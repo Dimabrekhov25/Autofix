@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/Autofix.Api/Autofix.Api.csproj" />
+  <Project Path="src/Autofix.Application/Autofix.Application.csproj" />
+  <Project Path="src/Autofix.Domain/Autofix.Domain.csproj" />
+  <Project Path="src/Autofix.Infrastructure/Autofix.Infrastructure.csproj" />
+</Solution>
