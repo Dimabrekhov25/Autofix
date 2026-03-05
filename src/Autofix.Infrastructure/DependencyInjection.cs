@@ -15,6 +15,8 @@ public static class DependencyInjection
             {
                 options.UseSnakeCaseNamingConvention();
             });
+
+        //builder.Services.AddScoped<IBookingRepositories, BookingRepositories>();
     }
     public static IHostApplicationBuilder AddNpgsqlDbContext<TContext>(
         this IHostApplicationBuilder builder,
