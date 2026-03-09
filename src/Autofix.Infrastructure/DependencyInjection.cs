@@ -1,4 +1,6 @@
+using Autofix.Application.ServiceCatalog.Repositories;
 using Autofix.Infrastructure.Persistance;
+using Autofix.Infrastructure.Persistance.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +18,7 @@ public static class DependencyInjection
                 options.UseSnakeCaseNamingConvention();
             });
 
-        //builder.Services.AddScoped<IBookingRepositories, BookingRepositories>();
+        builder.Services.AddScoped<IServiceCatalogRepository, ServiceCatalogRepository>();
     }
     public static IHostApplicationBuilder AddNpgsqlDbContext<TContext>(
         this IHostApplicationBuilder builder,
