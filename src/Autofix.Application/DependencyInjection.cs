@@ -1,7 +1,8 @@
 using System.Reflection;
+using Autofix.Application.Common.Behaviors;
+using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
 
 namespace Autofix.Application;
 
@@ -15,7 +16,10 @@ public static class DependencyInjection
         {
             cfg.RegisterServicesFromAssembly(assembly);
         });
-        
+
+        services.AddValidatorsFromAssembly(assembly);
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
         return services;
     }
 }
