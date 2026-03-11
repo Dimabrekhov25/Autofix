@@ -1,3 +1,4 @@
+using Autofix.Application.Common.Models;
 using Autofix.Application.Vehicles.Repositories;
 using Autofix.Domain.Entities.Vehicles;
 using Microsoft.EntityFrameworkCore;
@@ -20,14 +21,24 @@ public sealed class VehicleRepository(ApplicationDbContext dbContext) : IVehicle
             .FirstOrDefaultAsync(vehicle => vehicle.Id == id && !vehicle.IsDeleted, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Vehicle>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Vehicle>> GetPageAsync(
+        PageRequest page,
+        CancellationToken cancellationToken)
     {
         var vehicles = await dbContext.Vehicles
             .AsNoTracking()
             .Where(vehicle => !vehicle.IsDeleted)
             .OrderBy(vehicle => vehicle.LicensePlate)
+            .Skip(page.Skip)
+            .Take(page.Take)
             .ToListAsync(cancellationToken);
 
         return vehicles;
+    }
+
+    public Task<int> CountAsync(CancellationToken cancellationToken)
+    {
+        return dbContext.Vehicles
+            .CountAsync(vehicle => !vehicle.IsDeleted, cancellationToken);
     }
 }
