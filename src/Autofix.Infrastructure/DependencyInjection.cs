@@ -1,4 +1,5 @@
 using Autofix.Application.ServiceCatalog.Repositories;
+using Autofix.Application.Vehicles.Repositories;
 using Autofix.Infrastructure.Persistance;
 using Autofix.Infrastructure.Persistance.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,7 @@ public static class DependencyInjection
             });
 
         builder.Services.AddScoped<IServiceCatalogRepository, ServiceCatalogRepository>();
+        builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
     }
     public static IHostApplicationBuilder AddNpgsqlDbContext<TContext>(
         this IHostApplicationBuilder builder,
