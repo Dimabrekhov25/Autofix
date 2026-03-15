@@ -1,6 +1,6 @@
 using Autofix.Application.Common.Models;
 using Autofix.Application.Vehicles.Dtos;
-using Autofix.Application.Vehicles.Repositories;
+using Autofix.Application.Common.Interfaces;
 using MediatR;
 
 namespace Autofix.Application.Vehicles.Queries.GetVehicles;

@@ -1,3 +1,4 @@
+using Autofix.Domain.Common;
 using Autofix.Domain.Entities.Booking;
 using Autofix.Domain.Entities.Catalog;
 using Autofix.Domain.Entities.Finance;
@@ -33,5 +34,26 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+    }
+    
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        HandleSoftDelete();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+    
+    private void HandleSoftDelete()
+    {
+        var entries = ChangeTracker
+            .Entries()
+            .Where(e => e.State == EntityState.Deleted && e.Entity is BaseEntity);
+
+        foreach (var entry in entries)
+        {
+            var entity = (BaseEntity)entry.Entity;
+            entry.State = EntityState.Modified;
+            entity.IsDeleted = true;
+            entity.DeletedAt = DateTime.UtcNow;
+        }
     }
 }

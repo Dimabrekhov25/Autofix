@@ -1,6 +1,6 @@
 using Autofix.Domain.Entities.Catalog;
 
-namespace Autofix.Application.ServiceCatalog.Repositories;
+namespace Autofix.Application.Common.Interfaces;
 
 public interface IServiceCatalogRepository
 {

@@ -1,5 +1,4 @@
-using Autofix.Application.ServiceCatalog.Repositories;
-using Autofix.Application.Vehicles.Repositories;
+using Autofix.Application.Common.Interfaces;
 using Autofix.Infrastructure.Persistance;
 using Autofix.Infrastructure.Persistance.Repositories;
 using Microsoft.EntityFrameworkCore;
