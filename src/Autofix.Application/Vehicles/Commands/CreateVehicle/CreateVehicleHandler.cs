@@ -1,11 +1,14 @@
 using Autofix.Application.Vehicles.Dtos;
 using Autofix.Application.Common.Interfaces;
+using Autofix.Application.Common.Interfaces.IUnitOfWokr;
 using Autofix.Domain.Entities.Vehicles;
 using MediatR;
 
 namespace Autofix.Application.Vehicles.Commands.CreateVehicle;
 
-public sealed class CreateVehicleHandler(IVehicleRepository repository)
+public sealed class CreateVehicleHandler(
+    IVehicleRepository repository,
+    IUnitOfWork unitOfWork)
     : IRequestHandler<CreateVehicleCommand, VehicleDto>
 {
     public async Task<VehicleDto> Handle(CreateVehicleCommand request, CancellationToken cancellationToken)
@@ -22,6 +25,9 @@ public sealed class CreateVehicleHandler(IVehicleRepository repository)
 
         var saved = await repository.AddAsync(vehicle, cancellationToken);
 
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        
         return new VehicleDto(
             saved.Id,
             saved.OwnerCustomerId,
