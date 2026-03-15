@@ -9,29 +9,31 @@ public sealed class UpdateVehicleHandler(IVehicleRepository repository)
 {
     public async Task<VehicleDto?> Handle(UpdateVehicleCommand request, CancellationToken cancellationToken)
     {
-        var updated = await repository.UpdateAsync(
-            request.Id,
-            request.OwnerCustomerId,
-            request.LicensePlate,
-            request.Make,
-            request.Model,
-            request.Year,
-            request.IsDrivable,
-            cancellationToken);
+        var vehicle = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        if (updated is null)
+        if (vehicle is null)
         {
             return null;
         }
 
+        vehicle.OwnerCustomerId = request.OwnerCustomerId;
+        vehicle.LicensePlate = request.LicensePlate;
+        vehicle.Make = request.Make;
+        vehicle.Model = request.Model;
+        vehicle.Year = request.Year;
+        vehicle.IsDrivable = request.IsDrivable;
+        vehicle.UpdatedAt = DateTime.UtcNow;
+
+        await repository.UpdateAsync(vehicle, cancellationToken);
+
         return new VehicleDto(
-            updated.Id,
-            updated.OwnerCustomerId,
-            updated.LicensePlate,
-            updated.Make,
-            updated.Model,
-            updated.Year,
-            updated.IsDrivable
+            vehicle.Id,
+            vehicle.OwnerCustomerId,
+            vehicle.LicensePlate,
+            vehicle.Make,
+            vehicle.Model,
+            vehicle.Year,
+            vehicle.IsDrivable
         );
     }
 }

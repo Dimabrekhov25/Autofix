@@ -10,14 +10,20 @@ public sealed class UpdateEmployeeHandler(IEmployeeRepository repository)
 {
     public async Task<EmployeeDto?> Handle(UpdateEmployeeCommand request, CancellationToken cancellationToken)
     {
-        var updated = await repository.UpdateAsync(
-            request.Id,
-            request.UserId,
-            request.FullName,
-            request.Role,
-            request.IsActive,
-            cancellationToken);
+        var employee = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        return updated?.ToDto();
+        if (employee is null)
+        {
+            return null;
+        }
+
+        employee.UserId = request.UserId;
+        employee.FullName = request.FullName;
+        employee.Role = request.Role;
+        employee.IsActive = request.IsActive;
+        employee.UpdatedAt = DateTime.UtcNow;
+
+        await repository.UpdateAsync(employee, cancellationToken);
+        return employee.ToDto();
     }
 }

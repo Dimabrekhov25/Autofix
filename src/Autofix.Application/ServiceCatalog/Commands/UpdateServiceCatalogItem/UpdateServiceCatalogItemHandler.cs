@@ -12,14 +12,20 @@ public sealed class UpdateServiceCatalogItemHandler(IServiceCatalogRepository re
         UpdateServiceCatalogItemCommand request,
         CancellationToken cancellationToken)
     {
-        var updated = await repository.UpdateAsync(
-            request.Id,
-            request.Name,
-            request.BasePrice,
-            request.EstimatedDuration,
-            request.IsActive,
-            cancellationToken);
+        var item = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        return updated?.ToDto();
+        if (item is null)
+        {
+            return null;
+        }
+
+        item.Name = request.Name;
+        item.BasePrice = request.BasePrice;
+        item.EstimatedDuration = request.EstimatedDuration;
+        item.IsActive = request.IsActive;
+        item.UpdatedAt = DateTime.UtcNow;
+
+        await repository.UpdateAsync(item, cancellationToken);
+        return item.ToDto();
     }
 }

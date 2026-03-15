@@ -31,30 +31,10 @@ public sealed class ServiceCatalogRepository(ApplicationDbContext dbContext) : I
         return items;
     }
 
-    public async Task<ServiceCatalogItem?> UpdateAsync(
-        Guid id,
-        string name,
-        decimal basePrice,
-        TimeSpan estimatedDuration,
-        bool isActive,
-        CancellationToken cancellationToken)
+    public Task UpdateAsync(ServiceCatalogItem item, CancellationToken cancellationToken)
     {
-        var item = await dbContext.ServiceCatalogItems
-            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
-
-        if (item is null)
-        {
-            return null;
-        }
-
-        item.Name = name;
-        item.BasePrice = basePrice;
-        item.EstimatedDuration = estimatedDuration;
-        item.IsActive = isActive;
-        item.UpdatedAt = DateTime.UtcNow;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return item;
+        dbContext.ServiceCatalogItems.Update(item);
+        return dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)

@@ -1,6 +1,5 @@
 using Autofix.Application.Common.Interfaces;
 using Autofix.Domain.Entities.People;
-using Autofix.Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace Autofix.Infrastructure.Persistance.Repositories;
@@ -32,30 +31,10 @@ public sealed class EmployeeRepository(ApplicationDbContext dbContext) : IEmploy
         return employees;
     }
 
-    public async Task<Employee?> UpdateAsync(
-        Guid id,
-        Guid userId,
-        string fullName,
-        EmployeeRole role,
-        bool isActive,
-        CancellationToken cancellationToken)
+    public Task UpdateAsync(Employee employee, CancellationToken cancellationToken)
     {
-        var employee = await dbContext.Employees
-            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
-
-        if (employee is null)
-        {
-            return null;
-        }
-
-        employee.UserId = userId;
-        employee.FullName = fullName;
-        employee.Role = role;
-        employee.IsActive = isActive;
-        employee.UpdatedAt = DateTime.UtcNow;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return employee;
+        dbContext.Employees.Update(employee);
+        return dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)

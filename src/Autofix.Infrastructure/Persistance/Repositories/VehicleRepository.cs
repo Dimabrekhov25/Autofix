@@ -42,34 +42,10 @@ public sealed class VehicleRepository(ApplicationDbContext dbContext) : IVehicle
             .CountAsync(vehicle => !vehicle.IsDeleted, cancellationToken);
     }
 
-    public async Task<Vehicle?> UpdateAsync(
-        Guid id,
-        Guid ownerCustomerId,
-        string licensePlate,
-        string make,
-        string model,
-        int year,
-        bool isDrivable,
-        CancellationToken cancellationToken)
+    public Task UpdateAsync(Vehicle vehicle, CancellationToken cancellationToken)
     {
-        var vehicle = await dbContext.Vehicles
-            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
-
-        if (vehicle is null)
-        {
-            return null;
-        }
-
-        vehicle.OwnerCustomerId = ownerCustomerId;
-        vehicle.LicensePlate = licensePlate;
-        vehicle.Make = make;
-        vehicle.Model = model;
-        vehicle.Year = year;
-        vehicle.IsDrivable = isDrivable;
-        vehicle.UpdatedAt = DateTime.UtcNow;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return vehicle;
+        dbContext.Vehicles.Update(vehicle);
+        return dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
