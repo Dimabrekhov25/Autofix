@@ -1,7 +1,7 @@
 using Autofix.Application.Common.Models;
 using Autofix.Domain.Entities.Vehicles;
 
-namespace Autofix.Application.Vehicles.Repositories;
+namespace Autofix.Application.Common.Interfaces;
 
 public interface IVehicleRepository
 {

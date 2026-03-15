@@ -1,4 +1,4 @@
-using Autofix.Application.ServiceCatalog.Repositories;
+using Autofix.Application.Common.Interfaces;
 using Autofix.Domain.Entities.Catalog;
 using Microsoft.EntityFrameworkCore;
 
