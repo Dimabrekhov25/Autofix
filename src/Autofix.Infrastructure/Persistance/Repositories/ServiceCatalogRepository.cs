@@ -30,4 +30,28 @@ public sealed class ServiceCatalogRepository(ApplicationDbContext dbContext) : I
 
         return items;
     }
+
+    public Task UpdateAsync(ServiceCatalogItem item, CancellationToken cancellationToken)
+    {
+        dbContext.ServiceCatalogItems.Update(item);
+        return dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.ServiceCatalogItems
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+
+        if (item is null)
+        {
+            return false;
+        }
+
+        item.IsDeleted = true;
+        item.DeletedAt = DateTime.UtcNow;
+        item.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
 }

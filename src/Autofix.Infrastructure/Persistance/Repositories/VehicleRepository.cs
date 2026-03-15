@@ -41,4 +41,28 @@ public sealed class VehicleRepository(ApplicationDbContext dbContext) : IVehicle
         return dbContext.Vehicles
             .CountAsync(vehicle => !vehicle.IsDeleted, cancellationToken);
     }
+
+    public Task UpdateAsync(Vehicle vehicle, CancellationToken cancellationToken)
+    {
+        dbContext.Vehicles.Update(vehicle);
+        return dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var vehicle = await dbContext.Vehicles
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+
+        if (vehicle is null)
+        {
+            return false;
+        }
+
+        vehicle.IsDeleted = true;
+        vehicle.DeletedAt = DateTime.UtcNow;
+        vehicle.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
 }
