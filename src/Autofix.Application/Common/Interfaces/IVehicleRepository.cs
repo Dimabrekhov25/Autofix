@@ -1,7 +1,7 @@
 using Autofix.Application.Common.Models;
 using Autofix.Domain.Entities.Vehicles;
 
-namespace Autofix.Application.Vehicles.Repositories;
+namespace Autofix.Application.Common.Interfaces;
 
 public interface IVehicleRepository
 {
@@ -9,4 +9,14 @@ public interface IVehicleRepository
     Task<Vehicle?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     Task<IReadOnlyList<Vehicle>> GetPageAsync(PageRequest page, CancellationToken cancellationToken);
     Task<int> CountAsync(CancellationToken cancellationToken);
+    Task<Vehicle?> UpdateAsync(
+        Guid id,
+        Guid ownerCustomerId,
+        string licensePlate,
+        string make,
+        string model,
+        int year,
+        bool isDrivable,
+        CancellationToken cancellationToken);
+    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
 }

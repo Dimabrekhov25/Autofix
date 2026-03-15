@@ -1,5 +1,5 @@
 using Autofix.Application.Common.Models;
-using Autofix.Application.Vehicles.Repositories;
+using Autofix.Application.Common.Interfaces;
 using Autofix.Domain.Entities.Vehicles;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,5 +40,53 @@ public sealed class VehicleRepository(ApplicationDbContext dbContext) : IVehicle
     {
         return dbContext.Vehicles
             .CountAsync(vehicle => !vehicle.IsDeleted, cancellationToken);
+    }
+
+    public async Task<Vehicle?> UpdateAsync(
+        Guid id,
+        Guid ownerCustomerId,
+        string licensePlate,
+        string make,
+        string model,
+        int year,
+        bool isDrivable,
+        CancellationToken cancellationToken)
+    {
+        var vehicle = await dbContext.Vehicles
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+
+        if (vehicle is null)
+        {
+            return null;
+        }
+
+        vehicle.OwnerCustomerId = ownerCustomerId;
+        vehicle.LicensePlate = licensePlate;
+        vehicle.Make = make;
+        vehicle.Model = model;
+        vehicle.Year = year;
+        vehicle.IsDrivable = isDrivable;
+        vehicle.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return vehicle;
+    }
+
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var vehicle = await dbContext.Vehicles
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+
+        if (vehicle is null)
+        {
+            return false;
+        }
+
+        vehicle.IsDeleted = true;
+        vehicle.DeletedAt = DateTime.UtcNow;
+        vehicle.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

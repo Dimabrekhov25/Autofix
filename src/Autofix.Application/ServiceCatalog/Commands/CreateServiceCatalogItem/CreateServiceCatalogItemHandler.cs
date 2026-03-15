@@ -1,6 +1,6 @@
 using Autofix.Application.ServiceCatalog.Dtos;
 using Autofix.Application.ServiceCatalog.Mapping;
-using Autofix.Application.ServiceCatalog.Repositories;
+using Autofix.Application.Common.Interfaces;
 using Autofix.Domain.Entities.Catalog;
 using MediatR;
 

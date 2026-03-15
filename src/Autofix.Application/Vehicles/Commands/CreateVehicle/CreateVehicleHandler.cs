@@ -1,5 +1,5 @@
 using Autofix.Application.Vehicles.Dtos;
-using Autofix.Application.Vehicles.Repositories;
+using Autofix.Application.Common.Interfaces;
 using Autofix.Domain.Entities.Vehicles;
 using MediatR;
 
