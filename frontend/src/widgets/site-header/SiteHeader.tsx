@@ -1,16 +1,16 @@
 import { Link, useLocation } from 'react-router-dom'
 
-import { APP_ROUTES } from '../constants/routes'
-import { siteNavigation } from '../constants/site-shell'
-import { cn } from '../lib/cn'
+import { APP_ROUTES } from '../../shared/config/routes'
+import { siteNavigation } from '../../shared/config/site-shell'
+import { cn } from '../../shared/lib/cn'
 import { useAuth } from '../../features/auth/useAuth'
-import { BrandMark } from '../ui/BrandMark'
-import { Button } from '../ui/Button'
-import { Container } from '../ui/Container'
+import { BrandMark } from '../../shared/ui/BrandMark'
+import { Button } from '../../shared/ui/Button'
+import { Container } from '../../shared/ui/Container'
 
 export function SiteHeader() {
   const location = useLocation()
-  const { isAuthenticated, loginAsDemo, logout, user } = useAuth()
+  const { isAuthenticated, logout, user } = useAuth()
 
   return (
     <header className="glass-nav fixed inset-x-0 top-0 z-50">
@@ -43,19 +43,24 @@ export function SiteHeader() {
         </nav>
 
         {isAuthenticated && user ? (
-          <button
-            type="button"
-            onClick={logout}
-            title="Mock sign out"
-            className="inline-flex items-center gap-3 rounded-full border border-white/80 bg-white/80 px-2 py-2 text-sm font-semibold text-slate-700 shadow-card transition hover:-translate-y-0.5"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-extrabold uppercase text-white">
-              {user.initials}
-            </span>
-            <span className="hidden pr-2 sm:inline">{user.fullName}</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <Button to={APP_ROUTES.dashboard} tone="secondary">
+              Dashboard
+            </Button>
+            <button
+              type="button"
+              onClick={logout}
+              title="Mock sign out"
+              className="inline-flex items-center gap-3 rounded-full border border-white/80 bg-white/80 px-2 py-2 text-sm font-semibold text-slate-700 shadow-card transition hover:-translate-y-0.5"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-extrabold uppercase text-white">
+                {user.initials}
+              </span>
+              <span className="hidden pr-2 sm:inline">{user.fullName}</span>
+            </button>
+          </div>
         ) : (
-          <Button onClick={loginAsDemo} tone="secondary">
+          <Button to={APP_ROUTES.login} tone="secondary">
             Log In
           </Button>
         )}

@@ -19,21 +19,21 @@ export function TextField({
 }: TextFieldProps) {
   return (
     <label className={cn('flex flex-col gap-1.5', wrapperClassName)}>
-      <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-muted">
+      <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
         {label}
       </span>
       <div className="relative">
         <input
           type={type}
           className={cn(
-            'w-full rounded-2xl border border-transparent bg-surface-muted px-4 py-3 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-primary/20 focus:ring-2 focus:ring-primary/20',
+            'w-full rounded-xl border border-transparent bg-surface-container-low px-4 py-3.5 text-sm text-on-surface outline-none transition placeholder:text-on-surface-variant/70 focus:border-primary/20 focus:bg-white focus:ring-2 focus:ring-primary/15',
             trailingAction ? 'pr-12' : undefined,
             inputClassName,
           )}
           {...props}
         />
         {trailingAction ? (
-          <div className="absolute inset-y-0 right-3 flex items-center text-ink-muted">
+          <div className="absolute inset-y-0 right-3 flex items-center text-on-surface-variant">
             {trailingAction}
           </div>
         ) : null}

@@ -1,3 +1,4 @@
+import type { LoginSubmissionPayload } from './types/login'
 import type { RegisterSubmissionPayload } from './types/register'
 
 export interface MockAuthUser {
@@ -54,10 +55,27 @@ export function persistMockAuthState(state: MockAuthState) {
   window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state))
 }
 
+function inferDisplayName(email: string) {
+  const localPart = email.split('@')[0] ?? 'autofix client'
+
+  return localPart
+    .split(/[._-]/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ')
+}
+
 export function createDemoSession(): MockAuthState {
   return {
     isAuthenticated: true,
     user: createMockUser('Avery Precision', 'avery@autofix.dev'),
+  }
+}
+
+export function loginMockSession(payload: LoginSubmissionPayload): MockAuthState {
+  return {
+    isAuthenticated: true,
+    user: createMockUser(inferDisplayName(payload.email), payload.email),
   }
 }
 

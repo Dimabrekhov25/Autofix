@@ -9,16 +9,17 @@ import { cn } from '../lib/cn'
 import type { ActionTone } from '../types/content'
 
 const baseClassName =
-  'inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-heading text-sm font-extrabold tracking-tight transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2'
+  'inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-headline text-sm font-bold tracking-wide transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2'
 
 const toneClassNames: Record<ActionTone, string> = {
   primary:
-    'bg-primary text-white shadow-soft hover:-translate-y-0.5 hover:bg-primary-dark',
+    'bg-primary text-on-primary shadow-shell hover:-translate-y-0.5 hover:bg-primary-dark',
   secondary:
-    'bg-slate-200/80 text-primary hover:-translate-y-0.5 hover:bg-slate-300/90',
-  inverse: 'bg-white text-primary hover:-translate-y-0.5 hover:bg-slate-100',
+    'bg-surface-container text-primary hover:-translate-y-0.5 hover:bg-surface-container-high',
+  inverse:
+    'bg-surface-container-lowest text-primary shadow-panel hover:-translate-y-0.5 hover:bg-surface-container-low',
   ghost:
-    'border border-slate-300/80 bg-white/10 text-white hover:-translate-y-0.5 hover:bg-white/20',
+    'border border-outline-variant/40 bg-white/10 text-white hover:-translate-y-0.5 hover:bg-white/20',
 }
 
 type BaseProps = PropsWithChildren<{

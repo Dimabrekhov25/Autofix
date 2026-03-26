@@ -10,8 +10,11 @@ export const SECTION_IDS = {
 
 export const APP_ROUTES = {
   home: '/',
-  register: '/register',
+  dashboard: '/dashboard',
   booking: '/booking',
+  services: '/services',
+  login: '/login',
+  register: '/register',
   bookingEntry: '/start-booking',
 } as const
 
@@ -22,6 +25,7 @@ export const HOME_SECTION_ROUTES = {
   services: `/#${SECTION_IDS.services}`,
   testimonials: `/#${SECTION_IDS.testimonials}`,
   contact: `/#${SECTION_IDS.footer}`,
+  login: APP_ROUTES.login,
   register: APP_ROUTES.register,
 } as const
 
@@ -31,6 +35,6 @@ export const SUPPORT_ROUTES = {
   support: HOME_SECTION_ROUTES.contact,
 } as const
 
-export function resolveBookingRoute(isAuthenticated: boolean) {
-  return isAuthenticated ? APP_ROUTES.booking : APP_ROUTES.register
+export function resolveProtectedEntryRoute(isAuthenticated: boolean) {
+  return isAuthenticated ? APP_ROUTES.dashboard : APP_ROUTES.login
 }
