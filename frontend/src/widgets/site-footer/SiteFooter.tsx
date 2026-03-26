@@ -5,10 +5,10 @@ import {
   siteFooterBottomLinks,
   siteFooterColumns,
   siteSocialLinks,
-} from '../constants/site-shell'
-import { BrandMark } from '../ui/BrandMark'
-import { Container } from '../ui/Container'
-import { Icon } from '../ui/Icon'
+} from '../../shared/config/site-shell'
+import { BrandMark } from '../../shared/ui/BrandMark'
+import { Container } from '../../shared/ui/Container'
+import { Icon } from '../../shared/ui/Icon'
 
 interface SiteFooterProps {
   variant?: 'full' | 'compact'

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght@300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -18,7 +18,7 @@
   }
 
   body {
-    @apply m-0 bg-surface font-body text-ink antialiased;
+    @apply m-0 bg-surface font-body text-on-background antialiased;
     background-image:
       radial-gradient(circle at top right, rgba(82, 242, 245, 0.14), transparent 22%),
       linear-gradient(180deg, #f6f6f9 0%, #edf1f4 100%);
@@ -29,12 +29,35 @@
   }
 
   button,
-  input {
+  input,
+  textarea,
+  select {
     font: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-headline {
+    font-family: 'Manrope', sans-serif;
   }
 
   ::selection {
     background: rgba(0, 102, 104, 0.16);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #dbdde0;
+    border-radius: 9999px;
   }
 }
 
@@ -51,11 +74,20 @@
     @apply rounded-4xl border border-white/80 bg-white/80 shadow-card backdrop-blur-sm;
   }
 
+  .shell-panel {
+    @apply rounded-xl border border-white/70 bg-surface-container-lowest shadow-panel;
+  }
+
   .section-anchor {
     scroll-margin-top: 6rem;
   }
 
   .text-balance {
     text-wrap: balance;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
   }
 }

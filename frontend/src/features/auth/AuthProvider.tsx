@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 
 import {
   createDemoSession,
+  loginMockSession,
   persistMockAuthState,
   readMockAuthState,
   registerMockSession,
@@ -19,6 +20,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const value: AuthContextValue = {
     ...state,
+    login: (payload) => {
+      setState(loginMockSession(payload))
+    },
     loginAsDemo: () => {
       setState(createDemoSession())
     },

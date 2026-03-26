@@ -1,26 +1,40 @@
+import type { PropsWithChildren } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
-import { APP_ROUTES, resolveBookingRoute } from '../shared/constants/routes'
 import { useAuth } from '../features/auth/useAuth'
-import { HomePage } from '../features/home/HomePage'
-import { BookingPage } from '../features/booking/pages/BookingPage'
-import { RegisterPage } from '../features/auth/pages/RegisterPage'
+import { BookingPage } from '../pages/booking/BookingPage'
+import { DashboardPage } from '../pages/dashboard/DashboardPage'
+import { HomePage } from '../pages/home/HomePage'
+import { LoginPage } from '../pages/login/LoginPage'
+import { RegisterPage } from '../pages/register/RegisterPage'
+import { ServicesPage } from '../pages/services/ServicesPage'
+import { APP_ROUTES, resolveProtectedEntryRoute } from '../shared/config/routes'
 import { ScrollToHash } from './ScrollToHash'
 
-function ProtectedBookingRoute() {
+function ProtectedRoute({ children }: PropsWithChildren) {
   const { isAuthenticated } = useAuth()
 
   if (!isAuthenticated) {
-    return <Navigate to={APP_ROUTES.register} replace />
+    return <Navigate to={APP_ROUTES.login} replace />
   }
 
-  return <BookingPage />
+  return children
+}
+
+function GuestOnlyRoute({ children }: PropsWithChildren) {
+  const { isAuthenticated } = useAuth()
+
+  if (isAuthenticated) {
+    return <Navigate to={APP_ROUTES.dashboard} replace />
+  }
+
+  return children
 }
 
 function BookingEntryRedirect() {
   const { isAuthenticated } = useAuth()
 
-  return <Navigate to={resolveBookingRoute(isAuthenticated)} replace />
+  return <Navigate to={resolveProtectedEntryRoute(isAuthenticated)} replace />
 }
 
 export function AppRouter() {
@@ -29,8 +43,46 @@ export function AppRouter() {
       <ScrollToHash />
       <Routes>
         <Route path={APP_ROUTES.home} element={<HomePage />} />
-        <Route path={APP_ROUTES.register} element={<RegisterPage />} />
-        <Route path={APP_ROUTES.booking} element={<ProtectedBookingRoute />} />
+        <Route
+          path={APP_ROUTES.login}
+          element={
+            <GuestOnlyRoute>
+              <LoginPage />
+            </GuestOnlyRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.register}
+          element={
+            <GuestOnlyRoute>
+              <RegisterPage />
+            </GuestOnlyRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.dashboard}
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.booking}
+          element={
+            <ProtectedRoute>
+              <BookingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.services}
+          element={
+            <ProtectedRoute>
+              <ServicesPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path={APP_ROUTES.bookingEntry} element={<BookingEntryRedirect />} />
         <Route path="*" element={<Navigate to={APP_ROUTES.home} replace />} />
       </Routes>

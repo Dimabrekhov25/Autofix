@@ -1,4 +1,4 @@
-import { APP_ROUTES } from '../../../shared/constants/routes'
+import { APP_ROUTES } from '../../../shared/config/routes'
 import type { HomePageContent } from '../../../shared/types/content'
 
 export const homePageContent = {
