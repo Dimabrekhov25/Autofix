@@ -7,6 +7,7 @@ import { useAuth } from '../../features/auth/useAuth'
 import { BrandMark } from '../../shared/ui/BrandMark'
 import { Button } from '../../shared/ui/Button'
 import { Container } from '../../shared/ui/Container'
+import { ServicesDropdown } from './ServicesDropdown'
 
 export function SiteHeader() {
   const location = useLocation()
@@ -26,6 +27,16 @@ export function SiteHeader() {
               ? item.matchHashes.includes(location.hash)
               : true
             const isActive = matchesPath && matchesHash
+
+            if (item.label === 'Services') {
+              return (
+                <ServicesDropdown
+                  key={item.label}
+                  isActive={isActive}
+                  to={item.to}
+                />
+              )
+            }
 
             return (
               <Link
