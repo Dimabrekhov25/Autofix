@@ -1,6 +1,7 @@
 import { useState, type FocusEvent } from 'react'
 import { Link } from 'react-router-dom'
 
+import { APP_ROUTES } from '../../shared/config/routes'
 import { cn } from '../../shared/lib/cn'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 
@@ -92,8 +93,8 @@ const serviceCategories: ServiceCategory[] = [
         name: 'Synthetic Oil Change',
         description: 'Premium synthetic oil replacement matched to mileage and manufacturer spec.',
         icon: 'local_gas_station',
-        to: '/#services',
-      },
+        to: APP_ROUTES.premiumOilChange,
+        },
       {
         name: 'Oil Filter Replacement',
         description: 'Fresh filter installation with seal inspection and clean pressure flow support.',

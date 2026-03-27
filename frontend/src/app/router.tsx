@@ -7,6 +7,7 @@ import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { HomePage } from '../pages/home/HomePage'
 import { InventoryPage } from '../pages/inventory/InventoryPage'
 import { LoginPage } from '../pages/login/LoginPage'
+import { PremiumOilChangePage } from '../pages/premium-oil-change/PremiumOilChangePage'
 import { RegisterPage } from '../pages/register/RegisterPage'
 import { ServicesPage } from '../pages/services/ServicesPage'
 import { APP_ROUTES, resolveProtectedEntryRoute } from '../shared/config/routes'
@@ -84,6 +85,7 @@ export function AppRouter() {
             </ProtectedRoute>
           }
         />
+        <Route path={APP_ROUTES.premiumOilChange} element={<PremiumOilChangePage />} />
         <Route
           path={APP_ROUTES.services}
           element={

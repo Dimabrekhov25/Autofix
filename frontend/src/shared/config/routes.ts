@@ -13,6 +13,7 @@ export const APP_ROUTES = {
   dashboard: '/dashboard',
   inventory: '/inventory',
   booking: '/booking',
+  premiumOilChange: '/services/premium-oil-change',
   services: '/services',
   login: '/login',
   register: '/register',
