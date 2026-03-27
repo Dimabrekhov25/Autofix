@@ -11,6 +11,7 @@ export const SECTION_IDS = {
 export const APP_ROUTES = {
   home: '/',
   dashboard: '/dashboard',
+  inventory: '/inventory',
   booking: '/booking',
   services: '/services',
   login: '/login',

@@ -5,6 +5,7 @@ import { useAuth } from '../features/auth/useAuth'
 import { BookingPage } from '../pages/booking/BookingPage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { HomePage } from '../pages/home/HomePage'
+import { InventoryPage } from '../pages/inventory/InventoryPage'
 import { LoginPage } from '../pages/login/LoginPage'
 import { RegisterPage } from '../pages/register/RegisterPage'
 import { ServicesPage } from '../pages/services/ServicesPage'
@@ -72,6 +73,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <BookingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.inventory}
+          element={
+            <ProtectedRoute>
+              <InventoryPage />
             </ProtectedRoute>
           }
         />
