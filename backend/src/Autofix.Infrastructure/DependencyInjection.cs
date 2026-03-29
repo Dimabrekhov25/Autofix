@@ -18,6 +18,7 @@ public static class DependencyInjection
                 options.UseSnakeCaseNamingConvention();
             });
 
+        builder.Services.AddScoped<IPartRepository, PartRepository>();
         builder.Services.AddScoped<IServiceCatalogRepository, ServiceCatalogRepository>();
         builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
         builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
