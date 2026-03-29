@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply m-0 bg-surface font-body text-on-background antialiased;
+    background-image:
+      radial-gradient(circle at top right, rgba(82, 242, 245, 0.14), transparent 22%),
+      linear-gradient(180deg, #f6f6f9 0%, #edf1f4 100%);
+  }
+
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-headline {
+    font-family: 'Manrope', sans-serif;
+  }
+
+  ::selection {
+    background: rgba(0, 102, 104, 0.16);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #dbdde0;
+    border-radius: 9999px;
+  }
+}
+
+@layer components {
+  .section-frame {
+    @apply mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10;
+  }
+
+  .glass-nav {
+    @apply border-b border-white/70 bg-white/70 backdrop-blur-xl;
+  }
+
+  .surface-card {
+    @apply rounded-4xl border border-white/80 bg-white/80 shadow-card backdrop-blur-sm;
+  }
+
+  .shell-panel {
+    @apply rounded-xl border border-white/70 bg-surface-container-lowest shadow-panel;
+  }
+
+  .section-anchor {
+    scroll-margin-top: 6rem;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+  }
+}
