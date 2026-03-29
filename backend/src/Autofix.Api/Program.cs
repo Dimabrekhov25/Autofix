@@ -1,4 +1,5 @@
 using Autofix.Application;
+using Autofix.Api.Middlewares;
 using Autofix.Infrastructure;
 using Asp.Versioning;
 using Autofix.Infrastructure.Persistance;
@@ -12,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();
 builder.AddInfrastructure();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddApiVersioning(options =>
     {
         options.DefaultApiVersion = new ApiVersion(1.0);
@@ -37,6 +40,7 @@ if (app.Environment.IsDevelopment())
     await dbContext.Database.MigrateAsync();
 }
 
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.MapControllers();
 
