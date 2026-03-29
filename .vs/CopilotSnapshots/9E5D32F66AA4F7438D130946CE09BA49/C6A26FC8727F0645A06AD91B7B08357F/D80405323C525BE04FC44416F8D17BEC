@@ -1,0 +1,25 @@
+﻿using Autofix.Application.Common.Interfaces;
+using Autofix.Application.Parts.Dtos;
+using MediatR;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Autofix.Application.Parts.Queries.GetParts;
+
+public sealed class GetPartsHandler(IPartRepository repository)
+    : IRequestHandler<GetPartsQuery, IEnumerable<PartDto>>
+{
+    public async Task<IEnumerable<PartDto>> Handle(GetPartsQuery request, CancellationToken cancellationToken)
+    {
+        var parts = await repository.GetAllAsync(cancellationToken);
+
+        return parts.Select(part => new PartDto(
+            part.Id,
+            part.Name,
+            part.UnitPrice,
+            part.IsActive
+        ));
+    }
+}
+}

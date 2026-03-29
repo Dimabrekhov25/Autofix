@@ -1,0 +1,16 @@
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\obj\Debug\net10.0\Autofix.Application.csproj.AssemblyReference.cache
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\obj\Debug\net10.0\Autofix.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\obj\Debug\net10.0\Autofix.Application.AssemblyInfoInputs.cache
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\obj\Debug\net10.0\Autofix.Application.AssemblyInfo.cs
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\obj\Debug\net10.0\Autofix.Application.csproj.CoreCompileInputs.cache
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\obj\Debug\net10.0\Autofix.Application.sourcelink.json
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\bin\Debug\net10.0\Autofix.Application.deps.json
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\bin\Debug\net10.0\Autofix.Application.dll
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\bin\Debug\net10.0\Autofix.Application.pdb
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\bin\Debug\net10.0\Autofix.Domain.dll
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\bin\Debug\net10.0\Autofix.Domain.pdb
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\obj\Debug\net10.0\Autofix..545A037C.Up2Date
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\obj\Debug\net10.0\Autofix.Application.dll
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\obj\Debug\net10.0\refint\Autofix.Application.dll
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\obj\Debug\net10.0\Autofix.Application.pdb
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Application\obj\Debug\net10.0\ref\Autofix.Application.dll

@@ -1,0 +1,13 @@
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\bin\Debug\net10.0\Autofix.Domain.deps.json
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\bin\Debug\net10.0\Autofix.Domain.dll
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\bin\Debug\net10.0\Autofix.Domain.pdb
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\obj\Debug\net10.0\Autofix.Domain.csproj.AssemblyReference.cache
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\obj\Debug\net10.0\Autofix.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\obj\Debug\net10.0\Autofix.Domain.AssemblyInfoInputs.cache
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\obj\Debug\net10.0\Autofix.Domain.AssemblyInfo.cs
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\obj\Debug\net10.0\Autofix.Domain.csproj.CoreCompileInputs.cache
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\obj\Debug\net10.0\Autofix.Domain.sourcelink.json
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\obj\Debug\net10.0\Autofix.Domain.dll
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\obj\Debug\net10.0\refint\Autofix.Domain.dll
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\obj\Debug\net10.0\Autofix.Domain.pdb
+C:\Users\Ivan\source\repos\Autofix\src\Autofix.Domain\obj\Debug\net10.0\ref\Autofix.Domain.dll

@@ -25,6 +25,8 @@ public static class DependencyInjection
         builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IServiceOrderRepository, ServiceOrderRepository>();
+        builder.Services.AddScoped<IDiagnosisItemRepository, DiagnosisItemRepository>();
     }
     public static IHostApplicationBuilder AddNpgsqlDbContext<TContext>(
         this IHostApplicationBuilder builder,
