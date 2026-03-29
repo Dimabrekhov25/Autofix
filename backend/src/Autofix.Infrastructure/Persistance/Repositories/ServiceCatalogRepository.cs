@@ -20,6 +20,24 @@ public sealed class ServiceCatalogRepository(ApplicationDbContext dbContext) : I
             .FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<ServiceCatalogItem>> GetByIdsAsync(
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        var items = await dbContext.ServiceCatalogItems
+            .AsNoTracking()
+            .Where(item => ids.Contains(item.Id) && item.IsActive && !item.IsDeleted)
+            .OrderBy(item => item.Name)
+            .ToListAsync(cancellationToken);
+
+        return items;
+    }
+
     public async Task<IReadOnlyList<ServiceCatalogItem>> GetAllAsync(CancellationToken cancellationToken)
     {
         var items = await dbContext.ServiceCatalogItems
