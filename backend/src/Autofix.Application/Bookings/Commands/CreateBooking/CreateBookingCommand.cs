@@ -1,4 +1,4 @@
-using Autofix.Application.Bookings.Results;
+using Autofix.Application.Bookings.Dtos;
 using MediatR;
 
 namespace Autofix.Application.Bookings.Commands.CreateBooking;
@@ -9,4 +9,4 @@ public sealed record CreateBookingCommand(
     DateTime StartAt,
     DateTime EndAt,
     IReadOnlyList<Guid>? ServiceCatalogItemIds
-) : IRequest<BookingMutationResult>;
+) : IRequest<BookingDto>;

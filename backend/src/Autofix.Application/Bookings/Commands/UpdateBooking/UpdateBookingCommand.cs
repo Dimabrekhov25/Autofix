@@ -1,4 +1,4 @@
-using Autofix.Application.Bookings.Results;
+using Autofix.Application.Bookings.Dtos;
 using Autofix.Domain.Enum;
 using MediatR;
 
@@ -12,4 +12,4 @@ public sealed record UpdateBookingCommand(
     DateTime EndAt,
     BookingStatus Status,
     IReadOnlyList<Guid>? ServiceCatalogItemIds
-) : IRequest<BookingMutationResult>;
+) : IRequest<BookingDto?>;

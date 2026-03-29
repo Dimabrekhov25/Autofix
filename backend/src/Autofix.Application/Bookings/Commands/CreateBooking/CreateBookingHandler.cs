@@ -1,9 +1,10 @@
+using Autofix.Application.Bookings.Dtos;
 using Autofix.Application.Bookings.Mapping;
-using Autofix.Application.Bookings.Results;
 using Autofix.Application.Common.Interfaces;
 using Autofix.Domain.Entities.Booking;
 using Autofix.Domain.Entities.Catalog;
 using Autofix.Domain.Enum;
+using Autofix.Domain.Exceptions;
 using MediatR;
 
 namespace Autofix.Application.Bookings.Commands.CreateBooking;
@@ -13,25 +14,25 @@ public sealed class CreateBookingHandler(
     ICustomerRepository customerRepository,
     IVehicleRepository vehicleRepository,
     IServiceCatalogRepository serviceCatalogRepository)
-    : IRequestHandler<CreateBookingCommand, BookingMutationResult>
+    : IRequestHandler<CreateBookingCommand, BookingDto>
 {
-    public async Task<BookingMutationResult> Handle(CreateBookingCommand request, CancellationToken cancellationToken)
+    public async Task<BookingDto> Handle(CreateBookingCommand request, CancellationToken cancellationToken)
     {
         var customer = await customerRepository.GetByIdAsync(request.CustomerId, cancellationToken);
         if (customer is null)
         {
-            return new BookingMutationResult(null, BookingMutationError.CustomerNotFound);
+            throw new NotFoundException("Customer", request.CustomerId);
         }
 
         var vehicle = await vehicleRepository.GetByIdAsync(request.VehicleId, cancellationToken);
         if (vehicle is null)
         {
-            return new BookingMutationResult(null, BookingMutationError.VehicleNotFound);
+            throw new NotFoundException("Vehicle", request.VehicleId);
         }
 
         if (vehicle.OwnerCustomerId != request.CustomerId)
         {
-            return new BookingMutationResult(null, BookingMutationError.VehicleDoesNotBelongToCustomer);
+            throw new BadRequestException("Vehicle does not belong to customer");
         }
 
         var hasOverlap = await bookingRepository.HasOverlappingBookingAsync(
@@ -43,14 +44,10 @@ public sealed class CreateBookingHandler(
 
         if (hasOverlap)
         {
-            return new BookingMutationResult(null, BookingMutationError.TimeSlotUnavailable);
+            throw new BadRequestException("Selected time slot is unavailable");
         }
 
         var services = await LoadRequestedServicesAsync(request.ServiceCatalogItemIds, cancellationToken);
-        if (services is null)
-        {
-            return new BookingMutationResult(null, BookingMutationError.ServiceCatalogItemsNotFound);
-        }
 
         var booking = new Booking
         {
@@ -63,10 +60,10 @@ public sealed class CreateBookingHandler(
         };
 
         var saved = await bookingRepository.AddAsync(booking, cancellationToken);
-        return new BookingMutationResult(saved.ToDto());
+        return saved.ToDto();
     }
 
-    private async Task<List<BookingServiceItem>?> LoadRequestedServicesAsync(
+    private async Task<List<BookingServiceItem>> LoadRequestedServicesAsync(
         IReadOnlyList<Guid>? serviceCatalogItemIds,
         CancellationToken cancellationToken)
     {
@@ -83,7 +80,7 @@ public sealed class CreateBookingHandler(
         var catalogItems = await serviceCatalogRepository.GetByIdsAsync(normalizedIds, cancellationToken);
         if (catalogItems.Count != normalizedIds.Count)
         {
-            return null;
+            throw new NotFoundException("ServiceCatalogItem", string.Join(", ", normalizedIds));
         }
 
         return catalogItems

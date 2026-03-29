@@ -4,7 +4,6 @@ using Autofix.Application.Bookings.Commands.DeleteBooking;
 using Autofix.Application.Bookings.Commands.UpdateBooking;
 using Autofix.Application.Bookings.Queries.GetBookingById;
 using Autofix.Application.Bookings.Queries.GetBookings;
-using Autofix.Application.Bookings.Results;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +15,7 @@ public sealed class BookingsController(IMediator mediator) : BaseController
     public async Task<IActionResult> Create([FromBody] CreateBookingCommand command, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(command, cancellationToken);
-        return ToMutationResult(result);
+        return OkResult(result);
     }
 
     [HttpGet]
@@ -51,7 +50,13 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         }
 
         var result = await mediator.Send(command, cancellationToken);
-        return ToMutationResult(result, id);
+
+        if (result is null)
+        {
+            return NotFound(ApiResult.Failure($"Booking {id} not found"));
+        }
+
+        return OkResult(result);
     }
 
     [HttpDelete("{id:guid}")]
@@ -65,27 +70,5 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         }
 
         return OkResult(new { });
-    }
-
-    private IActionResult ToMutationResult(BookingMutationResult result, Guid? bookingId = null)
-    {
-        if (result.Booking is not null && result.Error == BookingMutationError.None)
-        {
-            return OkResult(result.Booking);
-        }
-
-        return result.Error switch
-        {
-            BookingMutationError.BookingNotFound => NotFound(ApiResult.Failure(
-                bookingId.HasValue
-                    ? $"Booking {bookingId.Value} not found"
-                    : "Booking not found")),
-            BookingMutationError.CustomerNotFound => NotFound(ApiResult.Failure("Customer not found")),
-            BookingMutationError.VehicleNotFound => NotFound(ApiResult.Failure("Vehicle not found")),
-            BookingMutationError.VehicleDoesNotBelongToCustomer => BadRequest(ApiResult.Failure("Vehicle does not belong to customer")),
-            BookingMutationError.ServiceCatalogItemsNotFound => BadRequest(ApiResult.Failure("One or more service catalog items were not found")),
-            BookingMutationError.TimeSlotUnavailable => Conflict(ApiResult.Failure("Selected time slot is unavailable")),
-            _ => BadRequest(ApiResult.Failure("Booking request could not be processed"))
-        };
     }
 }
