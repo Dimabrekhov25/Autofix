@@ -4,7 +4,6 @@ import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth'
 import { APP_ROUTES } from '../../shared/config/routes'
 import { BrandMark } from '../../shared/ui/BrandMark'
-import { Button } from '../../shared/ui/Button'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 
 interface DashboardShellProps extends PropsWithChildren {
@@ -13,7 +12,7 @@ interface DashboardShellProps extends PropsWithChildren {
 
 const dashboardNavItems = [
   { label: 'Dashboard', to: APP_ROUTES.dashboard, icon: 'dashboard' },
-  { label: 'Diagnostics', to: APP_ROUTES.diagnostics, icon: 'build' },
+  { label: 'Diagnostic', to: APP_ROUTES.diagnostics, icon: 'build' },
   { label: 'Inventory', to: APP_ROUTES.inventory, icon: 'inventory_2' },
   { label: 'Booking', to: APP_ROUTES.booking, icon: 'event' },
   { label: 'Services', to: APP_ROUTES.services, icon: 'settings' },
@@ -30,9 +29,6 @@ export function DashboardShell({
       <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col gap-2 bg-slate-50 p-4 pt-6 lg:flex">
         <div className="mb-8 px-4">
           <BrandMark className="font-headline text-xl font-bold tracking-tight text-slate-900" />
-          <p className="text-[0.6875rem] uppercase tracking-[0.1em] text-on-surface-variant opacity-60">
-            Precision Atelier
-          </p>
         </div>
 
         <nav className="flex flex-col gap-1">
@@ -55,13 +51,7 @@ export function DashboardShell({
           ))}
         </nav>
 
-        <div className="mt-auto px-4 pb-6">
-          <Button to={APP_ROUTES.booking} className="w-full">
-            Start Diagnostic
-          </Button>
-        </div>
-
-        <div className="border-t border-outline-variant/10 pt-4">
+        <div className="border-t border-outline-variant/10 pt-4 mt-auto">
           <button
             type="button"
             onClick={logout}

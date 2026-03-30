@@ -10,7 +10,7 @@ import { LoginPage } from '../pages/login/LoginPage'
 import { PremiumOilChangePage } from '../pages/premium-oil-change/PremiumOilChangePage'
 import { RegisterPage } from '../pages/register/RegisterPage'
 import { ServicesPage } from '../pages/services/ServicesPage'
-import { VehicleDiagnosticPage } from '../pages/vehicle/VehicleDiagnosticPage'
+import { VehicleDiagnosticPage } from '../pages/diagnostic/VehicleDiagnosticPage'
 import { APP_ROUTES, resolveProtectedEntryRoute } from '../shared/config/routes'
 import { ScrollToHash } from './ScrollToHash'
 
