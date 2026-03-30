@@ -1,15 +1,28 @@
 import type {
   BookingCalendarDay,
+  BookingOption,
+  BookingOptionKind,
+  BookingProgressStepId,
   BookingSummaryCard,
   BookingTimeSlot,
 } from '../types/booking'
 
-export const bookingProgressSteps = [
-  { id: 'services', label: 'Services', state: 'completed' },
-  { id: 'schedule', label: 'Schedule', state: 'current' },
-  { id: 'vehicle', label: 'Vehicle', state: 'upcoming' },
-  { id: 'summary', label: 'Summary', state: 'upcoming' },
+export const bookingStepDefinitions = [
+  { id: 'services', label: 'Services' },
+  { id: 'schedule', label: 'Schedule' },
+  { id: 'vehicle', label: 'Vehicle' },
+  { id: 'summary', label: 'Summary' },
 ] as const
+
+export function getBookingProgressSteps(currentStep: BookingProgressStepId) {
+  const currentIndex = bookingStepDefinitions.findIndex((step) => step.id === currentStep)
+
+  return bookingStepDefinitions.map((step, index) => ({
+    ...step,
+    state:
+      index < currentIndex ? 'completed' : index === currentIndex ? 'current' : 'upcoming',
+  }))
+}
 
 export const bookingCalendarWeekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
 
@@ -44,6 +57,117 @@ export const bookingTimeSlots: BookingTimeSlot[] = [
   { id: '16-45', label: '04:45 PM', period: 'afternoon', available: false },
 ] as const
 
+export const bookingServiceOptions: BookingOption[] = [
+  {
+    id: 'oil-change',
+    kind: 'service',
+    title: 'Oil Change',
+    description: 'Synthetic oil replacement including premium filter and inspection.',
+    priceLabel: '$89.00',
+    icon: 'oil_barrel',
+    duration: '1h 15m',
+    summaryLabel: 'Synthetic Premium',
+  },
+  {
+    id: 'tire-replacement',
+    kind: 'service',
+    title: 'Tire Replacement',
+    description: 'Installation of 4 new tires with precision balancing.',
+    priceLabel: '$120.00',
+    icon: 'tire_repair',
+    duration: '2h 00m',
+  },
+  {
+    id: 'brake-service',
+    kind: 'service',
+    title: 'Brake Service',
+    description: 'Full pad replacement and rotor resurfacing for optimal safety.',
+    priceLabel: '$245.00',
+    icon: 'eject',
+    duration: '2h 30m',
+  },
+  {
+    id: 'battery-replacement',
+    kind: 'service',
+    title: 'Battery Replacement',
+    description: 'Premium AGM battery installation with testing.',
+    priceLabel: '$185.00',
+    icon: 'battery_charging_full',
+    duration: '1h 00m',
+  },
+  {
+    id: 'wheel-alignment',
+    kind: 'service',
+    title: 'Wheel Alignment',
+    description: 'Laser-guided four-wheel geometry correction.',
+    priceLabel: '$95.00',
+    icon: 'settings_input_component',
+    duration: '1h 30m',
+  },
+  {
+    id: 'inspection',
+    kind: 'service',
+    title: 'Inspection',
+    description: 'Comprehensive 150-point vehicle safety check.',
+    priceLabel: '$50.00',
+    icon: 'fact_check',
+    duration: '45m',
+  },
+] as const
+
+export const bookingDiagnosticOptions: BookingOption[] = [
+  {
+    id: 'full-vehicle-diagnostic',
+    kind: 'diagnostic',
+    title: 'Full Vehicle Diagnostic',
+    description: 'Complete scan across engine, electronics, and vehicle health systems.',
+    priceLabel: '$180.00',
+    icon: 'monitor_heart',
+    duration: '1h 30m',
+    summaryLabel: 'Complete system scan',
+  },
+  {
+    id: 'engine-diagnostic',
+    kind: 'diagnostic',
+    title: 'Engine Diagnostic',
+    description: 'Fault code analysis and live data review for engine concerns.',
+    priceLabel: '$120.00',
+    icon: 'earth_engine',
+    duration: '1h 00m',
+  },
+  {
+    id: 'transmission-diagnostic',
+    kind: 'diagnostic',
+    title: 'Transmission Diagnostic',
+    description: 'Shift quality evaluation with gearbox error and sensor checks.',
+    priceLabel: '$135.00',
+    icon: 'settings_input_component',
+    duration: '1h 15m',
+  },
+  {
+    id: 'brake-diagnostic',
+    kind: 'diagnostic',
+    title: 'Brake Diagnostic',
+    description: 'Targeted diagnosis for noise, vibration, and braking inconsistencies.',
+    priceLabel: '$95.00',
+    icon: 'eject',
+    duration: '45m',
+  },
+] as const
+
+export const bookingOptionGroups: Record<BookingOptionKind, readonly BookingOption[]> = {
+  service: bookingServiceOptions,
+  diagnostic: bookingDiagnosticOptions,
+} as const
+
+export function resolveBookingSelection(kindParam?: string | null, optionId?: string | null) {
+  const kind: BookingOptionKind = kindParam === 'diagnostic' ? 'diagnostic' : 'service'
+  const options = bookingOptionGroups[kind]
+  const option = options.find((item) => item.id === optionId) ?? options[0]
+
+  return { kind, option, options }
+}
+
 export const bookingSummaryBase: Omit<BookingSummaryCard, 'value' | 'pending' | 'emphasized'>[] = [
   { id: 'service', label: 'Service', icon: 'oil_barrel' },
   { id: 'date-time', label: 'Date & Time', icon: 'calendar_month' },
@@ -54,7 +178,7 @@ export const bookingSummaryBase: Omit<BookingSummaryCard, 'value' | 'pending' | 
 export const bookingDefaults = {
   monthLabel: 'September 2024',
   monthDescription: 'Select an available workshop date',
-  selectedService: 'Full Synthetic Oil',
+  selectedService: bookingServiceOptions[0].title,
   selectedVehicle: 'Tesla Model 3',
   pendingEstimate: 'Pending info',
   selectedEstimate: '$180 diagnostic hold',

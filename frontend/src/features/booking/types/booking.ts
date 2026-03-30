@@ -10,6 +10,21 @@ export interface BookingTimeSlot {
   available: boolean
 }
 
+export type BookingOptionKind = 'service' | 'diagnostic'
+
+export type BookingProgressStepId = 'services' | 'schedule' | 'vehicle' | 'summary'
+
+export interface BookingOption {
+  id: string
+  kind: BookingOptionKind
+  title: string
+  description: string
+  priceLabel: string
+  icon: string
+  duration: string
+  summaryLabel?: string
+}
+
 export interface BookingSummaryCard {
   id: string
   label: string

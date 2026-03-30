@@ -1,4 +1,5 @@
-import { bookingProgressSteps } from '../constants/booking-content'
+import { getBookingProgressSteps } from '../constants/booking-content'
+import type { BookingProgressStepId } from '../types/booking'
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 
 const mobileIcons = {
@@ -8,7 +9,13 @@ const mobileIcons = {
   summary: 'assignment_turned_in',
 } as const
 
-export function BookingMobileStepNav() {
+interface BookingMobileStepNavProps {
+  currentStep: BookingProgressStepId
+}
+
+export function BookingMobileStepNav({ currentStep }: BookingMobileStepNavProps) {
+  const bookingProgressSteps = getBookingProgressSteps(currentStep)
+
   return (
     <nav className="fixed bottom-0 left-0 z-50 flex w-full items-center justify-around rounded-t-[1.5rem] border-t border-outline-variant/10 bg-white px-4 pb-6 pt-3 shadow-[0_-20px_40px_rgba(45,47,49,0.06)] md:hidden">
       {bookingProgressSteps.map((step) => {

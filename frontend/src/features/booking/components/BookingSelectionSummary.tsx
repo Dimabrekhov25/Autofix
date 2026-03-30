@@ -9,11 +9,13 @@ import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 interface BookingSelectionSummaryProps {
   selectedDate: number
   selectedSlotId: string
+  selectedServiceLabel?: string
 }
 
 export function BookingSelectionSummary({
   selectedDate,
   selectedSlotId,
+  selectedServiceLabel,
 }: BookingSelectionSummaryProps) {
   const selectedSlot = bookingTimeSlots.find((slot) => slot.id === selectedSlotId)
 
@@ -21,7 +23,7 @@ export function BookingSelectionSummary({
     if (card.id === 'service') {
       return {
         ...card,
-        value: bookingDefaults.selectedService,
+        value: selectedServiceLabel ?? bookingDefaults.selectedService,
       }
     }
 
