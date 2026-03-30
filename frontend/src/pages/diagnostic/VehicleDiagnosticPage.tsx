@@ -1,11 +1,11 @@
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
-import { VehicleHeader } from '../../features/vehicle/components/VehicleHeader'
-import { VehicleInfoCard } from '../../features/vehicle/components/VehicleInfoCard'
-import { VehicleImageSection } from '../../features/vehicle/components/VehicleImageSection'
-import { ServiceHistory } from '../../features/vehicle/components/ServiceHistory'
-import { DiagnosticReport } from '../../features/vehicle/components/DiagnosticReport'
-import { CostCalculator } from '../../features/vehicle/components/CostCalculator'
-import { mockVehicleDiagnostic } from '../../features/vehicle/mock/vehicle-data'
+import { VehicleHeader } from '../../features/diagnostic/components/VehicleHeader'
+import { VehicleInfoCard } from '../../features/diagnostic/components/VehicleInfoCard'
+import { VehicleImageSection } from '../../features/diagnostic/components/VehicleImageSection'
+import { ServiceHistory } from '../../features/diagnostic/components/ServiceHistory'
+import { DiagnosticReport } from '../../features/diagnostic/components/DiagnosticReport'
+import { CostCalculator } from '../../features/diagnostic/components/CostCalculator'
+import { mockVehicleDiagnostic } from '../../features/diagnostic/mock/vehicle-data'
 
 export function VehicleDiagnosticPage() {
   const { vehicle, serviceHistory, issues, costBreakdown } = mockVehicleDiagnostic
