@@ -15,9 +15,18 @@ export function BookingSchedulePage() {
   const [selectedSlotId, setSelectedSlotId] = useState('09-15')
 
   const selection = useMemo(
-    () => resolveBookingSelection(searchParams.get('kind'), searchParams.get('option')),
+    () =>
+      resolveBookingSelection(
+        searchParams.get('kind'),
+        searchParams.get('option'),
+        searchParams.get('services')
+      ),
     [searchParams]
   )
+  const selectedServiceLabel =
+    selection.selectedOptions.length <= 1
+      ? selection.option.title
+      : `${selection.selectedOptions[0].title} +${selection.selectedOptions.length - 1} more`
 
   return (
     <DashboardShell searchPlaceholder="Search appointments or VIN...">
@@ -40,7 +49,7 @@ export function BookingSchedulePage() {
         <BookingSelectionSummary
           selectedDate={selectedDate}
           selectedSlotId={selectedSlotId}
-          selectedServiceLabel={selection.option.title}
+          selectedServiceLabel={selectedServiceLabel}
         />
       </div>
 

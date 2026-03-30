@@ -160,12 +160,43 @@ export const bookingOptionGroups: Record<BookingOptionKind, readonly BookingOpti
   diagnostic: bookingDiagnosticOptions,
 } as const
 
-export function resolveBookingSelection(kindParam?: string | null, optionId?: string | null) {
+export function parseBookingPrice(priceLabel: string) {
+  return Number.parseFloat(priceLabel.replace(/[^0-9.]/g, '')) || 0
+}
+
+export function resolveBookingSelection(
+  kindParam?: string | null,
+  optionId?: string | null,
+  serviceIdsParam?: string | null
+) {
   const kind: BookingOptionKind = kindParam === 'diagnostic' ? 'diagnostic' : 'service'
   const options = bookingOptionGroups[kind]
+
+  if (kind === 'service') {
+    const requestedIds = (serviceIdsParam ?? '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+
+    const selectedOptions = options.filter((item) => requestedIds.includes(item.id))
+    const normalizedOptions = selectedOptions.length > 0 ? selectedOptions : [options[0]]
+
+    return {
+      kind,
+      options,
+      option: normalizedOptions[0],
+      selectedOptions: normalizedOptions,
+    }
+  }
+
   const option = options.find((item) => item.id === optionId) ?? options[0]
 
-  return { kind, option, options }
+  return {
+    kind,
+    options,
+    option,
+    selectedOptions: [option],
+  }
 }
 
 export const bookingSummaryBase: Omit<BookingSummaryCard, 'value' | 'pending' | 'emphasized'>[] = [

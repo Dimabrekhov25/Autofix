@@ -6,6 +6,7 @@ import { BookingProgressHeader } from '../../features/booking/components/Booking
 import {
   bookingDiagnosticOptions,
   bookingOptionGroups,
+  parseBookingPrice,
   bookingServiceOptions,
 } from '../../features/booking/constants/booking-content'
 import type { BookingOptionKind } from '../../features/booking/types/booking'
@@ -16,25 +17,61 @@ import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 export function BookingPage() {
   const navigate = useNavigate()
   const [activeKind, setActiveKind] = useState<BookingOptionKind>('service')
-  const [selectedIds, setSelectedIds] = useState({
-    service: bookingServiceOptions[0].id,
-    diagnostic: bookingDiagnosticOptions[0].id,
-  })
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([
+    bookingServiceOptions[0].id,
+  ])
+  const [selectedDiagnosticId, setSelectedDiagnosticId] = useState(bookingDiagnosticOptions[0].id)
   const [diagnosticNotes, setDiagnosticNotes] = useState('')
 
   const options = bookingOptionGroups[activeKind]
-  const selectedOptionId = selectedIds[activeKind]
-  const selectedOption =
-    useMemo(
-      () => options.find((option) => option.id === selectedOptionId) ?? options[0],
-      [options, selectedOptionId]
-    ) ?? options[0]
+  const selectedOptions = useMemo(() => {
+    if (activeKind === 'service') {
+      return options.filter((option) => selectedServiceIds.includes(option.id))
+    }
+
+    const selectedDiagnostic =
+      options.find((option) => option.id === selectedDiagnosticId) ?? options[0]
+
+    return [selectedDiagnostic]
+  }, [activeKind, options, selectedDiagnosticId, selectedServiceIds])
+
+  const selectedOption = selectedOptions[0]
+  const totalPrice = selectedOptions.reduce(
+    (sum, option) => sum + parseBookingPrice(option.priceLabel),
+    0
+  )
+  const totalDurationMinutes = selectedOptions.reduce((sum, option) => {
+    const hoursMatch = option.duration.match(/(\d+)\s*h/i)
+    const minutesMatch = option.duration.match(/(\d+)\s*m/i)
+    const hours = hoursMatch ? Number.parseInt(hoursMatch[1], 10) : 0
+    const minutes = minutesMatch ? Number.parseInt(minutesMatch[1], 10) : 0
+
+    return sum + hours * 60 + minutes
+  }, 0)
+  const totalDurationLabel =
+    totalDurationMinutes >= 60
+      ? `${Math.floor(totalDurationMinutes / 60)}h ${String(totalDurationMinutes % 60).padStart(2, '0')}m`
+      : `${totalDurationMinutes}m`
+  const canContinue = activeKind === 'diagnostic' ? Boolean(selectedOption) : selectedOptions.length > 0
+  const serviceSummaryLabel =
+    selectedOptions.length <= 1
+      ? selectedOption?.summaryLabel ?? selectedOption?.title ?? 'Workshop service'
+      : `${selectedOptions.length} services selected`
 
   const handleContinue = () => {
+    if (!canContinue || !selectedOption) {
+      return
+    }
+
     const params = new URLSearchParams({
       kind: activeKind,
-      option: selectedOption.id,
     })
+
+    if (activeKind === 'service') {
+      params.set('services', selectedServiceIds.join(','))
+    } else {
+      params.set('option', selectedOption.id)
+    }
 
     if (activeKind === 'diagnostic' && diagnosticNotes.trim()) {
       params.set('notes', diagnosticNotes.trim())
@@ -87,15 +124,28 @@ export function BookingPage() {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {options.map((option) => {
-                const isSelected = option.id === selectedOption.id
+                const isSelected =
+                  activeKind === 'service'
+                    ? selectedServiceIds.includes(option.id)
+                    : option.id === selectedOption?.id
 
                 return (
                   <button
                     key={option.id}
                     type="button"
-                    onClick={() =>
-                      setSelectedIds((current) => ({ ...current, [activeKind]: option.id }))
-                    }
+                    onClick={() => {
+                      if (activeKind === 'service') {
+                        setSelectedServiceIds((current) =>
+                          current.includes(option.id)
+                            ? current.filter((id) => id !== option.id)
+                            : [...current, option.id]
+                        )
+
+                        return
+                      }
+
+                      setSelectedDiagnosticId(option.id)
+                    }}
                     className={[
                       'group relative rounded-xl border-2 p-5 text-left transition-all',
                       isSelected
@@ -132,8 +182,11 @@ export function BookingPage() {
                       </span>
                       {isSelected ? (
                         <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">
-                          <MaterialIcon name="check_circle" className="text-sm" />
-                          Selected
+                          <MaterialIcon
+                            name={activeKind === 'service' ? 'check_box' : 'check_circle'}
+                            className="text-sm"
+                          />
+                          {activeKind === 'service' ? 'Added' : 'Selected'}
                         </span>
                       ) : null}
                     </div>
@@ -173,34 +226,36 @@ export function BookingPage() {
                 </div>
                 <div className="p-6">
                   <div className="mb-8 space-y-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-bold text-on-surface">
-                          {selectedOption.title}
-                        </p>
-                        <p className="text-xs text-on-surface-variant">
-                          {selectedOption.summaryLabel ??
-                            (activeKind === 'service' ? 'Workshop service' : 'Diagnostic session')}
-                        </p>
+                    {selectedOptions.map((option) => (
+                      <div key={option.id} className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-bold text-on-surface">{option.title}</p>
+                          <p className="text-xs text-on-surface-variant">
+                            {option.summaryLabel ??
+                              (activeKind === 'service'
+                                ? 'Workshop service'
+                                : 'Diagnostic session')}
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-on-surface">
+                          {option.priceLabel}
+                        </span>
                       </div>
-                      <span className="text-sm font-bold text-on-surface">
-                        {selectedOption.priceLabel}
-                      </span>
-                    </div>
+                    ))}
 
                     <div className="h-px bg-surface-container" />
 
                     <div className="flex justify-between text-sm text-on-surface-variant">
                       <span>Estimated Duration</span>
-                      <span className="font-semibold text-on-surface">
-                        {selectedOption.duration}
-                      </span>
+                      <span className="font-semibold text-on-surface">{totalDurationLabel}</span>
                     </div>
 
                     <div className="flex justify-between text-sm text-on-surface-variant">
                       <span>Category</span>
                       <span className="font-semibold capitalize text-on-surface">
-                        {activeKind}
+                        {activeKind === 'service' && selectedOptions.length > 1
+                          ? `${selectedOptions.length} services`
+                          : activeKind}
                       </span>
                     </div>
 
@@ -214,10 +269,12 @@ export function BookingPage() {
                   <div className="mb-8 rounded-xl bg-surface-container-low p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-bold text-on-surface-variant">
-                        Starting Price
+                        {activeKind === 'service' && selectedOptions.length > 1
+                          ? 'Estimated Total'
+                          : 'Starting Price'}
                       </span>
                       <span className="text-2xl font-black text-primary">
-                        {selectedOption.priceLabel}
+                        ${totalPrice.toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -225,7 +282,15 @@ export function BookingPage() {
                   <button
                     type="button"
                     onClick={handleContinue}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-dim py-4 font-bold text-on-primary shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+                    disabled={!canContinue}
+                    className={[
+                      'flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold text-on-primary transition-all',
+                      canContinue
+                        ? 'bg-gradient-to-r from-primary to-primary-dim shadow-lg shadow-primary/20 hover:-translate-y-0.5'
+                        : 'cursor-not-allowed bg-surface-container text-on-surface-variant',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
                   >
                     Continue
                     <MaterialIcon name="arrow_forward" />
@@ -241,7 +306,9 @@ export function BookingPage() {
                   <div>
                     <p className="text-sm font-bold text-on-surface">Need help?</p>
                     <p className="text-xs text-on-surface-variant">
-                      Speak with a Master Tech
+                      {activeKind === 'service' && selectedOptions.length > 1
+                        ? serviceSummaryLabel
+                        : 'Speak with a Master Tech'}
                     </p>
                   </div>
                   <button
