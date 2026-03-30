@@ -1,5 +1,4 @@
 import type {
-  BookingCalendarDay,
   BookingOption,
   BookingOptionKind,
   BookingProgressStepId,
@@ -15,38 +14,27 @@ export const bookingStepDefinitions = [
 ] as const
 
 export function getBookingProgressSteps(currentStep: BookingProgressStepId) {
+  return getBookingProgressStepsWithCompletion(currentStep)
+}
+
+export function getBookingProgressStepsWithCompletion(
+  currentStep: BookingProgressStepId,
+  completedSteps: BookingProgressStepId[] = []
+) {
   const currentIndex = bookingStepDefinitions.findIndex((step) => step.id === currentStep)
 
   return bookingStepDefinitions.map((step, index) => ({
     ...step,
     state:
-      index < currentIndex ? 'completed' : index === currentIndex ? 'current' : 'upcoming',
+      step.id === currentStep
+        ? 'current'
+        : completedSteps.includes(step.id) || index < currentIndex
+          ? 'completed'
+          : 'upcoming',
   }))
 }
 
 export const bookingCalendarWeekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
-
-export const bookingCalendarLeadingEmptyDays = 4
-
-export const bookingCalendarDays: BookingCalendarDay[] = [
-  { value: 1, available: false },
-  { value: 2, available: true },
-  { value: 3, available: true },
-  { value: 4, available: true },
-  { value: 5, available: true },
-  { value: 6, available: true },
-  { value: 7, available: true },
-  { value: 8, available: true },
-  { value: 9, available: true },
-  { value: 10, available: true },
-  { value: 11, available: true },
-  { value: 12, available: true },
-  { value: 13, available: true },
-  { value: 14, available: true },
-  { value: 15, available: true },
-  { value: 16, available: true },
-  { value: 17, available: true },
-] as const
 
 export const bookingTimeSlots: BookingTimeSlot[] = [
   { id: '08-30', label: '08:30 AM', period: 'morning', available: true },
@@ -207,9 +195,10 @@ export const bookingSummaryBase: Omit<BookingSummaryCard, 'value' | 'pending' | 
 ] as const
 
 export const bookingDefaults = {
-  monthLabel: 'September 2024',
   monthDescription: 'Select an available workshop date',
   selectedService: bookingServiceOptions[0].title,
+  selectedDate: 10,
+  selectedSlotId: '09-15',
   selectedVehicle: 'Tesla Model 3',
   pendingEstimate: 'Pending info',
   selectedEstimate: '$180 diagnostic hold',

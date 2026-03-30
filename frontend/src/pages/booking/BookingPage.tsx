@@ -1,27 +1,35 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useMemo } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { BookingMobileStepNav } from '../../features/booking/components/BookingMobileStepNav'
 import { BookingProgressHeader } from '../../features/booking/components/BookingProgressHeader'
+import { BookingSelectionSummary } from '../../features/booking/components/BookingSelectionSummary'
 import {
-  bookingDiagnosticOptions,
   bookingOptionGroups,
+  bookingTimeSlots,
   parseBookingPrice,
-  bookingServiceOptions,
 } from '../../features/booking/constants/booking-content'
-import type { BookingOptionKind } from '../../features/booking/types/booking'
+import { formatBookingDateLabel } from '../../features/booking/lib/booking-date'
+import {
+  createBookingSearchParams,
+  hasScheduleSelection,
+  resolveBookingFlowState,
+} from '../../features/booking/lib/booking-flow'
+import type { BookingProgressStepId } from '../../features/booking/types/booking'
 import { APP_ROUTES } from '../../shared/config/routes'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 
 export function BookingPage() {
   const navigate = useNavigate()
-  const [activeKind, setActiveKind] = useState<BookingOptionKind>('service')
-  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([
-    bookingServiceOptions[0].id,
-  ])
-  const [selectedDiagnosticId, setSelectedDiagnosticId] = useState(bookingDiagnosticOptions[0].id)
-  const [diagnosticNotes, setDiagnosticNotes] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const bookingState = useMemo(() => resolveBookingFlowState(searchParams), [searchParams])
+  const {
+    kind: activeKind,
+    selectedServiceIds,
+    selectedDiagnosticId,
+    diagnosticNotes,
+  } = bookingState
 
   const options = bookingOptionGroups[activeKind]
   const selectedOptions = useMemo(() => {
@@ -57,27 +65,52 @@ export function BookingPage() {
     selectedOptions.length <= 1
       ? selectedOption?.summaryLabel ?? selectedOption?.title ?? 'Workshop service'
       : `${selectedOptions.length} services selected`
+  const completedSteps: BookingProgressStepId[] = hasScheduleSelection(bookingState)
+    ? ['schedule']
+    : []
+  const bookingQuery = createBookingSearchParams(bookingState).toString()
+  const scheduleQuery = createBookingSearchParams(bookingState, {
+    includeScheduleState: true,
+  }).toString()
+  const stepLinks = {
+    services: `${APP_ROUTES.booking}?${bookingQuery}`,
+    schedule: `${APP_ROUTES.bookingSchedule}?${scheduleQuery}`,
+    vehicle: `${APP_ROUTES.bookingVehicle}?${scheduleQuery}`,
+    summary: `${APP_ROUTES.bookingSummary}?${scheduleQuery}`,
+  }
+  const summaryCardLinks = {
+    service: stepLinks.services,
+    'date-time': stepLinks.schedule,
+    vehicle: stepLinks.vehicle,
+    estimate: stepLinks.summary,
+  }
+  const selectedVehicleLabel =
+    bookingState.vehicleMake || bookingState.vehicleModel
+      ? `${bookingState.vehicleMake} ${bookingState.vehicleModel}`.trim()
+      : undefined
+  const selectedSlotLabel =
+    bookingTimeSlots.find((slot) => slot.id === bookingState.selectedSlotId)?.label ?? '09:15 AM'
+
+  const updateBookingState = (partial: Partial<typeof bookingState>) => {
+    setSearchParams(createBookingSearchParams({ ...bookingState, ...partial }), {
+      replace: true,
+    })
+  }
 
   const handleContinue = () => {
     if (!canContinue || !selectedOption) {
       return
     }
 
-    const params = new URLSearchParams({
-      kind: activeKind,
-    })
-
-    if (activeKind === 'service') {
-      params.set('services', selectedServiceIds.join(','))
-    } else {
-      params.set('option', selectedOption.id)
-    }
-
-    if (activeKind === 'diagnostic' && diagnosticNotes.trim()) {
-      params.set('notes', diagnosticNotes.trim())
-    }
-
-    navigate(`${APP_ROUTES.bookingSchedule}?${params.toString()}`)
+    navigate(
+      `${APP_ROUTES.bookingSchedule}?${createBookingSearchParams(
+        {
+          ...bookingState,
+          scheduleVisited: true,
+        },
+        { includeScheduleState: true }
+      ).toString()}`
+    )
   }
 
   return (
@@ -87,6 +120,8 @@ export function BookingPage() {
           currentStep="services"
           title="Book a Service"
           description="Select the maintenance or diagnostic services required for your vehicle."
+          completedSteps={completedSteps}
+          stepLinks={stepLinks}
         />
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
@@ -94,7 +129,7 @@ export function BookingPage() {
             <div className="mb-8 inline-flex rounded-2xl bg-surface-container-low p-1.5">
               <button
                 type="button"
-                onClick={() => setActiveKind('service')}
+                onClick={() => updateBookingState({ kind: 'service' })}
                 className={[
                   'rounded-xl px-8 py-2.5 text-sm font-bold transition-all',
                   activeKind === 'service'
@@ -108,7 +143,7 @@ export function BookingPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveKind('diagnostic')}
+                onClick={() => updateBookingState({ kind: 'diagnostic' })}
                 className={[
                   'rounded-xl px-8 py-2.5 text-sm font-bold transition-all',
                   activeKind === 'diagnostic'
@@ -135,16 +170,16 @@ export function BookingPage() {
                     type="button"
                     onClick={() => {
                       if (activeKind === 'service') {
-                        setSelectedServiceIds((current) =>
-                          current.includes(option.id)
-                            ? current.filter((id) => id !== option.id)
-                            : [...current, option.id]
-                        )
+                        updateBookingState({
+                          selectedServiceIds: selectedServiceIds.includes(option.id)
+                            ? selectedServiceIds.filter((id) => id !== option.id)
+                            : [...selectedServiceIds, option.id],
+                        })
 
                         return
                       }
 
-                      setSelectedDiagnosticId(option.id)
+                      updateBookingState({ selectedDiagnosticId: option.id })
                     }}
                     className={[
                       'group relative rounded-xl border-2 p-5 text-left transition-all',
@@ -207,7 +242,9 @@ export function BookingPage() {
                   id="diagnostic-notes"
                   rows={4}
                   value={diagnosticNotes}
-                  onChange={(event) => setDiagnosticNotes(event.target.value)}
+                  onChange={(event) =>
+                    updateBookingState({ diagnosticNotes: event.target.value })
+                  }
                   placeholder="E.g. Squeaking sound when braking, check engine light is on..."
                   className="w-full rounded-xl border-none bg-surface-container-low p-4 text-sm text-on-surface transition focus:ring-2 focus:ring-primary/30"
                 />
@@ -322,9 +359,31 @@ export function BookingPage() {
             </div>
           </aside>
         </div>
+
+        <BookingSelectionSummary
+          selectedDate={bookingState.selectedDate}
+          selectedDateLabel={formatBookingDateLabel(
+            bookingState.selectedMonthKey,
+            bookingState.selectedDate,
+            selectedSlotLabel
+          )}
+          selectedSlotId={bookingState.selectedSlotId}
+          selectedServiceLabel={
+            selectedOptions.length <= 1
+              ? selectedOption?.title
+              : `${selectedOption?.title ?? 'Service'} +${selectedOptions.length - 1} more`
+          }
+          selectedVehicleLabel={selectedVehicleLabel}
+          activeCardId="service"
+          cardLinks={summaryCardLinks}
+        />
       </div>
 
-      <BookingMobileStepNav currentStep="services" />
+      <BookingMobileStepNav
+        currentStep="services"
+        completedSteps={completedSteps}
+        stepLinks={stepLinks}
+      />
     </DashboardShell>
   )
 }

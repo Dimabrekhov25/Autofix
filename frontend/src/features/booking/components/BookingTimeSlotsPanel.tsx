@@ -4,11 +4,15 @@ import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 interface BookingTimeSlotsPanelProps {
   selectedSlotId: string
   onSelectSlot: (slotId: string) => void
+  onBack?: () => void
+  onContinue?: () => void
 }
 
 export function BookingTimeSlotsPanel({
   selectedSlotId,
   onSelectSlot,
+  onBack,
+  onContinue,
 }: BookingTimeSlotsPanelProps) {
   const morningSlots = bookingTimeSlots.filter((slot) => slot.period === 'morning')
   const afternoonSlots = bookingTimeSlots.filter((slot) => slot.period === 'afternoon')
@@ -79,6 +83,7 @@ export function BookingTimeSlotsPanel({
       <div className="mt-auto flex items-center justify-between pt-12">
         <button
           type="button"
+          onClick={onBack}
           className="flex items-center gap-2 px-6 py-3 font-bold text-on-surface-variant transition-colors hover:text-on-surface"
         >
           <MaterialIcon name="arrow_back" className="text-sm" />
@@ -87,6 +92,7 @@ export function BookingTimeSlotsPanel({
 
         <button
           type="button"
+          onClick={onContinue}
           className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-bold text-on-primary shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
         >
           Continue

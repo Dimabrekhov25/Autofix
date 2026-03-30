@@ -14,6 +14,8 @@ export const APP_ROUTES = {
   inventory: '/inventory',
   booking: '/booking',
   bookingSchedule: '/booking/schedule',
+  bookingVehicle: '/booking/vehicle',
+  bookingSummary: '/booking/summary',
   diagnostics: '/diagnostics',
   premiumOilChange: '/services/premium-oil-change',
   services: '/services',
