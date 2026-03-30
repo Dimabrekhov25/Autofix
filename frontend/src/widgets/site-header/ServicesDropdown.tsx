@@ -112,7 +112,7 @@ const serviceCategories: ServiceCategory[] = [
   {
     id: 'brakes',
     label: 'Brake Performance',
-    icon: 'brake',
+    icon: 'speed',
     title: 'Brake Performance Services',
     description:
       'Precision braking support focused on pad wear, fluid integrity, and confident stopping power.',

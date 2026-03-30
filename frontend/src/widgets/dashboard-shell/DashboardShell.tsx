@@ -13,9 +13,10 @@ interface DashboardShellProps extends PropsWithChildren {
 
 const dashboardNavItems = [
   { label: 'Dashboard', to: APP_ROUTES.dashboard, icon: 'dashboard' },
+  { label: 'Diagnostics', to: APP_ROUTES.diagnostics, icon: 'build' },
   { label: 'Inventory', to: APP_ROUTES.inventory, icon: 'inventory_2' },
   { label: 'Booking', to: APP_ROUTES.booking, icon: 'event' },
-  { label: 'Services', to: APP_ROUTES.services, icon: 'build' },
+  { label: 'Services', to: APP_ROUTES.services, icon: 'settings' },
 ] as const
 
 export function DashboardShell({
