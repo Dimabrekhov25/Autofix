@@ -15,6 +15,8 @@
 
   html {
     scroll-behavior: smooth;
+    /* Always reserve space for scrollbar to prevent layout shift */
+    scrollbar-gutter: stable;
   }
 
   body {
@@ -46,18 +48,39 @@
     background: rgba(0, 102, 104, 0.16);
   }
 
+  /* Custom scrollbar styling with primary brand color */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(0, 102, 104, 0.04);
+    border-radius: 9999px;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #dbdde0;
+    background: rgba(0, 102, 104, 0.3);
     border-radius: 9999px;
+    transition: background 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 102, 104, 0.5);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: #006668;
+  }
+
+  /* Hide scrollbar utility class */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 

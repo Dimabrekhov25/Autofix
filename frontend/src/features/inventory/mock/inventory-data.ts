@@ -68,7 +68,7 @@ export const inventoryParts: InventoryPart[] = [
     compatibility: ['BMW M4', 'Porsche 911'],
     supplier: 'Brembo Atelier',
     leadTime: '2 business days',
-    icon: 'brake',
+    icon: 'speed',
     reorderAvailable: true,
   },
   {
