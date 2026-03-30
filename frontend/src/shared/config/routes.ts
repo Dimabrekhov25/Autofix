@@ -13,6 +13,9 @@ export const APP_ROUTES = {
   dashboard: '/dashboard',
   inventory: '/inventory',
   booking: '/booking',
+  bookingSchedule: '/booking/schedule',
+  bookingVehicle: '/booking/vehicle',
+  bookingSummary: '/booking/summary',
   diagnostics: '/diagnostics',
   premiumOilChange: '/services/premium-oil-change',
   services: '/services',
@@ -39,5 +42,5 @@ export const SUPPORT_ROUTES = {
 } as const
 
 export function resolveProtectedEntryRoute(isAuthenticated: boolean) {
-  return isAuthenticated ? APP_ROUTES.dashboard : APP_ROUTES.login
+  return isAuthenticated ? APP_ROUTES.booking : APP_ROUTES.login
 }

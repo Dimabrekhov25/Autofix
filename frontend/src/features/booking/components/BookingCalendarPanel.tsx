@@ -1,36 +1,72 @@
 import {
-  bookingCalendarDays,
-  bookingCalendarLeadingEmptyDays,
   bookingCalendarWeekdays,
   bookingDefaults,
 } from '../constants/booking-content'
+import {
+  clampBookingDay,
+  formatBookingMonthLabel,
+  getFirstAvailableBookingDay,
+  getBookingMonthDayCount,
+  isBookingDateAvailable,
+  parseBookingMonthKey,
+  shiftBookingMonth,
+} from '../lib/booking-date'
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 
 interface BookingCalendarPanelProps {
+  selectedMonthKey: string
   selectedDate: number
   onSelectDate: (date: number) => void
+  onSelectMonthKey: (monthKey: string, suggestedDay: number) => void
 }
 
 export function BookingCalendarPanel({
+  selectedMonthKey,
   selectedDate,
   onSelectDate,
+  onSelectMonthKey,
 }: BookingCalendarPanelProps) {
+  const monthLabel = formatBookingMonthLabel(selectedMonthKey)
+  const { year, monthIndex } = parseBookingMonthKey(selectedMonthKey)
+  const firstDay = new Date(year, monthIndex, 1)
+  const leadingEmptyDays = (firstDay.getDay() + 6) % 7
+  const daysInMonth = getBookingMonthDayCount(selectedMonthKey)
+  const trailingEmptyDays = (7 - ((leadingEmptyDays + daysInMonth) % 7 || 7)) % 7
+  const previousMonthKey = shiftBookingMonth(selectedMonthKey, -1)
+  const nextMonthKey = shiftBookingMonth(selectedMonthKey, 1)
+
   return (
     <div className="bg-surface-container-low/30 p-8 md:col-span-7">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-on-surface">{bookingDefaults.monthLabel}</h2>
+          <h2 className="text-2xl font-bold text-on-surface">{monthLabel}</h2>
           <p className="text-sm text-on-surface-variant">{bookingDefaults.monthDescription}</p>
         </div>
         <div className="flex gap-2">
           <button
             type="button"
+            onClick={() =>
+              onSelectMonthKey(
+                previousMonthKey,
+                isBookingDateAvailable(previousMonthKey, clampBookingDay(previousMonthKey, selectedDate))
+                  ? clampBookingDay(previousMonthKey, selectedDate)
+                  : getFirstAvailableBookingDay(previousMonthKey, clampBookingDay(previousMonthKey, selectedDate))
+              )
+            }
             className="rounded-lg p-2 transition-colors hover:bg-surface-container"
           >
             <MaterialIcon name="chevron_left" />
           </button>
           <button
             type="button"
+            onClick={() =>
+              onSelectMonthKey(
+                nextMonthKey,
+                isBookingDateAvailable(nextMonthKey, clampBookingDay(nextMonthKey, selectedDate))
+                  ? clampBookingDay(nextMonthKey, selectedDate)
+                  : getFirstAvailableBookingDay(nextMonthKey, clampBookingDay(nextMonthKey, selectedDate))
+              )
+            }
             className="rounded-lg p-2 transition-colors hover:bg-surface-container"
           >
             <MaterialIcon name="chevron_right" />
@@ -48,31 +84,31 @@ export function BookingCalendarPanel({
           </div>
         ))}
 
-        {Array.from({ length: bookingCalendarLeadingEmptyDays }).map((_, index) => (
+        {Array.from({ length: leadingEmptyDays }).map((_, index) => (
           <div key={`empty-${index}`} className="p-4" />
         ))}
 
-        {bookingCalendarDays.map((day) => {
-          if (!day.available) {
+        {Array.from({ length: daysInMonth }, (_, index) => index + 1).map((dayValue) => {
+          if (!isBookingDateAvailable(selectedMonthKey, dayValue)) {
             return (
               <button
-                key={day.value}
+                key={dayValue}
                 type="button"
                 disabled
                 className="cursor-not-allowed rounded-xl p-4 text-sm font-medium text-on-surface-variant/40"
               >
-                {day.value}
+                {dayValue}
               </button>
             )
           }
 
-          const isSelected = day.value === selectedDate
+          const isSelected = dayValue === selectedDate
 
           return (
             <button
-              key={day.value}
+              key={dayValue}
               type="button"
-              onClick={() => onSelectDate(day.value)}
+              onClick={() => onSelectDate(dayValue)}
               className={[
                 'rounded-xl p-4 text-sm font-medium transition-all',
                 isSelected
@@ -82,10 +118,14 @@ export function BookingCalendarPanel({
                 .filter(Boolean)
                 .join(' ')}
             >
-              {day.value}
+              {dayValue}
             </button>
           )
         })}
+
+        {Array.from({ length: trailingEmptyDays }).map((_, index) => (
+          <div key={`trailing-empty-${index}`} className="p-4" />
+        ))}
       </div>
 
       <div className="relative mt-12 flex items-center gap-6 overflow-hidden rounded-xl bg-surface-container p-6">

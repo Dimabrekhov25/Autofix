@@ -3,6 +3,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { useAuth } from '../features/auth/useAuth'
 import { BookingPage } from '../pages/booking/BookingPage'
+import { BookingSchedulePage } from '../pages/booking/BookingSchedulePage'
+import { BookingSummaryPage } from '../pages/booking/BookingSummaryPage'
+import { BookingVehiclePage } from '../pages/booking/BookingVehiclePage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { HomePage } from '../pages/home/HomePage'
 import { InventoryPage } from '../pages/inventory/InventoryPage'
@@ -75,6 +78,30 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <BookingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.bookingSchedule}
+          element={
+            <ProtectedRoute>
+              <BookingSchedulePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.bookingVehicle}
+          element={
+            <ProtectedRoute>
+              <BookingVehiclePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.bookingSummary}
+          element={
+            <ProtectedRoute>
+              <BookingSummaryPage />
             </ProtectedRoute>
           }
         />
