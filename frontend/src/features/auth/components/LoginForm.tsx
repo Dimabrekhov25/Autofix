@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { APP_ROUTES } from '../../../shared/config/routes'
 import { getAuthErrorMessage } from '../auth-api'
 import { Button } from '../../../shared/ui/Button'
+import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 import { TextField } from '../../../shared/ui/TextField'
 import { useAuth } from '../useAuth'
 import { GoogleSignInCard } from './GoogleSignInCard'
@@ -103,11 +104,15 @@ export function LoginForm() {
         onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
         trailingAction={
           <button
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
             type="button"
             onClick={() => setShowPassword((value) => !value)}
-            className="text-on-surface-variant transition hover:text-on-surface"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant transition hover:bg-white/70 hover:text-on-surface"
           >
-            {showPassword ? 'Hide' : 'Show'}
+            <MaterialIcon
+              name={showPassword ? 'visibility_off' : 'visibility'}
+              className="text-[1.15rem]"
+            />
           </button>
         }
       />
