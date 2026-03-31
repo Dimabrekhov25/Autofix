@@ -22,11 +22,15 @@ public class GlobalExceptionHandler(
             ValidationException validationException => HandleValidationException(validationException),
             NotFoundException notFoundException => HandleNotFoundException(notFoundException),
             BadRequestException badRequestException => HandleBadRequestException(badRequestException),
+            ConflictException conflictException => HandleConflictException(conflictException),
+            UnauthorizedException unauthorizedException => HandleUnauthorizedException(unauthorizedException),
+            ForbiddenException forbiddenException => HandleForbiddenException(forbiddenException),
             DomainException domainException => HandleDomainException(domainException),
             _ => HandleDefaultException(exception, environment.IsDevelopment())
         };
 
         httpContext.Response.StatusCode = statusCode;
+        httpContext.Response.ContentType = "application/json";
 
         await httpContext.Response.WriteAsJsonAsync(response, cancellationToken);
 
@@ -59,10 +63,28 @@ public class GlobalExceptionHandler(
         return ((int)HttpStatusCode.BadRequest, ApiResult.Failure(apiError));
     }
 
+    private static (int StatusCode, object Response) HandleConflictException(ConflictException exception)
+    {
+        var apiError = ApiError.Simple(exception.Message, exception.Code);
+        return ((int)HttpStatusCode.Conflict, ApiResult.Failure(apiError));
+    }
+
     private static (int StatusCode, object Response) HandleDomainException(DomainException exception)
     {
         var apiError = ApiError.Simple(exception.Message, exception.Code);
         return ((int)HttpStatusCode.BadRequest, ApiResult.Failure(apiError));
+    }
+
+    private static (int StatusCode, object Response) HandleUnauthorizedException(UnauthorizedException exception)
+    {
+        var apiError = ApiError.Simple(exception.Message, exception.Code);
+        return ((int)HttpStatusCode.Unauthorized, ApiResult.Failure(apiError));
+    }
+
+    private static (int StatusCode, object Response) HandleForbiddenException(ForbiddenException exception)
+    {
+        var apiError = ApiError.Simple(exception.Message, exception.Code);
+        return ((int)HttpStatusCode.Forbidden, ApiResult.Failure(apiError));
     }
 
     private static (int StatusCode, object Response) HandleDefaultException(Exception exception, bool isDevelopment)

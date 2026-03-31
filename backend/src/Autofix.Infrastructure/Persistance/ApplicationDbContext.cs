@@ -6,11 +6,15 @@ using Autofix.Domain.Entities.Inventory;
 using Autofix.Domain.Entities.People;
 using Autofix.Domain.Entities.ServiceOrders;
 using Autofix.Domain.Entities.Vehicles;
+using Autofix.Infrastructure.Auth.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Autofix.Infrastructure.Persistance;
 
-public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
+public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+    : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
 {
     public DbSet<Booking> Bookings => Set<Booking>();
     public DbSet<BookingServiceItem> BookingServiceItems => Set<BookingServiceItem>();
@@ -23,12 +27,12 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Part> Parts => Set<Part>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Employee> Employees => Set<Employee>();
-    public DbSet<User> Users => Set<User>();
     public DbSet<DiagnosisItem> DiagnosisItems => Set<DiagnosisItem>();
     public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
     public DbSet<ServicePartItem> ServicePartItems => Set<ServicePartItem>();
     public DbSet<ServiceWorkItem> ServiceWorkItems => Set<ServiceWorkItem>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -4,11 +4,14 @@ using Autofix.Application.Employees.Commands.DeleteEmployee;
 using Autofix.Application.Employees.Commands.UpdateEmployee;
 using Autofix.Application.Employees.Queries.GetEmployeeById;
 using Autofix.Application.Employees.Queries.GetEmployees;
+using Autofix.Domain.Constants;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Autofix.Api.Controllers;
 
+[Authorize(Roles = RoleNames.Admin)]
 public sealed class EmployeesController(IMediator mediator) : BaseController
 {
     [HttpPost]
