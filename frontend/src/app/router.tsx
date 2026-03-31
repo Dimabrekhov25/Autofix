@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { useAuth } from '../features/auth/useAuth'
 import { BookingPage } from '../pages/booking/BookingPage'
+import { BookingConfirmationPage } from '../pages/booking/BookingConfirmationPage'
 import { BookingSchedulePage } from '../pages/booking/BookingSchedulePage'
 import { BookingSummaryPage } from '../pages/booking/BookingSummaryPage'
 import { BookingVehiclePage } from '../pages/booking/BookingVehiclePage'
@@ -103,6 +104,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <BookingSummaryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.bookingConfirmation}
+          element={
+            <ProtectedRoute>
+              <BookingConfirmationPage />
             </ProtectedRoute>
           }
         />
