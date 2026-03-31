@@ -1,6 +1,7 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
+import { BookingPaymentModal } from '../../features/booking/components/BookingPaymentModal'
 import { BookingMobileStepNav } from '../../features/booking/components/BookingMobileStepNav'
 import { BookingProgressHeader } from '../../features/booking/components/BookingProgressHeader'
 import { BookingSelectionSummary } from '../../features/booking/components/BookingSelectionSummary'
@@ -21,6 +22,7 @@ import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 export function BookingSummaryPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const bookingState = useMemo(() => resolveBookingFlowState(searchParams), [searchParams])
   const selection = useMemo(
     () =>
@@ -63,6 +65,7 @@ export function BookingSummaryPage() {
     vehicle: stepLinks.vehicle,
     estimate: stepLinks.summary,
   }
+  const confirmationLink = `${APP_ROUTES.bookingConfirmation}?${summaryQuery}`
 
   const updateBookingState = (partial: Partial<typeof bookingState>) => {
     setSearchParams(
@@ -252,6 +255,14 @@ export function BookingSummaryPage() {
 
                 <button
                   type="button"
+                  onClick={() => {
+                    if (bookingState.paymentMethod === 'shop') {
+                      navigate(confirmationLink)
+                      return
+                    }
+
+                    setIsPaymentModalOpen(true)
+                  }}
                   className="mb-4 w-full rounded-xl bg-primary py-4 font-black uppercase tracking-widest text-on-primary shadow-lg shadow-primary/30 transition-all hover:opacity-90 active:scale-95"
                 >
                   Confirm Booking
@@ -295,6 +306,16 @@ export function BookingSummaryPage() {
       </div>
 
       <BookingMobileStepNav currentStep="summary" stepLinks={stepLinks} />
+      <BookingPaymentModal
+        open={isPaymentModalOpen}
+        totalAmount={totalEstimate}
+        paymentMethod={bookingState.paymentMethod}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onConfirm={() => {
+          setIsPaymentModalOpen(false)
+          navigate(confirmationLink)
+        }}
+      />
     </DashboardShell>
   )
 }
