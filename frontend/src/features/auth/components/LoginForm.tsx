@@ -2,21 +2,54 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { APP_ROUTES } from '../../../shared/config/routes'
+import { getAuthErrorMessage } from '../auth-api'
 import { Button } from '../../../shared/ui/Button'
 import { TextField } from '../../../shared/ui/TextField'
 import { useAuth } from '../useAuth'
+import { GoogleSignInCard } from './GoogleSignInCard'
 import { createInitialLoginForm, toLoginPayload } from '../types/login'
 
 export function LoginForm() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, loginWithGoogle } = useAuth()
   const [form, setForm] = useState(createInitialLoginForm)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    login(toLoginPayload(form))
-    navigate(APP_ROUTES.dashboard)
+
+    if (!form.identifier.trim() || !form.password) {
+      setErrorMessage('Enter your email or username and password to continue.')
+      return
+    }
+
+    setErrorMessage(null)
+    setIsSubmitting(true)
+
+    try {
+      await login(toLoginPayload(form))
+      navigate(APP_ROUTES.dashboard)
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error, 'Unable to sign in right now.'))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleGoogleSignIn(idToken: string) {
+    setErrorMessage(null)
+    setIsSubmitting(true)
+
+    try {
+      await loginWithGoogle(idToken)
+      navigate(APP_ROUTES.dashboard)
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error, 'Google sign-in failed.'))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -30,15 +63,39 @@ export function LoginForm() {
         </h2>
       </div>
 
+      <GoogleSignInCard
+        disabled={isSubmitting}
+        mode="login"
+        onCredential={handleGoogleSignIn}
+      />
+
+      <div className="relative flex items-center justify-center py-1">
+        <div className="absolute inset-x-0 h-px bg-outline-variant/20" />
+        <span className="relative bg-surface-container-lowest px-3 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+          Or continue with password
+        </span>
+      </div>
+
+      {errorMessage ? (
+        <div className="rounded-2xl border border-error/15 bg-error/5 px-4 py-3 text-sm text-error">
+          {errorMessage}
+        </div>
+      ) : null}
+
       <TextField
-        label="Email Address"
-        type="email"
+        autoComplete="username"
+        disabled={isSubmitting}
+        label="Email or Username"
         placeholder="client@autofix.dev"
-        value={form.email}
-        onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+        value={form.identifier}
+        onChange={(event) =>
+          setForm((current) => ({ ...current, identifier: event.target.value }))
+        }
       />
 
       <TextField
+        autoComplete="current-password"
+        disabled={isSubmitting}
         label="Password"
         type={showPassword ? 'text' : 'password'}
         placeholder="********"
@@ -56,7 +113,7 @@ export function LoginForm() {
       />
 
       <Button type="submit" className="w-full">
-        Sign In
+        {isSubmitting ? 'Signing In...' : 'Sign In'}
       </Button>
 
       <p className="text-center text-sm text-on-surface-variant">

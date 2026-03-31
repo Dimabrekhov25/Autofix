@@ -2,6 +2,7 @@ import type { PropsWithChildren } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { useAuth } from '../features/auth/useAuth'
+import { isAdminUser } from '../features/auth/auth-types'
 import { BookingPage } from '../pages/booking/BookingPage'
 import { BookingConfirmationPage } from '../pages/booking/BookingConfirmationPage'
 import { BookingSchedulePage } from '../pages/booking/BookingSchedulePage'
@@ -19,18 +20,47 @@ import { VehicleDiagnosticPage } from '../pages/diagnostic/VehicleDiagnosticPage
 import { APP_ROUTES, resolveProtectedEntryRoute } from '../shared/config/routes'
 import { ScrollToHash } from './ScrollToHash'
 
-function ProtectedRoute({ children }: PropsWithChildren) {
-  const { isAuthenticated } = useAuth()
+function AuthRouteFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-surface px-6">
+      <div className="rounded-[1.75rem] border border-white/70 bg-white/80 px-6 py-5 text-center shadow-card backdrop-blur-sm">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-primary">
+          Auth
+        </p>
+        <p className="mt-2 text-sm text-on-surface-variant">Restoring your session...</p>
+      </div>
+    </div>
+  )
+}
+
+interface ProtectedRouteProps extends PropsWithChildren {
+  requireAdmin?: boolean
+}
+
+function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
+  const { isAuthenticated, isReady, user } = useAuth()
+
+  if (!isReady) {
+    return <AuthRouteFallback />
+  }
 
   if (!isAuthenticated) {
     return <Navigate to={APP_ROUTES.login} replace />
+  }
+
+  if (requireAdmin && !isAdminUser(user)) {
+    return <Navigate to={APP_ROUTES.dashboard} replace />
   }
 
   return children
 }
 
 function GuestOnlyRoute({ children }: PropsWithChildren) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isReady } = useAuth()
+
+  if (!isReady) {
+    return <AuthRouteFallback />
+  }
 
   if (isAuthenticated) {
     return <Navigate to={APP_ROUTES.dashboard} replace />
@@ -40,7 +70,11 @@ function GuestOnlyRoute({ children }: PropsWithChildren) {
 }
 
 function BookingEntryRedirect() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isReady } = useAuth()
+
+  if (!isReady) {
+    return <AuthRouteFallback />
+  }
 
   return <Navigate to={resolveProtectedEntryRoute(isAuthenticated)} replace />
 }
@@ -118,7 +152,7 @@ export function AppRouter() {
         <Route
           path={APP_ROUTES.inventory}
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireAdmin>
               <InventoryPage />
             </ProtectedRoute>
           }
@@ -126,7 +160,7 @@ export function AppRouter() {
         <Route
           path={APP_ROUTES.inventoryAddPart}
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireAdmin>
               <InventoryAddPartPage />
             </ProtectedRoute>
           }
@@ -134,7 +168,7 @@ export function AppRouter() {
         <Route
           path={APP_ROUTES.diagnostics}
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireAdmin>
               <VehicleDiagnosticPage />
             </ProtectedRoute>
           }

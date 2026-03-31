@@ -2,6 +2,7 @@ import type { PropsWithChildren } from 'react'
 import { NavLink } from 'react-router-dom'
 
 import { useAuth } from '../../features/auth/useAuth'
+import { isAdminUser } from '../../features/auth/auth-types'
 import { APP_ROUTES } from '../../shared/config/routes'
 import { BrandHomeLink } from '../../shared/ui/BrandHomeLink'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
@@ -11,11 +12,11 @@ interface DashboardShellProps extends PropsWithChildren {
 }
 
 const dashboardNavItems = [
-  { label: 'Dashboard', to: APP_ROUTES.dashboard, icon: 'dashboard' },
-  { label: 'Diagnostic', to: APP_ROUTES.diagnostics, icon: 'build' },
-  { label: 'Inventory', to: APP_ROUTES.inventory, icon: 'inventory_2' },
-  { label: 'Booking', to: APP_ROUTES.booking, icon: 'event' },
-  { label: 'Services', to: APP_ROUTES.services, icon: 'settings' },
+  { label: 'Dashboard', to: APP_ROUTES.dashboard, icon: 'dashboard', adminOnly: false },
+  { label: 'Diagnostic', to: APP_ROUTES.diagnostics, icon: 'build', adminOnly: true },
+  { label: 'Inventory', to: APP_ROUTES.inventory, icon: 'inventory_2', adminOnly: true },
+  { label: 'Booking', to: APP_ROUTES.booking, icon: 'event', adminOnly: false },
+  { label: 'Services', to: APP_ROUTES.services, icon: 'settings', adminOnly: false },
 ] as const
 
 export function DashboardShell({
@@ -23,6 +24,8 @@ export function DashboardShell({
   searchPlaceholder = 'Search repairs or vehicles...',
 }: DashboardShellProps) {
   const { logout, user } = useAuth()
+  const isAdmin = isAdminUser(user)
+  const visibleNavItems = dashboardNavItems.filter((item) => !item.adminOnly || isAdmin)
 
   return (
     <div className="min-h-screen bg-surface text-on-background">
@@ -34,7 +37,7 @@ export function DashboardShell({
         </div>
 
         <nav className="flex flex-col gap-1">
-          {dashboardNavItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <NavLink
               key={item.label}
               to={item.to}
@@ -56,7 +59,9 @@ export function DashboardShell({
         <div className="border-t border-outline-variant/10 pt-4 mt-auto">
           <button
             type="button"
-            onClick={logout}
+            onClick={() => {
+              void logout()
+            }}
             className="flex w-full items-center gap-3 px-4 py-2 text-slate-600 transition-colors hover:text-error"
           >
             <MaterialIcon name="logout" className="text-lg" />

@@ -1,23 +1,23 @@
 export interface LoginFormModel {
-  email: string
+  identifier: string
   password: string
 }
 
 export interface LoginSubmissionPayload {
-  email: string
+  userNameOrEmail: string
   password: string
 }
 
 export function createInitialLoginForm(): LoginFormModel {
   return {
-    email: '',
+    identifier: '',
     password: '',
   }
 }
 
 export function toLoginPayload(form: LoginFormModel): LoginSubmissionPayload {
   return {
-    email: form.email.trim(),
+    userNameOrEmail: form.identifier.trim(),
     password: form.password,
   }
 }
