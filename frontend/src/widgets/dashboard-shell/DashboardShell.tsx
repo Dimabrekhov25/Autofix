@@ -1,9 +1,9 @@
 import type { PropsWithChildren } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
 import { useAuth } from '../../features/auth/useAuth'
 import { APP_ROUTES } from '../../shared/config/routes'
-import { BrandMark } from '../../shared/ui/BrandMark'
+import { BrandHomeLink } from '../../shared/ui/BrandHomeLink'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 
 interface DashboardShellProps extends PropsWithChildren {
@@ -28,9 +28,9 @@ export function DashboardShell({
     <div className="min-h-screen bg-surface text-on-background">
       <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col gap-2 bg-slate-50 p-4 pt-6 lg:flex">
         <div className="mb-8 px-4">
-          <Link to={APP_ROUTES.home} className="inline-block">
-            <BrandMark className="font-headline text-xl font-bold tracking-tight text-slate-900" />
-          </Link>
+          <BrandHomeLink
+            brandClassName="relative font-headline text-xl font-bold tracking-tight text-slate-900"
+          />
         </div>
 
         <nav className="flex flex-col gap-1">
@@ -67,9 +67,10 @@ export function DashboardShell({
 
       <header className="fixed left-0 right-0 top-0 z-50 flex h-16 items-center justify-between bg-white/70 px-4 shadow-sm backdrop-blur-xl sm:px-6 lg:left-64 lg:px-8">
         <div className="flex items-center gap-4">
-          <Link to={APP_ROUTES.home} className="lg:hidden">
-            <BrandMark className="font-headline text-lg font-bold tracking-tight text-slate-900" />
-          </Link>
+          <BrandHomeLink
+            className="lg:hidden"
+            brandClassName="relative font-headline text-lg font-bold tracking-tight text-slate-900"
+          />
           <label className="relative hidden sm:block">
             <MaterialIcon
               name="search"
