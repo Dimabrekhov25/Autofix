@@ -12,6 +12,7 @@ export const APP_ROUTES = {
   home: '/',
   dashboard: '/dashboard',
   inventory: '/inventory',
+  inventoryAddPart: '/inventory/new-part',
   booking: '/booking',
   bookingSchedule: '/booking/schedule',
   bookingVehicle: '/booking/vehicle',

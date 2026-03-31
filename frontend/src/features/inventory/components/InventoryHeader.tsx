@@ -1,3 +1,4 @@
+import { APP_ROUTES } from '../../../shared/config/routes'
 import { Button } from '../../../shared/ui/Button'
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 
@@ -24,7 +25,7 @@ export function InventoryHeader({ trackedParts }: InventoryHeaderProps) {
         </div>
       </div>
 
-      <Button className="px-5 py-3 text-sm">
+      <Button to={APP_ROUTES.inventoryAddPart} className="px-5 py-3 text-sm">
         <MaterialIcon name="add" className="text-lg" />
         <span>Add New Part</span>
       </Button>
