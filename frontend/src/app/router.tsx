@@ -8,6 +8,7 @@ import { BookingSummaryPage } from '../pages/booking/BookingSummaryPage'
 import { BookingVehiclePage } from '../pages/booking/BookingVehiclePage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { HomePage } from '../pages/home/HomePage'
+import { InventoryAddPartPage } from '../pages/inventory/InventoryAddPartPage'
 import { InventoryPage } from '../pages/inventory/InventoryPage'
 import { LoginPage } from '../pages/login/LoginPage'
 import { PremiumOilChangePage } from '../pages/premium-oil-change/PremiumOilChangePage'
@@ -110,6 +111,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <InventoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.inventoryAddPart}
+          element={
+            <ProtectedRoute>
+              <InventoryAddPartPage />
             </ProtectedRoute>
           }
         />
