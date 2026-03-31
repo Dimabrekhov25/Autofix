@@ -14,8 +14,13 @@ public abstract class BaseController : ControllerBase
         return Ok(ApiResult.Success(data));
     }
 
-    protected IActionResult BadRequestResult(string massege)
+    protected IActionResult CreatedResult<T>(T data)
     {
-        return BadRequest(ApiResult.Failure(massege));
+        return StatusCode(StatusCodes.Status201Created, ApiResult.Success(data));
+    }
+
+    protected IActionResult BadRequestResult(string message)
+    {
+        return BadRequest(ApiResult.Failure(message));
     }
 }
