@@ -19,8 +19,11 @@ export function AuthShell({ eyebrow, title, description, children }: AuthShellPr
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_30%)]" />
           <div className="relative flex h-full flex-col">
             <div className="flex items-center justify-between gap-4">
-              <Link to={APP_ROUTES.home}>
-                <BrandMark className="font-headline text-2xl font-extrabold tracking-tight text-white" />
+              <Link
+                to={APP_ROUTES.home}
+                className="inline-flex items-center rounded-full border border-white/80 bg-white px-5 py-2.5 shadow-[0_18px_30px_-24px_rgba(15,23,42,0.7)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_36px_-24px_rgba(15,23,42,0.82)]"
+              >
+                <BrandMark className="font-headline text-2xl font-extrabold tracking-tight text-primary" />
               </Link>
               <span className="rounded-full border border-white/15 px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-white/70">
                 Precision Atelier
