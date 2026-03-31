@@ -9,7 +9,7 @@ import { cn } from '../lib/cn'
 import type { ActionTone } from '../types/content'
 
 const baseClassName =
-  'inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-headline text-sm font-bold tracking-wide transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2'
+  'inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-headline text-sm font-bold tracking-wide transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60'
 
 const toneClassNames: Record<ActionTone, string> = {
   primary:

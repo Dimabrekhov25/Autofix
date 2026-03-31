@@ -2,20 +2,19 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { APP_ROUTES } from '../../../shared/config/routes'
+import { getAuthErrorMessage } from '../auth-api'
 import { Button } from '../../../shared/ui/Button'
 import { TextField } from '../../../shared/ui/TextField'
 import { useAuth } from '../useAuth'
-import {
-  createEmptyVehicle,
-  createInitialRegisterForm,
-  toRegisterPayload,
-  type RegisterFormModel,
-} from '../types/register'
+import { GoogleSignInCard } from './GoogleSignInCard'
+import { createInitialRegisterForm, toRegisterPayload, type RegisterFormModel } from '../types/register'
 
 export function RegisterForm() {
   const navigate = useNavigate()
-  const { register } = useAuth()
+  const { loginWithGoogle, register } = useAuth()
   const [form, setForm] = useState<RegisterFormModel>(() => createInitialRegisterForm())
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
   const updateField = <K extends keyof RegisterFormModel>(
@@ -25,23 +24,72 @@ export function RegisterForm() {
     setForm((current) => ({ ...current, [key]: value }))
   }
 
-  const updateVehicle = (
-    vehicleId: string,
-    key: 'licensePlate' | 'brandModel',
-    value: string,
-  ) => {
-    setForm((current) => ({
-      ...current,
-      vehicles: current.vehicles.map((vehicle) =>
-        vehicle.id === vehicleId ? { ...vehicle, [key]: value } : vehicle,
-      ),
-    }))
+  function validateForm() {
+    if (!form.fullName.trim() || !form.email.trim()) {
+      return 'Fill in your full name and email address.'
+    }
+
+    if (form.password !== form.confirmPassword) {
+      return 'Passwords do not match.'
+    }
+
+    if (form.password.length < 12) {
+      return 'Password must be at least 12 characters long.'
+    }
+
+    if (!/[A-Z]/.test(form.password)) {
+      return 'Password must include at least one uppercase letter.'
+    }
+
+    if (!/[a-z]/.test(form.password)) {
+      return 'Password must include at least one lowercase letter.'
+    }
+
+    if (!/[0-9]/.test(form.password)) {
+      return 'Password must include at least one number.'
+    }
+
+    if (!/[^a-zA-Z0-9]/.test(form.password)) {
+      return 'Password must include at least one special character.'
+    }
+
+    return null
   }
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    register(toRegisterPayload(form))
-    navigate(APP_ROUTES.dashboard)
+    const validationMessage = validateForm()
+
+    if (validationMessage) {
+      setErrorMessage(validationMessage)
+      return
+    }
+
+    setErrorMessage(null)
+    setIsSubmitting(true)
+
+    try {
+      await register(toRegisterPayload(form))
+      navigate(APP_ROUTES.dashboard)
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error, 'Unable to create the account right now.'))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleGoogleRegistration(idToken: string) {
+    setErrorMessage(null)
+    setIsSubmitting(true)
+
+    try {
+      await loginWithGoogle(idToken)
+      navigate(APP_ROUTES.dashboard)
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error, 'Google registration failed.'))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -55,14 +103,37 @@ export function RegisterForm() {
         </h2>
       </div>
 
+      <GoogleSignInCard
+        disabled={isSubmitting}
+        mode="register"
+        onCredential={handleGoogleRegistration}
+      />
+
+      <div className="relative flex items-center justify-center py-1">
+        <div className="absolute inset-x-0 h-px bg-outline-variant/20" />
+        <span className="relative bg-surface-container-lowest px-3 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+          Or create with email
+        </span>
+      </div>
+
+      {errorMessage ? (
+        <div className="rounded-2xl border border-error/15 bg-error/5 px-4 py-3 text-sm text-error">
+          {errorMessage}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <TextField
+          autoComplete="name"
+          disabled={isSubmitting}
           label="Full Name"
           placeholder="John Doe"
           value={form.fullName}
           onChange={(event) => updateField('fullName', event.target.value)}
         />
         <TextField
+          autoComplete="email"
+          disabled={isSubmitting}
           label="Email Address"
           type="email"
           placeholder="john@example.com"
@@ -73,9 +144,11 @@ export function RegisterForm() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <TextField
+          autoComplete="new-password"
+          disabled={isSubmitting}
           label="Password"
           type={showPassword ? 'text' : 'password'}
-          placeholder="********"
+          placeholder="At least 12 characters"
           value={form.password}
           onChange={(event) => updateField('password', event.target.value)}
           trailingAction={
@@ -89,6 +162,8 @@ export function RegisterForm() {
           }
         />
         <TextField
+          autoComplete="new-password"
+          disabled={isSubmitting}
           label="Confirm Password"
           type={showPassword ? 'text' : 'password'}
           placeholder="********"
@@ -97,49 +172,18 @@ export function RegisterForm() {
         />
       </div>
 
-      <section className="rounded-[1.4rem] bg-surface-container-low p-6">
-        <h3 className="mb-4 text-sm font-headline font-bold">Initial Vehicle</h3>
-        <div className="space-y-4">
-          {form.vehicles.map((vehicle, index) => (
-            <div key={vehicle.id} className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <TextField
-                label={`License Plate ${index + 1}`}
-                placeholder="ABC-1234"
-                inputClassName="bg-white"
-                value={vehicle.licensePlate}
-                onChange={(event) =>
-                  updateVehicle(vehicle.id, 'licensePlate', event.target.value)
-                }
-              />
-              <TextField
-                label={`Brand / Model ${index + 1}`}
-                placeholder="Tesla Model 3"
-                inputClassName="bg-white"
-                value={vehicle.brandModel}
-                onChange={(event) =>
-                  updateVehicle(vehicle.id, 'brandModel', event.target.value)
-                }
-              />
-            </div>
-          ))}
-        </div>
-        <button
-          type="button"
-          className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:opacity-80"
-          onClick={() =>
-            setForm((current) => ({
-              ...current,
-              vehicles: [...current.vehicles, createEmptyVehicle()],
-            }))
-          }
-        >
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white">+</span>
-          Add another vehicle
-        </button>
+      <section className="rounded-[1.4rem] border border-outline-variant/20 bg-surface-container-low px-5 py-4">
+        <p className="text-sm font-headline font-bold text-on-background">
+          Password requirements
+        </p>
+        <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+          Use at least 12 characters with uppercase, lowercase, number, and special symbol to
+          satisfy the backend validation rules.
+        </p>
       </section>
 
       <Button type="submit" className="w-full">
-        Register
+        {isSubmitting ? 'Creating Account...' : 'Register'}
       </Button>
 
       <p className="text-center text-sm text-on-surface-variant">

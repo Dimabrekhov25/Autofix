@@ -1,35 +1,15 @@
-export interface VehicleRegistrationFormModel {
-  id: string
-  licensePlate: string
-  brandModel: string
-}
-
 export interface RegisterFormModel {
   fullName: string
   email: string
   password: string
   confirmPassword: string
-  vehicles: VehicleRegistrationFormModel[]
 }
 
 export interface RegisterSubmissionPayload {
-  profile: {
-    fullName: string
-    email: string
-    password: string
-  }
-  vehicles: Array<{
-    licensePlate: string
-    brandModel: string
-  }>
-}
-
-export function createEmptyVehicle(): VehicleRegistrationFormModel {
-  return {
-    id: crypto.randomUUID(),
-    licensePlate: '',
-    brandModel: '',
-  }
+  userName: string
+  email: string
+  fullName: string
+  password: string
 }
 
 export function createInitialRegisterForm(): RegisterFormModel {
@@ -38,22 +18,26 @@ export function createInitialRegisterForm(): RegisterFormModel {
     email: '',
     password: '',
     confirmPassword: '',
-    vehicles: [createEmptyVehicle()],
   }
 }
 
-export function toRegisterPayload(
-  form: RegisterFormModel,
-): RegisterSubmissionPayload {
+function createUserName(email: string, fullName: string) {
+  const localPart = email.split('@')[0]?.trim() ?? fullName
+  const normalized = localPart
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '.')
+    .replace(/^[._-]+|[._-]+$/g, '')
+
+  return (normalized || `user.${crypto.randomUUID().slice(0, 8)}`).slice(0, 50)
+}
+
+export function toRegisterPayload(form: RegisterFormModel): RegisterSubmissionPayload {
   return {
-    profile: {
-      fullName: form.fullName.trim(),
-      email: form.email.trim(),
-      password: form.password,
-    },
-    vehicles: form.vehicles.map((vehicle) => ({
-      licensePlate: vehicle.licensePlate.trim(),
-      brandModel: vehicle.brandModel.trim(),
-    })),
+    userName: createUserName(form.email.trim(), form.fullName.trim()),
+    email: form.email.trim(),
+    fullName: form.fullName.trim(),
+    password: form.password,
   }
 }

@@ -5,8 +5,8 @@ export function RegisterPage() {
   return (
     <AuthShell
       eyebrow="Client Onboarding"
-      title="Create your precision service profile."
-      description="After registration, the client is redirected to the AUTOFIX dashboard page based on your provided HTML."
+      title="Create your AUTOFIX account."
+      description="Register to manage bookings, review service history, and keep every vehicle profile in one place."
     >
       <RegisterForm />
     </AuthShell>
