@@ -115,6 +115,7 @@ public static class DependencyInjection
 
         builder.Services.AddScoped<IIdentityService, IdentityService>();
         builder.Services.AddScoped<IAuthorizationHandler, ActiveUserRequirementHandler>();
+        builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
         builder.Services.AddScoped<IPartRepository, PartRepository>();
         builder.Services.AddScoped<IServiceCatalogRepository, ServiceCatalogRepository>();
         builder.Services.AddScoped<IBookingRepository, BookingRepository>();
