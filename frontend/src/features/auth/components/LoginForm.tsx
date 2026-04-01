@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { getAuthErrorMessage } from '../../../apis/authApi'
 import { APP_ROUTES } from '../../../shared/config/routes'
-import { getAuthErrorMessage } from '../auth-api'
 import { Button } from '../../../shared/ui/Button'
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 import { TextField } from '../../../shared/ui/TextField'

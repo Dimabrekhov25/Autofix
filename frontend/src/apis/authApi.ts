@@ -1,37 +1,15 @@
-interface ApiResultError {
-  message: string
-  code?: string | null
-  validationErrors?: Record<string, string[]> | null
-  details?: unknown
-}
+import type { LoginSubmissionPayload } from '../features/auth/types/login'
+import type { RegisterSubmissionPayload } from '../features/auth/types/register'
+import type {
+  ApiResultEnvelope,
+  ApiResultError,
+  AuthApiUser,
+  AuthResponseDto,
+} from '../features/auth/auth-types'
 
-interface ApiResultEnvelope<T> {
-  status: boolean
-  data: T | null
-  error: ApiResultError | null
-  createdAt: string
-}
+const AUTH_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/+$/, '')
 
-export interface CatalogPartDto {
-  id: string
-  name: string
-  unitPrice: number
-  isActive: boolean
-}
-
-export interface CreateCatalogPartPayload {
-  name: string
-  unitPrice: number
-  isActive: boolean
-}
-
-export interface UpdateCatalogPartPayload extends CreateCatalogPartPayload {
-  id: string
-}
-
-const CATALOG_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/+$/, '')
-
-export class CatalogApiError extends Error {
+export class AuthApiError extends Error {
   code?: string | null
   statusCode: number
   validationErrors?: Record<string, string[]> | null
@@ -44,7 +22,7 @@ export class CatalogApiError extends Error {
     details?: unknown
   }) {
     super(message)
-    this.name = 'CatalogApiError'
+    this.name = 'AuthApiError'
     this.code = options.code
     this.statusCode = options.statusCode
     this.validationErrors = options.validationErrors
@@ -53,7 +31,7 @@ export class CatalogApiError extends Error {
 }
 
 function createEndpointUrl(path: string) {
-  return `${CATALOG_API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
+  return `${AUTH_API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
 }
 
 function getApiErrorMessage(
@@ -76,7 +54,7 @@ async function parseApiEnvelope<T>(response: Response): Promise<ApiResultEnvelop
   try {
     return JSON.parse(responseText) as ApiResultEnvelope<T>
   } catch {
-    throw new CatalogApiError('The server returned an unreadable response.', {
+    throw new AuthApiError('The server returned an unreadable response.', {
       statusCode: response.status,
     })
   }
@@ -101,8 +79,8 @@ async function request<T>(
 
   const envelope = await parseApiEnvelope<T>(response)
 
-  if (!response.ok || !envelope?.status || envelope.data === null) {
-    throw new CatalogApiError(
+  if (!response.ok || !envelope?.status || !envelope.data) {
+    throw new AuthApiError(
       getApiErrorMessage(envelope?.error, `Request failed with status ${response.status}.`),
       {
         code: envelope?.error?.code,
@@ -116,11 +94,11 @@ async function request<T>(
   return envelope.data
 }
 
-export function getCatalogErrorMessage(
+export function getAuthErrorMessage(
   error: unknown,
   fallbackMessage = 'Unable to complete the request.',
 ) {
-  if (error instanceof CatalogApiError) {
+  if (error instanceof AuthApiError) {
     return getApiErrorMessage(
       {
         message: error.message,
@@ -137,43 +115,50 @@ export function getCatalogErrorMessage(
   return fallbackMessage
 }
 
-export function getPartsRequest(accessToken?: string) {
-  return request<CatalogPartDto[]>('/Parts', { method: 'GET' }, accessToken)
+export function loginRequest(payload: LoginSubmissionPayload) {
+  return request<AuthResponseDto>('/Auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }
 
-export function createPartRequest(
-  payload: CreateCatalogPartPayload,
-  accessToken?: string,
-) {
-  return request<CatalogPartDto>(
-    '/Parts',
+export function registerRequest(payload: RegisterSubmissionPayload) {
+  return request<AuthResponseDto>('/Auth/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function googleLoginRequest(idToken: string) {
+  return request<AuthResponseDto>('/Auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken }),
+  })
+}
+
+export function refreshTokenRequest(refreshToken: string) {
+  return request<AuthResponseDto>('/Auth/refresh-token', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken }),
+  })
+}
+
+export function logoutRequest(refreshToken: string, accessToken?: string) {
+  return request<Record<string, never>>(
+    '/Auth/logout',
     {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ refreshToken }),
     },
     accessToken,
   )
 }
 
-export function updatePartRequest(
-  payload: UpdateCatalogPartPayload,
-  accessToken?: string,
-) {
-  return request<CatalogPartDto>(
-    `/Parts/${payload.id}`,
+export function getCurrentUserRequest(accessToken: string) {
+  return request<AuthApiUser>(
+    '/Auth/me',
     {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    },
-    accessToken,
-  )
-}
-
-export async function deletePartRequest(id: string, accessToken?: string) {
-  await request<Record<string, never>>(
-    `/Parts/${id}`,
-    {
-      method: 'DELETE',
+      method: 'GET',
     },
     accessToken,
   )
