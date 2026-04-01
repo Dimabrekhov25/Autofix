@@ -9,7 +9,8 @@ public sealed record UpdateBookingCommand(
     Guid CustomerId,
     Guid VehicleId,
     DateTime StartAt,
-    DateTime EndAt,
+    IReadOnlyList<Guid>? ServiceCatalogItemIds,
     BookingStatus Status,
-    IReadOnlyList<Guid>? ServiceCatalogItemIds
+    BookingPaymentOption PaymentOption,
+    string? Notes
 ) : IRequest<BookingDto?>;

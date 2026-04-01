@@ -15,9 +15,12 @@ public sealed class CreateVehicleHandler(
         {
             OwnerCustomerId = request.OwnerCustomerId,
             LicensePlate = request.LicensePlate,
+            Vin = request.Vin.Trim().ToUpperInvariant(),
             Make = request.Make,
             Model = request.Model,
             Year = request.Year,
+            Trim = string.IsNullOrWhiteSpace(request.Trim) ? null : request.Trim.Trim(),
+            Engine = string.IsNullOrWhiteSpace(request.Engine) ? null : request.Engine.Trim(),
             IsDrivable = request.IsDrivable
         };
 
@@ -27,9 +30,12 @@ public sealed class CreateVehicleHandler(
             saved.Id,
             saved.OwnerCustomerId,
             saved.LicensePlate,
+            saved.Vin ?? string.Empty,
             saved.Make,
             saved.Model,
             saved.Year,
+            saved.Trim,
+            saved.Engine,
             saved.IsDrivable
         );
     }

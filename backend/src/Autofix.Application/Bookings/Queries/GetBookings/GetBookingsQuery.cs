@@ -3,4 +3,6 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Queries.GetBookings;
 
-public sealed record GetBookingsQuery() : IRequest<IReadOnlyList<BookingDto>>;
+public sealed record GetBookingsQuery(
+    Guid? CustomerId = null,
+    Guid? VehicleId = null) : IRequest<IReadOnlyList<BookingDto>>;

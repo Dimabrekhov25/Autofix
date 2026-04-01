@@ -2,14 +2,17 @@ using System.Security.Claims;
 using System.Text;
 using Autofix.Application.Common.Interfaces;
 using Autofix.Application.Common.Interfaces.Auth;
+using Autofix.Application.Common.Interfaces.BookingFlow;
 using Autofix.Application.Common.Security;
 using Autofix.Domain.Constants;
 using Autofix.Infrastructure.Auth;
 using Autofix.Infrastructure.Auth.Authorization;
 using Autofix.Infrastructure.Auth.Entities;
 using Autofix.Infrastructure.Auth.Options;
+using Autofix.Infrastructure.Options;
 using Autofix.Infrastructure.Persistance;
 using Autofix.Infrastructure.Persistance.Repositories;
+using Autofix.Infrastructure.Persistance.Seed;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -52,6 +55,19 @@ public static class DependencyInjection
         builder.Services
             .AddOptions<GoogleAuthOptions>()
             .Bind(builder.Configuration.GetSection(GoogleAuthOptions.SectionName));
+
+        builder.Services
+            .AddOptions<BookingFlowOptions>()
+            .Bind(builder.Configuration.GetSection(BookingFlowOptions.SectionName))
+            .Validate(
+                options =>
+                    options.WorkshopDayStart < options.WorkshopDayEnd &&
+                    options.SlotIntervalMinutes > 0 &&
+                    options.BufferMinutes >= 0 &&
+                    options.MaxConcurrentBookings > 0 &&
+                    !string.IsNullOrWhiteSpace(options.Currency),
+                "Booking flow configuration is invalid.")
+            .ValidateOnStart();
 
         builder.Services
             .AddIdentityCore<ApplicationUser>(options =>
@@ -119,17 +135,21 @@ public static class DependencyInjection
         builder.Services.AddScoped<IPartRepository, PartRepository>();
         builder.Services.AddScoped<IServiceCatalogRepository, ServiceCatalogRepository>();
         builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+        builder.Services.AddScoped<IBookingTimeSlotRepository, BookingTimeSlotRepository>();
         builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
         builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+        builder.Services.AddSingleton<IBookingFlowSettings, BookingFlowSettings>();
     }
 
     public static async Task InitializeInfrastructureAsync(this IHost host, CancellationToken cancellationToken = default)
     {
         await using var scope = host.Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var bookingFlowSettings = scope.ServiceProvider.GetRequiredService<IBookingFlowSettings>();
 
         await dbContext.Database.MigrateAsync(cancellationToken);
+        await BookingTimeSlotSeeder.SeedAsync(dbContext, bookingFlowSettings, cancellationToken);
         await SeedIdentityAsync(scope.ServiceProvider, cancellationToken);
     }
 

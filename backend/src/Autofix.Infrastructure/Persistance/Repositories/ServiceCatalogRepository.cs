@@ -39,14 +39,30 @@ public sealed class ServiceCatalogRepository(ApplicationDbContext dbContext) : I
     }
 
     public async Task<IReadOnlyList<ServiceCatalogItem>> GetAllAsync(CancellationToken cancellationToken)
+        => await GetAllAsync(isActive: null, ids: null, cancellationToken);
+
+    public async Task<IReadOnlyList<ServiceCatalogItem>> GetAllAsync(
+        bool? isActive,
+        Guid[]? ids,
+        CancellationToken cancellationToken)
     {
-        var items = await dbContext.ServiceCatalogItems
+        var query = dbContext.ServiceCatalogItems
             .AsNoTracking()
-            .Where(item => !item.IsDeleted)
+            .Where(item => !item.IsDeleted);
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(item => item.IsActive == isActive.Value);
+        }
+
+        if (ids is { Length: > 0 })
+        {
+            query = query.Where(item => ids.Contains(item.Id));
+        }
+
+        return await query
             .OrderBy(item => item.Name)
             .ToListAsync(cancellationToken);
-
-        return items;
     }
 
     public Task UpdateAsync(ServiceCatalogItem item, CancellationToken cancellationToken)

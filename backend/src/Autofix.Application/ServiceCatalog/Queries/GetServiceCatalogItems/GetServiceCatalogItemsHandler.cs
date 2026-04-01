@@ -10,7 +10,15 @@ public sealed class GetServiceCatalogItemsHandler(IServiceCatalogRepository repo
 {
     public async Task<IReadOnlyList<ServiceCatalogItemDto>> Handle(GetServiceCatalogItemsQuery request, CancellationToken cancellationToken)
     {
-        var items = await repository.GetAllAsync(cancellationToken);
+        var items = await repository.GetAllAsync(request.IsActive, null, cancellationToken);
+
+        if (request.Category.HasValue)
+        {
+            items = items
+                .Where(item => item.Category == request.Category.Value)
+                .ToList();
+        }
+
         return items.Select(item => item.ToDto()).ToList();
     }
 }

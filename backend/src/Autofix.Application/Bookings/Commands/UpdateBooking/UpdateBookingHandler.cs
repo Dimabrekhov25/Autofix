@@ -1,8 +1,8 @@
 using Autofix.Application.Bookings.Dtos;
 using Autofix.Application.Bookings.Mapping;
+using Autofix.Application.Bookings.Services;
 using Autofix.Application.Common.Interfaces;
-using Autofix.Domain.Entities.Booking;
-using Autofix.Domain.Entities.Catalog;
+using Autofix.Application.Common.Interfaces.BookingFlow;
 using Autofix.Domain.Exceptions;
 using MediatR;
 
@@ -10,9 +10,11 @@ namespace Autofix.Application.Bookings.Commands.UpdateBooking;
 
 public sealed class UpdateBookingHandler(
     IBookingRepository bookingRepository,
+    IBookingTimeSlotRepository bookingTimeSlotRepository,
     ICustomerRepository customerRepository,
     IVehicleRepository vehicleRepository,
-    IServiceCatalogRepository serviceCatalogRepository)
+    IServiceCatalogRepository serviceCatalogRepository,
+    IBookingFlowSettings bookingFlowSettings)
     : IRequestHandler<UpdateBookingCommand, BookingDto?>
 {
     public async Task<BookingDto?> Handle(UpdateBookingCommand request, CancellationToken cancellationToken)
@@ -40,33 +42,60 @@ public sealed class UpdateBookingHandler(
             throw new BadRequestException("Vehicle does not belong to customer");
         }
 
-        var hasOverlap = await bookingRepository.HasOverlappingBookingAsync(
+        var timeSlot = await bookingTimeSlotRepository.GetActiveByStartAtAsync(request.StartAt, cancellationToken);
+        if (timeSlot is null)
+        {
+            throw new BadRequestException("Selected time slot does not exist");
+        }
+
+        var services = await LoadRequestedServicesAsync(request.ServiceCatalogItemIds, cancellationToken);
+        var endAt = BookingFlowCalculator.CalculateEndAt(timeSlot.StartAt, services, bookingFlowSettings);
+        var pricing = BookingFlowCalculator.CalculatePricing(services, bookingFlowSettings);
+
+        var hasVehicleOverlap = await bookingRepository.HasOverlappingBookingAsync(
             request.VehicleId,
-            request.StartAt,
-            request.EndAt,
+            timeSlot.StartAt,
+            endAt,
             request.Id,
             cancellationToken);
 
-        if (hasOverlap)
+        if (hasVehicleOverlap)
         {
             throw new BadRequestException("Selected time slot is unavailable");
         }
 
-        var services = await LoadRequestedServicesAsync(request.ServiceCatalogItemIds, cancellationToken);
+        var overlapCount = await bookingRepository.CountOverlappingBookingsAsync(
+            timeSlot.StartAt,
+            endAt,
+            request.Id,
+            cancellationToken);
+
+        if (overlapCount > 0)
+        {
+            throw new BadRequestException("Selected time slot is unavailable");
+        }
 
         booking.CustomerId = request.CustomerId;
         booking.VehicleId = request.VehicleId;
-        booking.StartAt = request.StartAt;
-        booking.EndAt = request.EndAt;
+        booking.BookingTimeSlotId = timeSlot.Id;
+        booking.StartAt = timeSlot.StartAt;
+        booking.EndAt = endAt;
         booking.Status = request.Status;
+        booking.PaymentOption = request.PaymentOption;
+        booking.Currency = pricing.Currency;
+        booking.Subtotal = pricing.Subtotal;
+        booking.EstimatedLaborCost = pricing.EstimatedLaborCost;
+        booking.TaxAmount = pricing.TaxAmount;
+        booking.TotalEstimate = pricing.TotalEstimate;
+        booking.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
         booking.UpdatedAt = DateTime.UtcNow;
-        booking.Services = services;
+        booking.Services = BookingFlowCalculator.CreateSnapshots(services);
 
         await bookingRepository.UpdateAsync(booking, cancellationToken);
         return booking.ToDto();
     }
 
-    private async Task<List<BookingServiceItem>> LoadRequestedServicesAsync(
+    private async Task<IReadOnlyList<Autofix.Domain.Entities.Catalog.ServiceCatalogItem>> LoadRequestedServicesAsync(
         IReadOnlyList<Guid>? serviceCatalogItemIds,
         CancellationToken cancellationToken)
     {
@@ -77,7 +106,7 @@ public sealed class UpdateBookingHandler(
 
         if (normalizedIds.Count == 0)
         {
-            return [];
+            throw new NotFoundException("ServiceCatalogItem", "No services selected");
         }
 
         var catalogItems = await serviceCatalogRepository.GetByIdsAsync(normalizedIds, cancellationToken);
@@ -86,17 +115,6 @@ public sealed class UpdateBookingHandler(
             throw new NotFoundException("ServiceCatalogItem", string.Join(", ", normalizedIds));
         }
 
-        return catalogItems
-            .Select(CreateServiceSnapshot)
-            .ToList();
+        return catalogItems;
     }
-
-    private static BookingServiceItem CreateServiceSnapshot(ServiceCatalogItem item)
-        => new()
-        {
-            ServiceCatalogItemId = item.Id,
-            Name = item.Name,
-            BasePrice = item.BasePrice,
-            EstimatedDuration = item.EstimatedDuration
-        };
 }

@@ -17,6 +17,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
 {
     public DbSet<Booking> Bookings => Set<Booking>();
+    public DbSet<BookingTimeSlot> BookingTimeSlots => Set<BookingTimeSlot>();
     public DbSet<BookingServiceItem> BookingServiceItems => Set<BookingServiceItem>();
     public DbSet<ServiceCatalogItem> ServiceCatalogItems => Set<ServiceCatalogItem>();
     public DbSet<Invoice> Invoices => Set<Invoice>();

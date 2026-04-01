@@ -10,7 +10,7 @@ public sealed class GetBookingsHandler(IBookingRepository repository)
 {
     public async Task<IReadOnlyList<BookingDto>> Handle(GetBookingsQuery request, CancellationToken cancellationToken)
     {
-        var bookings = await repository.GetAllAsync(cancellationToken);
+        var bookings = await repository.GetAllAsync(request.CustomerId, request.VehicleId, cancellationToken);
         return bookings.Select(booking => booking.ToDto()).ToList();
     }
 }

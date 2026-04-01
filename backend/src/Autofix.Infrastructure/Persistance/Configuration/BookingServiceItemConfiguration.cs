@@ -11,6 +11,18 @@ public sealed class BookingServiceItemConfiguration : IEntityTypeConfiguration<B
     {
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.Name)
+            .HasMaxLength(200);
+
+        builder.Property(x => x.Description)
+            .HasMaxLength(2000);
+
+        builder.Property(x => x.BasePrice)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.EstimatedLaborCost)
+            .HasPrecision(18, 2);
+
         builder.HasOne<ServiceCatalogItem>(x => x.ServiceCatalogItem)
             .WithMany()
             .HasForeignKey(x => x.ServiceCatalogItemId);

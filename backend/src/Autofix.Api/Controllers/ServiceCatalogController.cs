@@ -32,9 +32,11 @@ public sealed class ServiceCatalogController(IMediator mediator) : BaseControlle
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] GetServiceCatalogItemsQuery query,
+        CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetServiceCatalogItemsQuery(), cancellationToken);
+        var result = await mediator.Send(query, cancellationToken);
         return OkResult(result);
     }
 

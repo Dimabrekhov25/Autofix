@@ -16,12 +16,14 @@ public sealed class UpdateBookingCommandValidator : AbstractValidator<UpdateBook
             .NotEmpty();
 
         RuleFor(x => x.StartAt)
-            .NotEmpty();
-
-        RuleFor(x => x.EndAt)
             .NotEmpty()
-            .GreaterThan(x => x.StartAt)
-            .WithMessage("EndAt must be greater than StartAt.");
+            .Must(startAt => startAt > DateTime.UtcNow)
+            .WithMessage("StartAt must be in the future.");
+
+        RuleFor(x => x.ServiceCatalogItemIds)
+            .NotNull()
+            .Must(ids => ids is { Count: > 0 })
+            .WithMessage("At least one service must be selected.");
 
         RuleForEach(x => x.ServiceCatalogItemIds)
             .NotEmpty();

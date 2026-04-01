@@ -19,9 +19,12 @@ public sealed class GetVehicleByIdHandler(IVehicleRepository repository)
             vehicle.Id,
             vehicle.OwnerCustomerId,
             vehicle.LicensePlate,
+            vehicle.Vin ?? string.Empty,
             vehicle.Make,
             vehicle.Model,
             vehicle.Year,
+            vehicle.Trim,
+            vehicle.Engine,
             vehicle.IsDrivable
         );
     }

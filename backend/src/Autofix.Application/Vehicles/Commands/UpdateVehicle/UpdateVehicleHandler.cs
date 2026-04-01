@@ -18,9 +18,12 @@ public sealed class UpdateVehicleHandler(IVehicleRepository repository)
 
         vehicle.OwnerCustomerId = request.OwnerCustomerId;
         vehicle.LicensePlate = request.LicensePlate;
+        vehicle.Vin = request.Vin.Trim().ToUpperInvariant();
         vehicle.Make = request.Make;
         vehicle.Model = request.Model;
         vehicle.Year = request.Year;
+        vehicle.Trim = string.IsNullOrWhiteSpace(request.Trim) ? null : request.Trim.Trim();
+        vehicle.Engine = string.IsNullOrWhiteSpace(request.Engine) ? null : request.Engine.Trim();
         vehicle.IsDrivable = request.IsDrivable;
         vehicle.UpdatedAt = DateTime.UtcNow;
 
@@ -30,9 +33,12 @@ public sealed class UpdateVehicleHandler(IVehicleRepository repository)
             vehicle.Id,
             vehicle.OwnerCustomerId,
             vehicle.LicensePlate,
+            vehicle.Vin ?? string.Empty,
             vehicle.Make,
             vehicle.Model,
             vehicle.Year,
+            vehicle.Trim,
+            vehicle.Engine,
             vehicle.IsDrivable
         );
     }
