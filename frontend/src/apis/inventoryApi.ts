@@ -1,15 +1,39 @@
-import type { LoginSubmissionPayload } from './types/login'
-import type { RegisterSubmissionPayload } from './types/register'
-import type {
-  ApiResultEnvelope,
-  ApiResultError,
-  AuthApiUser,
-  AuthResponseDto,
-} from './auth-types'
+interface ApiResultError {
+  message: string
+  code?: string | null
+  validationErrors?: Record<string, string[]> | null
+  details?: unknown
+}
 
-const AUTH_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/+$/, '')
+interface ApiResultEnvelope<T> {
+  status: boolean
+  data: T | null
+  error: ApiResultError | null
+  createdAt: string
+}
 
-export class AuthApiError extends Error {
+export interface InventoryItemDto {
+  id: string
+  partId: string
+  quantityOnHand: number
+  reservedQuantity: number
+  minLevel: number
+}
+
+export interface CreateInventoryItemPayload {
+  partId: string
+  quantityOnHand: number
+  reservedQuantity: number
+  minLevel: number
+}
+
+export interface UpdateInventoryItemPayload extends CreateInventoryItemPayload {
+  id: string
+}
+
+const INVENTORY_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/+$/, '')
+
+export class InventoryApiError extends Error {
   code?: string | null
   statusCode: number
   validationErrors?: Record<string, string[]> | null
@@ -22,7 +46,7 @@ export class AuthApiError extends Error {
     details?: unknown
   }) {
     super(message)
-    this.name = 'AuthApiError'
+    this.name = 'InventoryApiError'
     this.code = options.code
     this.statusCode = options.statusCode
     this.validationErrors = options.validationErrors
@@ -31,7 +55,7 @@ export class AuthApiError extends Error {
 }
 
 function createEndpointUrl(path: string) {
-  return `${AUTH_API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
+  return `${INVENTORY_API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
 }
 
 function getApiErrorMessage(
@@ -54,7 +78,7 @@ async function parseApiEnvelope<T>(response: Response): Promise<ApiResultEnvelop
   try {
     return JSON.parse(responseText) as ApiResultEnvelope<T>
   } catch {
-    throw new AuthApiError('The server returned an unreadable response.', {
+    throw new InventoryApiError('The server returned an unreadable response.', {
       statusCode: response.status,
     })
   }
@@ -79,8 +103,8 @@ async function request<T>(
 
   const envelope = await parseApiEnvelope<T>(response)
 
-  if (!response.ok || !envelope?.status || !envelope.data) {
-    throw new AuthApiError(
+  if (!response.ok || !envelope?.status || envelope.data === null) {
+    throw new InventoryApiError(
       getApiErrorMessage(envelope?.error, `Request failed with status ${response.status}.`),
       {
         code: envelope?.error?.code,
@@ -94,11 +118,11 @@ async function request<T>(
   return envelope.data
 }
 
-export function getAuthErrorMessage(
+export function getInventoryErrorMessage(
   error: unknown,
   fallbackMessage = 'Unable to complete the request.',
 ) {
-  if (error instanceof AuthApiError) {
+  if (error instanceof InventoryApiError) {
     return getApiErrorMessage(
       {
         message: error.message,
@@ -115,50 +139,43 @@ export function getAuthErrorMessage(
   return fallbackMessage
 }
 
-export function loginRequest(payload: LoginSubmissionPayload) {
-  return request<AuthResponseDto>('/Auth/login', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+export function getInventoryItemsRequest(accessToken?: string) {
+  return request<InventoryItemDto[]>('/Inventory', { method: 'GET' }, accessToken)
 }
 
-export function registerRequest(payload: RegisterSubmissionPayload) {
-  return request<AuthResponseDto>('/Auth/register', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
-}
-
-export function googleLoginRequest(idToken: string) {
-  return request<AuthResponseDto>('/Auth/google', {
-    method: 'POST',
-    body: JSON.stringify({ idToken }),
-  })
-}
-
-export function refreshTokenRequest(refreshToken: string) {
-  return request<AuthResponseDto>('/Auth/refresh-token', {
-    method: 'POST',
-    body: JSON.stringify({ refreshToken }),
-  })
-}
-
-export function logoutRequest(refreshToken: string, accessToken?: string) {
-  return request<Record<string, never>>(
-    '/Auth/logout',
+export function createInventoryItemRequest(
+  payload: CreateInventoryItemPayload,
+  accessToken?: string,
+) {
+  return request<InventoryItemDto>(
+    '/Inventory',
     {
       method: 'POST',
-      body: JSON.stringify({ refreshToken }),
+      body: JSON.stringify(payload),
     },
     accessToken,
   )
 }
 
-export function getCurrentUserRequest(accessToken: string) {
-  return request<AuthApiUser>(
-    '/Auth/me',
+export function updateInventoryItemRequest(
+  payload: UpdateInventoryItemPayload,
+  accessToken?: string,
+) {
+  return request<InventoryItemDto>(
+    `/Inventory/${payload.id}`,
     {
-      method: 'GET',
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    },
+    accessToken,
+  )
+}
+
+export async function deleteInventoryItemRequest(id: string, accessToken?: string) {
+  await request<Record<string, never>>(
+    `/Inventory/${id}`,
+    {
+      method: 'DELETE',
     },
     accessToken,
   )

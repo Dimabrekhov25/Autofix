@@ -9,7 +9,7 @@ import {
   logoutRequest,
   refreshTokenRequest,
   registerRequest,
-} from './auth-api'
+} from '../../apis/authApi'
 import {
   clearPersistedAuthSession,
   persistAuthSession,

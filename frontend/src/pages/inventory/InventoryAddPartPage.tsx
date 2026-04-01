@@ -1,24 +1,81 @@
-import type { ChangeEvent, FormEvent } from 'react'
-import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { getPartsRequest, type CatalogPartDto } from '../../apis/catalogApi'
+import {
+  createInventoryItemRequest,
+  getInventoryErrorMessage,
+} from '../../apis/inventoryApi'
+import { useAuth } from '../../features/auth/useAuth'
 import { APP_ROUTES } from '../../shared/config/routes'
 import { Button } from '../../shared/ui/Button'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 
-const inventoryCategoryOptions = [
-  'Brakes',
-  'Engine',
-  'Suspension',
-  'Drivetrain',
-  'Electrical',
-  'Fuel System',
-] as const
+interface InventoryCreateFormState {
+  partId: string
+  quantityOnHand: string
+  reservedQuantity: string
+  minLevel: string
+}
+
+function createInitialFormState(): InventoryCreateFormState {
+  return {
+    partId: '',
+    quantityOnHand: '0',
+    reservedQuantity: '0',
+    minLevel: '0',
+  }
+}
 
 export function InventoryAddPartPage() {
   const navigate = useNavigate()
-  const [imageLabel, setImageLabel] = useState('PNG, JPG or WebP (max. 5MB)')
+  const { tokens } = useAuth()
+  const accessToken = tokens?.accessToken
+
+  const [parts, setParts] = useState<CatalogPartDto[]>([])
+  const [form, setForm] = useState<InventoryCreateFormState>(() => createInitialFormState())
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadParts() {
+      setIsLoading(true)
+      setErrorMessage(null)
+
+      try {
+        const nextParts = await getPartsRequest(accessToken)
+
+        if (isMounted) {
+          setParts(nextParts)
+          setForm((current) => ({
+            ...current,
+            partId: current.partId || nextParts[0]?.id || '',
+          }))
+        }
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(
+            getInventoryErrorMessage(error, 'Unable to load parts for inventory creation.'),
+          )
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadParts()
+
+    return () => {
+      isMounted = false
+    }
+  }, [accessToken])
 
   function handleBack() {
     if (window.history.state?.idx > 0) {
@@ -29,19 +86,54 @@ export function InventoryAddPartPage() {
     navigate(APP_ROUTES.inventory)
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    navigate(APP_ROUTES.inventory)
-  }
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
+    const quantityOnHand = Number.parseInt(form.quantityOnHand, 10)
+    const reservedQuantity = Number.parseInt(form.reservedQuantity, 10)
+    const minLevel = Number.parseInt(form.minLevel, 10)
 
-    setImageLabel(file ? file.name : 'PNG, JPG or WebP (max. 5MB)')
+    if (!form.partId) {
+      setErrorMessage('Select a part before creating an inventory item.')
+      return
+    }
+
+    if ([quantityOnHand, reservedQuantity, minLevel].some((value) => !Number.isInteger(value) || value < 0)) {
+      setErrorMessage('All inventory quantities must be whole numbers greater than or equal to 0.')
+      return
+    }
+
+    if (reservedQuantity > quantityOnHand) {
+      setErrorMessage('Reserved quantity cannot be greater than quantity on hand.')
+      return
+    }
+
+    setErrorMessage(null)
+    setIsSubmitting(true)
+
+    try {
+      await createInventoryItemRequest(
+        {
+          partId: form.partId,
+          quantityOnHand,
+          reservedQuantity,
+          minLevel,
+        },
+        accessToken,
+      )
+
+      navigate(APP_ROUTES.inventory)
+    } catch (error) {
+      setErrorMessage(
+        getInventoryErrorMessage(error, 'Unable to create the inventory item right now.'),
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
-    <DashboardShell searchPlaceholder="Search components...">
+    <DashboardShell searchPlaceholder="Search inventory items...">
       <section className="relative overflow-hidden pb-8 pt-2">
         <div className="pointer-events-none absolute -right-32 -top-24 h-80 w-80 rounded-full bg-primary/5 blur-[120px]" />
         <div className="pointer-events-none absolute bottom-0 left-0 h-72 w-72 rounded-full bg-secondary/5 blur-[100px]" />
@@ -56,7 +148,7 @@ export function InventoryAddPartPage() {
                 Inventory
               </Link>
               <span className="text-slate-300">/</span>
-              <span className="font-medium text-slate-500">Add New Part</span>
+              <span className="font-medium text-slate-500">Add Inventory Item</span>
             </div>
             <button
               type="button"
@@ -74,59 +166,53 @@ export function InventoryAddPartPage() {
             </span>
             <div>
               <h1 className="font-headline text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-                New Component Entry
+                New Inventory Entry
               </h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-on-surface-variant sm:text-base">
-                Register high-performance parts into the inventory catalog. Keep
-                technical specs, stock inputs, and compatibility details in one place.
+                Create a real inventory item tied to an existing part from the master parts catalog.
               </p>
             </div>
           </div>
+
+          {errorMessage ? (
+            <div className="mb-6 rounded-2xl border border-error/15 bg-error/5 px-5 py-4 text-sm text-error">
+              {errorMessage}
+            </div>
+          ) : null}
 
           <div className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-surface-container-lowest shadow-panel">
             <form className="space-y-8 p-6 sm:p-8 lg:p-10" onSubmit={handleSubmit}>
               <div className="grid grid-cols-12 gap-8">
                 <div className="col-span-12 md:col-span-4">
                   <h2 className="mb-1 font-headline text-sm font-bold uppercase tracking-[0.2em] text-slate-900">
-                    Identity
+                    Part Link
                   </h2>
                   <p className="text-xs leading-6 text-on-surface-variant">
-                    General part identification and manufacturer details.
+                    Select which part from the catalog this inventory record belongs to.
                   </p>
                 </div>
-                <div className="col-span-12 space-y-6 md:col-span-8">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="block pl-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-700">
-                        Part Name
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="e.g., Ceramic Brake Pads"
-                        className="w-full rounded-xl border-none bg-surface-container-low px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/30"
-                      />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="block pl-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-700">
-                        SKU / Part Number
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="PA-7702-BRK"
-                        className="w-full rounded-xl border-none bg-surface-container-low px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/30"
-                      />
-                    </label>
-                  </div>
-
+                <div className="col-span-12 md:col-span-8">
                   <label className="space-y-2">
                     <span className="block pl-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-700">
-                      Category
+                      Part
                     </span>
                     <div className="relative">
-                      <select className="w-full appearance-none rounded-xl border-none bg-surface-container-low px-4 py-3 pr-12 text-sm text-slate-900 focus:ring-2 focus:ring-primary/30">
-                        {inventoryCategoryOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
+                      <select
+                        value={form.partId}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, partId: event.target.value }))
+                        }
+                        disabled={isLoading || isSubmitting || parts.length === 0}
+                        className="w-full appearance-none rounded-xl border-none bg-surface-container-low px-4 py-3 pr-12 text-sm text-slate-900 focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+                      >
+                        {parts.length === 0 ? (
+                          <option value="">
+                            {isLoading ? 'Loading parts...' : 'No parts available'}
+                          </option>
+                        ) : null}
+                        {parts.map((part) => (
+                          <option key={part.id} value={part.id}>
+                            {part.name}
                           </option>
                         ))}
                       </select>
@@ -144,103 +230,45 @@ export function InventoryAddPartPage() {
               <div className="grid grid-cols-12 gap-8">
                 <div className="col-span-12 md:col-span-4">
                   <h2 className="mb-1 font-headline text-sm font-bold uppercase tracking-[0.2em] text-slate-900">
-                    Logistics
+                    Stock Data
                   </h2>
                   <p className="text-xs leading-6 text-on-surface-variant">
-                    Inventory levels and unit price settings.
+                    These fields map directly to the backend inventory DTO.
                   </p>
                 </div>
-                <div className="col-span-12 md:col-span-8">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="block pl-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-700">
-                        Initial Stock Level
-                      </span>
-                      <input
-                        type="number"
-                        min="0"
-                        defaultValue="0"
-                        className="w-full rounded-xl border-none bg-surface-container-low px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-primary/30"
-                      />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="block pl-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-700">
-                        Unit Price ($)
-                      </span>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">
-                          $
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="0.00"
-                          className="w-full rounded-xl border-none bg-surface-container-low py-3 pl-8 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/30"
-                        />
-                      </div>
-                    </label>
-                  </div>
+                <div className="col-span-12 grid gap-6 md:col-span-8 md:grid-cols-3">
+                  <NumberField
+                    label="Quantity On Hand"
+                    value={form.quantityOnHand}
+                    onChange={(value) =>
+                      setForm((current) => ({ ...current, quantityOnHand: value }))
+                    }
+                  />
+                  <NumberField
+                    label="Reserved Quantity"
+                    value={form.reservedQuantity}
+                    onChange={(value) =>
+                      setForm((current) => ({ ...current, reservedQuantity: value }))
+                    }
+                  />
+                  <NumberField
+                    label="Min Level"
+                    value={form.minLevel}
+                    onChange={(value) =>
+                      setForm((current) => ({ ...current, minLevel: value }))
+                    }
+                  />
                 </div>
               </div>
 
-              <div className="h-px bg-slate-100" />
-
-              <div className="grid grid-cols-12 gap-8">
-                <div className="col-span-12 md:col-span-4">
-                  <h2 className="mb-1 font-headline text-sm font-bold uppercase tracking-[0.2em] text-slate-900">
-                    Specifications
-                  </h2>
-                  <p className="text-xs leading-6 text-on-surface-variant">
-                    Vehicle compatibility and technical descriptions.
-                  </p>
-                </div>
-                <div className="col-span-12 space-y-6 md:col-span-8">
-                  <label className="space-y-2">
-                    <span className="block pl-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-700">
-                      Compatibility
-                    </span>
-                    <textarea
-                      rows={3}
-                      placeholder="BMW M3 (G80), M4 (G82) 2021-2024..."
-                      className="w-full resize-none rounded-xl border-none bg-surface-container-low px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/30"
-                    />
-                  </label>
-                  <label className="space-y-2">
-                    <span className="block pl-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-700">
-                      Description
-                    </span>
-                    <textarea
-                      rows={4}
-                      placeholder="Full ceramic composite brake pads designed for high-thermal endurance..."
-                      className="w-full resize-none rounded-xl border-none bg-surface-container-low px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/30"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div className="h-px bg-slate-100" />
-
-              <div className="grid grid-cols-12 gap-8">
-                <div className="col-span-12 md:col-span-4">
-                  <h2 className="mb-1 font-headline text-sm font-bold uppercase tracking-[0.2em] text-slate-900">
-                    Media Assets
-                  </h2>
-                  <p className="text-xs leading-6 text-on-surface-variant">
-                    Upload a product image for catalog and technician reference.
-                  </p>
-                </div>
-                <div className="col-span-12 md:col-span-8">
-                  <label className="group flex cursor-pointer flex-col items-center rounded-[1.25rem] border-2 border-dashed border-slate-200 px-6 py-10 text-center transition-colors hover:bg-slate-50">
-                    <input type="file" accept="image/*" className="sr-only" onChange={handleFileChange} />
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 transition-colors group-hover:bg-primary/10">
-                      <MaterialIcon
-                        name="cloud_upload"
-                        className="text-slate-400 transition-colors group-hover:text-primary"
-                      />
-                    </div>
-                    <p className="text-sm font-bold text-slate-900">Click to upload image</p>
-                    <p className="mt-1 text-xs text-on-surface-variant">{imageLabel}</p>
-                  </label>
-                </div>
+              <div className="rounded-[1.4rem] border border-outline-variant/20 bg-surface-container-low px-5 py-4">
+                <p className="text-sm font-headline font-bold text-on-background">
+                  Backend payload preview
+                </p>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                  The payload fields `partId`, `quantityOnHand`, `reservedQuantity`, and `minLevel`
+                  will be sent to `/api/v1/Inventory`.
+                </p>
               </div>
 
               <div className="flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
@@ -252,8 +280,12 @@ export function InventoryAddPartPage() {
                   <Button to={APP_ROUTES.inventory} tone="secondary" className="px-6 py-3 text-sm">
                     Cancel
                   </Button>
-                  <Button type="submit" className="px-7 py-3 text-sm shadow-lg shadow-primary/20">
-                    Add to Inventory
+                  <Button
+                    type="submit"
+                    disabled={isLoading || isSubmitting || parts.length === 0}
+                    className="px-7 py-3 text-sm shadow-lg shadow-primary/20"
+                  >
+                    {isSubmitting ? 'Creating...' : 'Add to Inventory'}
                   </Button>
                 </div>
               </div>
@@ -262,5 +294,31 @@ export function InventoryAddPartPage() {
         </div>
       </section>
     </DashboardShell>
+  )
+}
+
+function NumberField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="space-y-2">
+      <span className="block pl-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-700">
+        {label}
+      </span>
+      <input
+        type="number"
+        min="0"
+        step="1"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-xl border-none bg-surface-container-low px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-primary/30"
+      />
+    </label>
   )
 }
