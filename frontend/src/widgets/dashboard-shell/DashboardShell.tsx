@@ -15,6 +15,7 @@ const dashboardNavItems = [
   { label: 'Dashboard', to: APP_ROUTES.dashboard, icon: 'dashboard', adminOnly: false },
   { label: 'Diagnostic', to: APP_ROUTES.diagnostics, icon: 'build', adminOnly: true },
   { label: 'Inventory', to: APP_ROUTES.inventory, icon: 'inventory_2', adminOnly: true },
+  { label: 'Parts Catalog', to: APP_ROUTES.partsCatalog, icon: 'settings_suggest', adminOnly: true },
   { label: 'Booking', to: APP_ROUTES.booking, icon: 'event', adminOnly: false },
   { label: 'Services', to: APP_ROUTES.services, icon: 'settings', adminOnly: false },
 ] as const

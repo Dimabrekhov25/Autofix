@@ -13,6 +13,7 @@ import { HomePage } from '../pages/home/HomePage'
 import { InventoryAddPartPage } from '../pages/inventory/InventoryAddPartPage'
 import { InventoryPage } from '../pages/inventory/InventoryPage'
 import { LoginPage } from '../pages/login/LoginPage'
+import { PartsCatalogPage } from '../pages/parts-catalog/PartsCatalogPage'
 import { PremiumOilChangePage } from '../pages/premium-oil-change/PremiumOilChangePage'
 import { RegisterPage } from '../pages/register/RegisterPage'
 import { ServicesPage } from '../pages/services/ServicesPage'
@@ -162,6 +163,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute requireAdmin>
               <InventoryAddPartPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.partsCatalog}
+          element={
+            <ProtectedRoute requireAdmin>
+              <PartsCatalogPage />
             </ProtectedRoute>
           }
         />
