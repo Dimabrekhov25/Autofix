@@ -2,6 +2,7 @@ using Autofix.Api.Models;
 using Autofix.Application.Vehicles.Commands.CreateVehicle;
 using Autofix.Application.Vehicles.Commands.DeleteVehicle;
 using Autofix.Application.Vehicles.Commands.UpdateVehicle;
+using Autofix.Application.Vehicles.Queries.DecodeVin;
 using Autofix.Application.Vehicles.Queries.GetVehicleById;
 using Autofix.Application.Vehicles.Queries.GetVehicles;
 using MediatR;
@@ -37,6 +38,13 @@ public sealed class VehiclesController(IMediator mediator) : BaseController
             return NotFound(ApiResult.Failure($"Vehicle {id} not found"));
         }
 
+        return OkResult(result);
+    }
+
+    [HttpPost("decode-vin")]
+    public async Task<IActionResult> DecodeVin([FromBody] DecodeVinQuery query, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(query, cancellationToken);
         return OkResult(result);
     }
 

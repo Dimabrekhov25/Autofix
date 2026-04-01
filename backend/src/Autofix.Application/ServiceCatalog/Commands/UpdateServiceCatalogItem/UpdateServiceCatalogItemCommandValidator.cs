@@ -16,7 +16,13 @@ public sealed class UpdateServiceCatalogItemCommandValidator : AbstractValidator
             .MinimumLength(2)
             .MaximumLength(200);
 
+        RuleFor(x => x.Description)
+            .MaximumLength(2000);
+
         RuleFor(x => x.BasePrice)
+            .GreaterThanOrEqualTo(0);
+
+        RuleFor(x => x.EstimatedLaborCost)
             .GreaterThanOrEqualTo(0);
 
         RuleFor(x => x.EstimatedDuration)

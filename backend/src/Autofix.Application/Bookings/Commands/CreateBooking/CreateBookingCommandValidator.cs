@@ -17,10 +17,10 @@ public sealed class CreateBookingCommandValidator : AbstractValidator<CreateBook
             .Must(startAt => startAt > DateTime.UtcNow)
             .WithMessage("StartAt must be in the future.");
 
-        RuleFor(x => x.EndAt)
-            .NotEmpty()
-            .GreaterThan(x => x.StartAt)
-            .WithMessage("EndAt must be greater than StartAt.");
+        RuleFor(x => x.ServiceCatalogItemIds)
+            .NotNull()
+            .Must(ids => ids is { Count: > 0 })
+            .WithMessage("At least one service must be selected.");
 
         RuleForEach(x => x.ServiceCatalogItemIds)
             .NotEmpty();

@@ -22,12 +22,27 @@ public sealed class BookingRepository(ApplicationDbContext dbContext) : IBooking
             .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Booking>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Booking>> GetAllAsync(
+        Guid? customerId,
+        Guid? vehicleId,
+        CancellationToken cancellationToken)
     {
-        var bookings = await dbContext.Bookings
+        var query = dbContext.Bookings
             .AsNoTracking()
             .Include(x => x.Services.Where(service => !service.IsDeleted))
-            .Where(x => !x.IsDeleted)
+            .Where(x => !x.IsDeleted);
+
+        if (customerId.HasValue)
+        {
+            query = query.Where(x => x.CustomerId == customerId.Value);
+        }
+
+        if (vehicleId.HasValue)
+        {
+            query = query.Where(x => x.VehicleId == vehicleId.Value);
+        }
+
+        var bookings = await query
             .OrderBy(x => x.StartAt)
             .ToListAsync(cancellationToken);
 
@@ -47,9 +62,17 @@ public sealed class BookingRepository(ApplicationDbContext dbContext) : IBooking
 
         existingBooking.CustomerId = booking.CustomerId;
         existingBooking.VehicleId = booking.VehicleId;
+        existingBooking.BookingTimeSlotId = booking.BookingTimeSlotId;
         existingBooking.StartAt = booking.StartAt;
         existingBooking.EndAt = booking.EndAt;
         existingBooking.Status = booking.Status;
+        existingBooking.PaymentOption = booking.PaymentOption;
+        existingBooking.Currency = booking.Currency;
+        existingBooking.Subtotal = booking.Subtotal;
+        existingBooking.EstimatedLaborCost = booking.EstimatedLaborCost;
+        existingBooking.TaxAmount = booking.TaxAmount;
+        existingBooking.TotalEstimate = booking.TotalEstimate;
+        existingBooking.Notes = booking.Notes;
         existingBooking.UpdatedAt = booking.UpdatedAt ?? DateTime.UtcNow;
 
         var now = DateTime.UtcNow;
@@ -66,7 +89,10 @@ public sealed class BookingRepository(ApplicationDbContext dbContext) : IBooking
                 BookingId = existingBooking.Id,
                 ServiceCatalogItemId = service.ServiceCatalogItemId,
                 Name = service.Name,
+                Description = service.Description,
+                Category = service.Category,
                 BasePrice = service.BasePrice,
+                EstimatedLaborCost = service.EstimatedLaborCost,
                 EstimatedDuration = service.EstimatedDuration
             })
             .ToList();
@@ -116,6 +142,22 @@ public sealed class BookingRepository(ApplicationDbContext dbContext) : IBooking
         return dbContext.Bookings.AnyAsync(
             booking =>
                 booking.VehicleId == vehicleId &&
+                !booking.IsDeleted &&
+                booking.Status != BookingStatus.Cancelled &&
+                (!excludeBookingId.HasValue || booking.Id != excludeBookingId.Value) &&
+                startAt < booking.EndAt &&
+                endAt > booking.StartAt,
+            cancellationToken);
+    }
+
+    public Task<int> CountOverlappingBookingsAsync(
+        DateTime startAt,
+        DateTime endAt,
+        Guid? excludeBookingId,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.Bookings.CountAsync(
+            booking =>
                 !booking.IsDeleted &&
                 booking.Status != BookingStatus.Cancelled &&
                 (!excludeBookingId.HasValue || booking.Id != excludeBookingId.Value) &&

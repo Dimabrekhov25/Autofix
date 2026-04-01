@@ -15,6 +15,12 @@ public sealed class CreateVehicleCommandValidator : AbstractValidator<CreateVehi
             .WithMessage("License plate must not be empty or whitespace.")
             .MaximumLength(20);
 
+        RuleFor(x => x.Vin)
+            .NotEmpty()
+            .Must(vin => !string.IsNullOrWhiteSpace(vin))
+            .WithMessage("VIN must not be empty or whitespace.")
+            .Length(17);
+
         RuleFor(x => x.Make)
             .NotEmpty()
             .Must(make => !string.IsNullOrWhiteSpace(make))
@@ -30,5 +36,11 @@ public sealed class CreateVehicleCommandValidator : AbstractValidator<CreateVehi
         RuleFor(x => x.Year)
             .GreaterThanOrEqualTo(1900)
             .LessThanOrEqualTo(2100);
+
+        RuleFor(x => x.Trim)
+            .MaximumLength(100);
+
+        RuleFor(x => x.Engine)
+            .MaximumLength(100);
     }
 }

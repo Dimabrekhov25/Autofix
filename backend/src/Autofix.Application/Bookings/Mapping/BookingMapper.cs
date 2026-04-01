@@ -10,9 +10,18 @@ public static class BookingMapper
             entity.Id,
             entity.CustomerId,
             entity.VehicleId,
+            entity.BookingTimeSlotId,
             entity.StartAt,
             entity.EndAt,
             entity.Status,
+            entity.PaymentOption,
+            new BookingPricingDto(
+                entity.Subtotal,
+                entity.EstimatedLaborCost,
+                entity.TaxAmount,
+                entity.TotalEstimate,
+                entity.Currency),
+            entity.Notes,
             entity.Services
                 .Where(service => !service.IsDeleted)
                 .OrderBy(service => service.Name)
@@ -20,7 +29,10 @@ public static class BookingMapper
                     service.Id,
                     service.ServiceCatalogItemId,
                     service.Name,
+                    service.Description,
+                    service.Category,
                     service.BasePrice,
+                    service.EstimatedLaborCost,
                     service.EstimatedDuration))
                 .ToList());
 }

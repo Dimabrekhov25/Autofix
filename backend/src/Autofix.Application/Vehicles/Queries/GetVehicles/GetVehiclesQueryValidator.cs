@@ -12,5 +12,8 @@ public sealed class GetVehiclesQueryValidator : AbstractValidator<GetVehiclesQue
         RuleFor(x => x.Page.PageSize)
             .GreaterThan(0)
             .LessThanOrEqualTo(100);
+
+        RuleFor(x => x.Vin)
+            .MaximumLength(17);
     }
 }

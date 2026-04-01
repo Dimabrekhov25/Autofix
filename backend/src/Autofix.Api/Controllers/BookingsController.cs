@@ -2,7 +2,9 @@ using Autofix.Api.Models;
 using Autofix.Application.Bookings.Commands.CreateBooking;
 using Autofix.Application.Bookings.Commands.DeleteBooking;
 using Autofix.Application.Bookings.Commands.UpdateBooking;
+using Autofix.Application.Bookings.Queries.GetAvailableBookingSlots;
 using Autofix.Application.Bookings.Queries.GetBookingById;
+using Autofix.Application.Bookings.Queries.GetBookingQuote;
 using Autofix.Application.Bookings.Queries.GetBookings;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -19,9 +21,27 @@ public sealed class BookingsController(IMediator mediator) : BaseController
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll([FromQuery] GetBookingsQuery query, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetBookingsQuery(), cancellationToken);
+        var result = await mediator.Send(query, cancellationToken);
+        return OkResult(result);
+    }
+
+    [HttpPost("quote")]
+    public async Task<IActionResult> GetQuote(
+        [FromBody] GetBookingQuoteQuery query,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(query, cancellationToken);
+        return OkResult(result);
+    }
+
+    [HttpGet("slots")]
+    public async Task<IActionResult> GetAvailableSlots(
+        [FromQuery] GetAvailableBookingSlotsQuery query,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(query, cancellationToken);
         return OkResult(result);
     }
 

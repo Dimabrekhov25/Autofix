@@ -9,7 +9,10 @@ public interface IServiceCatalogRepository
     Task<IReadOnlyList<ServiceCatalogItem>> GetByIdsAsync(
         IReadOnlyCollection<Guid> ids,
         CancellationToken cancellationToken);
-    Task<IReadOnlyList<ServiceCatalogItem>> GetAllAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyList<ServiceCatalogItem>> GetAllAsync(
+        bool? isActive,
+        Guid[]? ids,
+        CancellationToken cancellationToken);
     Task UpdateAsync(ServiceCatalogItem item, CancellationToken cancellationToken);
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
 }

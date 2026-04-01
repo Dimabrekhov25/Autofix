@@ -29,9 +29,19 @@ namespace Autofix.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<Guid?>("BookingTimeSlotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("booking_time_slot_id");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
 
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid")
@@ -45,9 +55,23 @@ namespace Autofix.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("end_at");
 
+                    b.Property<decimal>("EstimatedLaborCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("estimated_labor_cost");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean")
                         .HasColumnName("is_deleted");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<int>("PaymentOption")
+                        .HasColumnType("integer")
+                        .HasColumnName("payment_option");
 
                     b.Property<DateTime>("StartAt")
                         .HasColumnType("timestamp with time zone")
@@ -56,6 +80,21 @@ namespace Autofix.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer")
                         .HasColumnName("status");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("subtotal");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("tax_amount");
+
+                    b.Property<decimal>("TotalEstimate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_estimate");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -67,6 +106,11 @@ namespace Autofix.Infrastructure.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_bookings");
+
+                    b.HasIndex("BookingTimeSlotId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bookings_booking_time_slot_id")
+                        .HasFilter("\"booking_time_slot_id\" IS NOT NULL AND \"is_deleted\" = false AND \"status\" <> 3");
 
                     b.HasIndex("CustomerId")
                         .HasDatabaseName("ix_bookings_customer_id");
@@ -85,12 +129,17 @@ namespace Autofix.Infrastructure.Migrations
                         .HasColumnName("id");
 
                     b.Property<decimal>("BasePrice")
-                        .HasColumnType("numeric")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
                         .HasColumnName("base_price");
 
                     b.Property<Guid>("BookingId")
                         .HasColumnType("uuid")
                         .HasColumnName("booking_id");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer")
+                        .HasColumnName("category");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -100,9 +149,20 @@ namespace Autofix.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
                     b.Property<TimeSpan>("EstimatedDuration")
                         .HasColumnType("interval")
                         .HasColumnName("estimated_duration");
+
+                    b.Property<decimal>("EstimatedLaborCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("estimated_labor_cost");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean")
@@ -110,7 +170,8 @@ namespace Autofix.Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
                     b.Property<Guid>("ServiceCatalogItemId")
@@ -133,16 +194,12 @@ namespace Autofix.Infrastructure.Migrations
                     b.ToTable("booking_service_items", (string)null);
                 });
 
-            modelBuilder.Entity("Autofix.Domain.Entities.Catalog.ServiceCatalogItem", b =>
+            modelBuilder.Entity("Autofix.Domain.Entities.Booking.BookingTimeSlot", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    b.Property<decimal>("BasePrice")
-                        .HasColumnType("numeric")
-                        .HasColumnName("base_price");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -152,9 +209,77 @@ namespace Autofix.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("label");
+
+                    b.Property<DateTime>("StartAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("start_at");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_booking_time_slots");
+
+                    b.HasIndex("StartAt")
+                        .IsUnique()
+                        .HasDatabaseName("ix_booking_time_slots_start_at")
+                        .HasFilter("\"is_deleted\" = false");
+
+                    b.ToTable("booking_time_slots", (string)null);
+                });
+
+            modelBuilder.Entity("Autofix.Domain.Entities.Catalog.ServiceCatalogItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("BasePrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("base_price");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer")
+                        .HasColumnName("category");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
                     b.Property<TimeSpan>("EstimatedDuration")
                         .HasColumnType("interval")
                         .HasColumnName("estimated_duration");
+
+                    b.Property<decimal>("EstimatedLaborCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("estimated_labor_cost");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -166,7 +291,8 @@ namespace Autofix.Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -861,6 +987,11 @@ namespace Autofix.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
+                    b.Property<string>("Engine")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("engine");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean")
                         .HasColumnName("is_deleted");
@@ -871,26 +1002,39 @@ namespace Autofix.Infrastructure.Migrations
 
                     b.Property<string>("LicensePlate")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("license_plate");
 
                     b.Property<string>("Make")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("make");
 
                     b.Property<string>("Model")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("model");
 
                     b.Property<Guid>("OwnerCustomerId")
                         .HasColumnType("uuid")
                         .HasColumnName("owner_customer_id");
 
+                    b.Property<string>("Trim")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("trim");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
+
+                    b.Property<string>("Vin")
+                        .HasMaxLength(17)
+                        .HasColumnType("character varying(17)")
+                        .HasColumnName("vin");
 
                     b.Property<int>("Year")
                         .HasColumnType("integer")
@@ -901,6 +1045,11 @@ namespace Autofix.Infrastructure.Migrations
 
                     b.HasIndex("OwnerCustomerId")
                         .HasDatabaseName("ix_vehicles_owner_customer_id");
+
+                    b.HasIndex("Vin")
+                        .IsUnique()
+                        .HasDatabaseName("ix_vehicles_vin")
+                        .HasFilter("\"vin\" IS NOT NULL AND \"is_deleted\" = false");
 
                     b.ToTable("vehicles", (string)null);
                 });
@@ -1230,6 +1379,12 @@ namespace Autofix.Infrastructure.Migrations
 
             modelBuilder.Entity("Autofix.Domain.Entities.Booking.Booking", b =>
                 {
+                    b.HasOne("Autofix.Domain.Entities.Booking.BookingTimeSlot", "BookingTimeSlot")
+                        .WithMany("Bookings")
+                        .HasForeignKey("BookingTimeSlotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_bookings_booking_time_slots_booking_time_slot_id");
+
                     b.HasOne("Autofix.Domain.Entities.People.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -1243,6 +1398,8 @@ namespace Autofix.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_bookings_vehicles_vehicle_id");
+
+                    b.Navigation("BookingTimeSlot");
 
                     b.Navigation("Customer");
 
@@ -1516,6 +1673,11 @@ namespace Autofix.Infrastructure.Migrations
             modelBuilder.Entity("Autofix.Domain.Entities.Booking.Booking", b =>
                 {
                     b.Navigation("Services");
+                });
+
+            modelBuilder.Entity("Autofix.Domain.Entities.Booking.BookingTimeSlot", b =>
+                {
+                    b.Navigation("Bookings");
                 });
 
             modelBuilder.Entity("Autofix.Domain.Entities.Finance.Invoice", b =>

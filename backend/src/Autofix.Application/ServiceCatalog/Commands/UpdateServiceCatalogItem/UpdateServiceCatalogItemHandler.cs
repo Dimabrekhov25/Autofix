@@ -20,7 +20,10 @@ public sealed class UpdateServiceCatalogItemHandler(IServiceCatalogRepository re
         }
 
         item.Name = request.Name;
+        item.Description = request.Description;
+        item.Category = request.Category;
         item.BasePrice = request.BasePrice;
+        item.EstimatedLaborCost = request.EstimatedLaborCost;
         item.EstimatedDuration = request.EstimatedDuration;
         item.IsActive = request.IsActive;
         item.UpdatedAt = DateTime.UtcNow;

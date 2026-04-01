@@ -1,15 +1,30 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
+import {
+  createVehicleRequest,
+  decodeVinRequest,
+  getBookingErrorMessage,
+  getCurrentCustomerRequest,
+  getServiceCatalogItemsRequest,
+  getVehiclesRequest,
+  type CustomerDto,
+  type ServiceCatalogItemDto,
+  type VehicleDto,
+} from '../../apis/bookingApi'
+import { useAuth } from '../../features/auth/useAuth'
 import { BookingMobileStepNav } from '../../features/booking/components/BookingMobileStepNav'
 import { BookingProgressHeader } from '../../features/booking/components/BookingProgressHeader'
 import { BookingSelectionSummary } from '../../features/booking/components/BookingSelectionSummary'
 import {
-  bookingTimeSlots,
-  parseBookingPrice,
-  resolveBookingSelection,
-} from '../../features/booking/constants/booking-content'
-import { formatBookingDateLabel } from '../../features/booking/lib/booking-date'
+  buildVehicleDetailsLabel,
+  buildVehicleLabel,
+  formatBookingCurrency,
+  formatBookingDuration,
+  getSelectedCatalogItemIds,
+  mapServiceTotal,
+  resolveBookingOptionIcon,
+} from '../../features/booking/lib/booking-api-helpers'
 import {
   createBookingSearchParams,
   resolveBookingFlowState,
@@ -19,46 +34,107 @@ import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 import { TextField } from '../../shared/ui/TextField'
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 
-const vehicleYearOptions = Array.from({ length: 12 }, (_, index) => String(2026 - index))
+const vehicleYearOptions = Array.from({ length: 25 }, (_, index) => String(2026 - index))
 
-const savedVehiclePreset = {
-  vehicleVin: '5YJ3E1EB7NF2XXXXX',
-  vehicleMake: 'Tesla',
-  vehicleModel: 'Model 3',
-  vehicleYear: '2022',
-  vehicleTrim: 'Performance Dual Motor',
-} as const
-
-function formatScheduledFor(monthKey: string, date: number, slotId: string) {
-  const slot = bookingTimeSlots.find((item) => item.id === slotId)
-  return formatBookingDateLabel(monthKey, date, slot?.label ?? '09:15 AM')
+function buildVehicleState(vehicle: VehicleDto) {
+  return {
+    selectedVehicleId: vehicle.id,
+    vehicleVin: vehicle.vin,
+    vehicleLicensePlate: vehicle.licensePlate,
+    vehicleMake: vehicle.make,
+    vehicleModel: vehicle.model,
+    vehicleYear: String(vehicle.year),
+    vehicleTrim: vehicle.trim ?? '',
+    vehicleEngine: vehicle.engine ?? '',
+  }
 }
 
 export function BookingVehiclePage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const { tokens, user } = useAuth()
+  const accessToken = tokens?.accessToken
   const bookingState = useMemo(() => resolveBookingFlowState(searchParams), [searchParams])
-  const selection = useMemo(
-    () =>
-      resolveBookingSelection(
-        bookingState.kind,
-        bookingState.selectedDiagnosticId,
-        bookingState.selectedServiceIds.join(',')
-      ),
-    [bookingState.kind, bookingState.selectedDiagnosticId, bookingState.selectedServiceIds]
+  const [customer, setCustomer] = useState<CustomerDto | null>(null)
+  const [vehicles, setVehicles] = useState<VehicleDto[]>([])
+  const [catalogItems, setCatalogItems] = useState<ServiceCatalogItemDto[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isDecodingVin, setIsDecodingVin] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const selectedCatalogItemIdsKey =
+    bookingState.kind === 'diagnostic'
+      ? bookingState.selectedDiagnosticId
+      : bookingState.selectedServiceIds.join(',')
+  const selectedCatalogItemIds = useMemo(
+    () => getSelectedCatalogItemIds(bookingState),
+    [bookingState.kind, selectedCatalogItemIdsKey],
   )
 
-  const subtotal = selection.selectedOptions.reduce(
-    (sum, option) => sum + parseBookingPrice(option.priceLabel),
-    0
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadPageData() {
+      if (!user) {
+        return
+      }
+
+      setIsLoading(true)
+      setErrorMessage(null)
+
+      try {
+        const currentCustomer = await getCurrentCustomerRequest(user.id, accessToken)
+        const [vehiclesResult, services, diagnostics] = await Promise.all([
+          getVehiclesRequest({ ownerCustomerId: currentCustomer.id }, accessToken),
+          getServiceCatalogItemsRequest({ category: 0, isActive: true }, accessToken),
+          getServiceCatalogItemsRequest({ category: 1, isActive: true }, accessToken),
+        ])
+
+        if (!isMounted) {
+          return
+        }
+
+        setCustomer(currentCustomer)
+        setVehicles(vehiclesResult.items)
+        setCatalogItems([...services, ...diagnostics])
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(
+            getBookingErrorMessage(error, 'Unable to load your vehicles right now.'),
+          )
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadPageData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [accessToken, user])
+
+  const selectedOptions = useMemo(
+    () => catalogItems.filter((item) => selectedCatalogItemIds.includes(item.id)),
+    [catalogItems, selectedCatalogItemIds],
   )
-  const estimatedLabor = selection.selectedOptions.length * 22.5
+  const subtotal = selectedOptions.reduce((sum, option) => sum + option.basePrice, 0)
+  const estimatedLabor = selectedOptions.reduce(
+    (sum, option) => sum + option.estimatedLaborCost,
+    0,
+  )
   const totalEstimate = subtotal + estimatedLabor
-  const scheduledFor = formatScheduledFor(
-    bookingState.selectedMonthKey,
-    bookingState.selectedDate,
-    bookingState.selectedSlotId
-  )
+  const scheduledFor = bookingState.selectedSlotStartAt
+    ? new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(bookingState.selectedSlotStartAt))
+    : 'Select schedule first'
   const vehicleQuery = createBookingSearchParams(bookingState, {
     includeScheduleState: bookingState.scheduleVisited,
   }).toString()
@@ -79,17 +155,111 @@ export function BookingVehiclePage() {
   }
   const selectedVehicleLabel =
     bookingState.vehicleMake || bookingState.vehicleModel
-      ? `${bookingState.vehicleMake} ${bookingState.vehicleModel}`.trim()
+      ? `${bookingState.vehicleYear ? `${bookingState.vehicleYear} ` : ''}${bookingState.vehicleMake} ${bookingState.vehicleModel}`.trim()
       : undefined
 
   const updateBookingState = (
     partial: Partial<typeof bookingState>,
-    includeScheduleState = bookingState.scheduleVisited
+    includeScheduleState = bookingState.scheduleVisited,
   ) => {
     setSearchParams(
       createBookingSearchParams({ ...bookingState, ...partial }, { includeScheduleState }),
-      { replace: true }
+      { replace: true },
     )
+  }
+
+  const updateManualVehicleState = (partial: Partial<typeof bookingState>) => {
+    updateBookingState({ ...partial, selectedVehicleId: '' })
+  }
+
+  const handleDecodeVin = async () => {
+    const normalizedVin = bookingState.vehicleVin.trim().toUpperCase()
+
+    if (!normalizedVin) {
+      setErrorMessage('Enter a VIN before decoding.')
+      return
+    }
+
+    setIsDecodingVin(true)
+    setErrorMessage(null)
+
+    try {
+      const decoded = await decodeVinRequest(normalizedVin, accessToken)
+
+      updateManualVehicleState({
+        vehicleVin: decoded.vin,
+        vehicleMake: decoded.make ?? bookingState.vehicleMake,
+        vehicleModel: decoded.model ?? bookingState.vehicleModel,
+        vehicleYear: decoded.year ? String(decoded.year) : bookingState.vehicleYear,
+        vehicleTrim: decoded.trim ?? bookingState.vehicleTrim,
+        vehicleEngine: decoded.engine ?? bookingState.vehicleEngine,
+      })
+    } catch (error) {
+      setErrorMessage(getBookingErrorMessage(error, 'Unable to decode this VIN.'))
+    } finally {
+      setIsDecodingVin(false)
+    }
+  }
+
+  const handleContinue = async () => {
+    if (bookingState.selectedVehicleId) {
+      navigate(stepLinks.summary)
+      return
+    }
+
+    if (!customer) {
+      setErrorMessage('Customer profile was not resolved for this account.')
+      return
+    }
+
+    const normalizedVin = bookingState.vehicleVin.trim().toUpperCase()
+    const normalizedPlate = bookingState.vehicleLicensePlate.trim().toUpperCase()
+    const normalizedMake = bookingState.vehicleMake.trim()
+    const normalizedModel = bookingState.vehicleModel.trim()
+    const parsedYear = Number.parseInt(bookingState.vehicleYear, 10)
+
+    if (!normalizedPlate || !normalizedVin || !normalizedMake || !normalizedModel || !Number.isFinite(parsedYear)) {
+      setErrorMessage('License plate, VIN, make, model, and year are required.')
+      return
+    }
+
+    setIsSubmitting(true)
+    setErrorMessage(null)
+
+    try {
+      const createdVehicle = await createVehicleRequest(
+        {
+          ownerCustomerId: customer.id,
+          licensePlate: normalizedPlate,
+          vin: normalizedVin,
+          make: normalizedMake,
+          model: normalizedModel,
+          year: parsedYear,
+          trim: bookingState.vehicleTrim.trim() || null,
+          engine: bookingState.vehicleEngine.trim() || null,
+          isDrivable: true,
+        },
+        accessToken,
+      )
+
+      setVehicles((current) => [createdVehicle, ...current])
+
+      navigate(
+        `${APP_ROUTES.bookingSummary}?${createBookingSearchParams(
+          {
+            ...bookingState,
+            ...buildVehicleState(createdVehicle),
+          },
+          { includeScheduleState: true },
+        ).toString()}`,
+      )
+    } catch (error) {
+      setErrorMessage(
+        getBookingErrorMessage(error, 'Unable to save the vehicle right now.'),
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -98,34 +268,74 @@ export function BookingVehiclePage() {
         <BookingProgressHeader
           currentStep="vehicle"
           title="Vehicle Details"
-          description="Enter your vehicle information for more accurate diagnostics."
+          description="Select one of your vehicles or create a new one for this booking."
           stepLinks={stepLinks}
         />
 
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
           <div className="space-y-8 lg:col-span-8">
             <section className="space-y-8 rounded-xl bg-surface-container-lowest p-8 shadow-panel">
+              {errorMessage ? (
+                <div className="rounded-2xl border border-error/15 bg-error/5 px-4 py-3 text-sm text-error">
+                  {errorMessage}
+                </div>
+              ) : null}
+
               <div className="relative">
                 <label className="mb-3 block text-xs font-bold uppercase tracking-widest text-on-surface-variant">
                   Saved Vehicles
                 </label>
-                <button
-                  type="button"
-                  onClick={() => updateBookingState(savedVehiclePreset)}
-                  className="group flex w-full items-center justify-between rounded-xl bg-surface-container-low px-5 py-4 text-left transition-all hover:bg-surface-container hover:shadow-inner"
-                >
-                  <div className="flex items-center gap-4">
-                    <MaterialIcon name="directions_car" className="text-primary" />
-                    <div>
-                      <p className="font-bold leading-none text-slate-900">Select from my vehicles</p>
-                      <p className="text-xs text-on-surface-variant">Choose from 2 registered cars</p>
-                    </div>
+                {isLoading ? (
+                  <div className="rounded-xl bg-surface-container-low px-5 py-4 text-sm text-on-surface-variant">
+                    Loading your vehicles...
                   </div>
-                  <MaterialIcon
-                    name="expand_more"
-                    className="text-on-surface-variant transition-transform group-hover:translate-y-0.5"
-                  />
-                </button>
+                ) : vehicles.length === 0 ? (
+                  <div className="rounded-xl bg-surface-container-low px-5 py-4 text-sm text-on-surface-variant">
+                    No saved vehicles found for this customer. Enter one manually below.
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {vehicles.map((vehicle) => {
+                      const isSelected = vehicle.id === bookingState.selectedVehicleId
+
+                      return (
+                        <button
+                          key={vehicle.id}
+                          type="button"
+                          onClick={() => updateBookingState(buildVehicleState(vehicle))}
+                          className={[
+                            'flex w-full items-center justify-between rounded-xl px-5 py-4 text-left transition-all',
+                            isSelected
+                              ? 'bg-primary/10 ring-2 ring-primary/20'
+                              : 'bg-surface-container-low hover:bg-surface-container',
+                          ].join(' ')}
+                        >
+                          <div className="flex items-center gap-4">
+                            <MaterialIcon name="directions_car" className="text-primary" />
+                            <div>
+                              <p className="font-bold leading-none text-slate-900">
+                                {buildVehicleLabel(vehicle)}
+                              </p>
+                              <p className="mt-1 text-xs text-on-surface-variant">
+                                {vehicle.licensePlate} | {vehicle.vin}
+                              </p>
+                              {buildVehicleDetailsLabel(vehicle) ? (
+                                <p className="mt-1 text-xs text-on-surface-variant">
+                                  {buildVehicleDetailsLabel(vehicle)}
+                                </p>
+                              ) : null}
+                            </div>
+                          </div>
+                          {isSelected ? (
+                            <MaterialIcon name="check_circle" className="text-primary" />
+                          ) : (
+                            <MaterialIcon name="chevron_right" className="text-on-surface-variant" />
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-4">
@@ -150,7 +360,9 @@ export function BookingVehiclePage() {
                       type="text"
                       placeholder="17-digit VIN number"
                       value={bookingState.vehicleVin}
-                      onChange={(event) => updateBookingState({ vehicleVin: event.target.value })}
+                      onChange={(event) =>
+                        updateManualVehicleState({ vehicleVin: event.target.value.toUpperCase() })
+                      }
                       className="w-full rounded-xl border border-transparent bg-surface-container-low px-5 py-4 pr-12 font-mono tracking-wider text-sm text-on-surface outline-none transition placeholder:text-on-surface-variant/70 focus:border-primary/20 focus:bg-white focus:ring-2 focus:ring-primary/15"
                     />
                     <div className="absolute inset-y-0 right-4 flex items-center text-outline-variant">
@@ -159,31 +371,43 @@ export function BookingVehiclePage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (bookingState.vehicleVin.startsWith('5YJ') || !bookingState.vehicleVin.trim()) {
-                        updateBookingState(savedVehiclePreset)
-                      }
-                    }}
-                    className="rounded-xl bg-surface-container-highest px-8 py-4 font-bold text-primary transition-all hover:bg-primary-container hover:text-on-primary-container active:scale-95"
+                    onClick={() => void handleDecodeVin()}
+                    disabled={isDecodingVin}
+                    className="rounded-xl bg-surface-container-highest px-8 py-4 font-bold text-primary transition-all hover:bg-primary-container hover:text-on-primary-container active:scale-95 disabled:opacity-60"
                   >
-                    Decode
+                    {isDecodingVin ? 'Decoding...' : 'Decode'}
                   </button>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <TextField
+                  label="License Plate"
+                  placeholder="e.g. AB1234"
+                  value={bookingState.vehicleLicensePlate}
+                  onChange={(event) =>
+                    updateManualVehicleState({
+                      vehicleLicensePlate: event.target.value.toUpperCase(),
+                    })
+                  }
+                  inputClassName="px-5 py-4"
+                />
+                <TextField
                   label="Make"
                   placeholder="e.g. Tesla"
                   value={bookingState.vehicleMake}
-                  onChange={(event) => updateBookingState({ vehicleMake: event.target.value })}
+                  onChange={(event) =>
+                    updateManualVehicleState({ vehicleMake: event.target.value })
+                  }
                   inputClassName="px-5 py-4"
                 />
                 <TextField
                   label="Model"
                   placeholder="e.g. Model 3"
                   value={bookingState.vehicleModel}
-                  onChange={(event) => updateBookingState({ vehicleModel: event.target.value })}
+                  onChange={(event) =>
+                    updateManualVehicleState({ vehicleModel: event.target.value })
+                  }
                   inputClassName="px-5 py-4"
                 />
 
@@ -193,7 +417,9 @@ export function BookingVehiclePage() {
                   </span>
                   <select
                     value={bookingState.vehicleYear}
-                    onChange={(event) => updateBookingState({ vehicleYear: event.target.value })}
+                    onChange={(event) =>
+                      updateManualVehicleState({ vehicleYear: event.target.value })
+                    }
                     className="w-full appearance-none rounded-xl border border-transparent bg-surface-container-low px-5 py-4 text-sm text-on-surface outline-none transition focus:border-primary/20 focus:bg-white focus:ring-2 focus:ring-primary/15"
                   >
                     <option value="">Select Year</option>
@@ -206,10 +432,21 @@ export function BookingVehiclePage() {
                 </label>
 
                 <TextField
-                  label="Trim/Engine"
-                  placeholder="e.g. Performance Dual Motor"
+                  label="Trim"
+                  placeholder="e.g. Performance"
                   value={bookingState.vehicleTrim}
-                  onChange={(event) => updateBookingState({ vehicleTrim: event.target.value })}
+                  onChange={(event) =>
+                    updateManualVehicleState({ vehicleTrim: event.target.value })
+                  }
+                  inputClassName="px-5 py-4"
+                />
+                <TextField
+                  label="Engine"
+                  placeholder="e.g. Dual Motor"
+                  value={bookingState.vehicleEngine}
+                  onChange={(event) =>
+                    updateManualVehicleState({ vehicleEngine: event.target.value })
+                  }
                   inputClassName="px-5 py-4"
                 />
               </div>
@@ -228,7 +465,7 @@ export function BookingVehiclePage() {
                   <div>
                     <p className="font-bold text-slate-900">VIN Verification</p>
                     <p className="text-xs text-on-surface-variant">
-                      Encrypted connection for vehicle data lookup
+                      Vehicle data is now resolved against the backend decode endpoint.
                     </p>
                   </div>
                 </div>
@@ -242,24 +479,29 @@ export function BookingVehiclePage() {
                 <div className="bg-slate-900 p-6 text-white">
                   <h3 className="font-headline text-lg font-bold">Booking Summary</h3>
                   <p className="mt-1 text-xs uppercase tracking-widest text-slate-400">
-                    Order #AF-20942
+                    Live estimate before quote
                   </p>
                 </div>
 
                 <div className="space-y-6 p-6">
                   <div className="space-y-4">
-                    {selection.selectedOptions.map((option) => (
+                    {selectedOptions.map((option) => (
                       <div key={option.id} className="flex items-start justify-between">
                         <div className="flex gap-3">
-                          <MaterialIcon name={option.icon} className="text-xl text-primary" />
+                          <MaterialIcon
+                            name={resolveBookingOptionIcon(option.name, option.category)}
+                            className="text-xl text-primary"
+                          />
                           <div>
-                            <p className="text-sm font-bold text-slate-900">{option.title}</p>
+                            <p className="text-sm font-bold text-slate-900">{option.name}</p>
                             <p className="text-xs text-on-surface-variant">
-                              {option.summaryLabel ?? option.duration}
+                              {formatBookingDuration(option.estimatedDuration)}
                             </p>
                           </div>
                         </div>
-                        <span className="text-sm font-bold">{option.priceLabel}</span>
+                        <span className="text-sm font-bold">
+                          {formatBookingCurrency(mapServiceTotal(option))}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -283,11 +525,15 @@ export function BookingVehiclePage() {
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-on-surface-variant">Subtotal</span>
-                      <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                      <span className="font-semibold">
+                        {formatBookingCurrency(subtotal)}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-on-surface-variant">Estimated Labor</span>
-                      <span className="font-semibold">${estimatedLabor.toFixed(2)}</span>
+                      <span className="font-semibold">
+                        {formatBookingCurrency(estimatedLabor)}
+                      </span>
                     </div>
                     <div className="flex items-end justify-between border-t border-surface-container pt-3">
                       <span className="text-sm font-bold text-slate-900">Total Estimate</span>
@@ -296,7 +542,7 @@ export function BookingVehiclePage() {
                           Total USD
                         </span>
                         <span className="text-2xl font-black leading-none text-primary">
-                          ${totalEstimate.toFixed(2)}
+                          {formatBookingCurrency(totalEstimate)}
                         </span>
                       </div>
                     </div>
@@ -304,16 +550,16 @@ export function BookingVehiclePage() {
 
                   <button
                     type="button"
-                    onClick={() => navigate(stepLinks.summary)}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-primary px-6 py-5 text-lg font-extrabold text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] hover:bg-primary-dim"
+                    onClick={() => void handleContinue()}
+                    disabled={isSubmitting}
+                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-primary px-6 py-5 text-lg font-extrabold text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] hover:bg-primary-dim disabled:opacity-60"
                   >
-                    Continue to Summary
+                    {isSubmitting ? 'Saving vehicle...' : 'Continue to Summary'}
                     <MaterialIcon name="arrow_forward" />
                   </button>
 
                   <p className="text-center text-[10px] leading-relaxed text-on-surface-variant">
-                    No credit card required at this step. Final pricing may vary based on vehicle
-                    inspection.
+                    Price here is informative. Final source of truth comes from the booking quote.
                   </p>
                 </div>
               </div>
@@ -337,9 +583,9 @@ export function BookingVehiclePage() {
           selectedDateLabel={scheduledFor}
           selectedSlotId={bookingState.selectedSlotId}
           selectedServiceLabel={
-            selection.selectedOptions.length <= 1
-              ? selection.option.title
-              : `${selection.selectedOptions[0].title} +${selection.selectedOptions.length - 1} more`
+            selectedOptions.length <= 1
+              ? selectedOptions[0]?.name
+              : `${selectedOptions[0]?.name ?? 'Service'} +${selectedOptions.length - 1} more`
           }
           selectedVehicleLabel={selectedVehicleLabel}
           activeCardId="vehicle"

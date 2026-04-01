@@ -1,66 +1,114 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import {
-  bookingTimeSlots,
-  parseBookingPrice,
-  resolveBookingSelection,
-} from '../../features/booking/constants/booking-content'
-import { formatBookingDateLabel } from '../../features/booking/lib/booking-date'
+  getBookingByIdRequest,
+  getBookingErrorMessage,
+  type BookingDto,
+} from '../../apis/bookingApi'
+import { useAuth } from '../../features/auth/useAuth'
+import {
+  buildVehicleDetailsLabel,
+  buildVehicleLabel,
+  formatBookingCurrency,
+} from '../../features/booking/lib/booking-api-helpers'
 import { resolveBookingFlowState } from '../../features/booking/lib/booking-flow'
 import { APP_ROUTES } from '../../shared/config/routes'
 import { BrandHomeLink } from '../../shared/ui/BrandHomeLink'
 import { Button } from '../../shared/ui/Button'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 
-function createBookingReference(searchParams: URLSearchParams) {
-  const seed = Array.from(searchParams.toString()).reduce(
-    (sum, char) => sum + char.charCodeAt(0),
-    0
-  )
+function createBookingReference(bookingId?: string) {
+  if (!bookingId) {
+    return 'AF-PENDING'
+  }
 
-  return `AF-${String(20000 + (seed % 80000)).padStart(5, '0')}`
+  return `AF-${bookingId.replace(/-/g, '').slice(0, 8).toUpperCase()}`
 }
 
 export function BookingConfirmationPage() {
   const [searchParams] = useSearchParams()
+  const { tokens } = useAuth()
+  const accessToken = tokens?.accessToken
   const bookingState = useMemo(() => resolveBookingFlowState(searchParams), [searchParams])
-  const selection = useMemo(
-    () =>
-      resolveBookingSelection(
-        bookingState.kind,
-        bookingState.selectedDiagnosticId,
-        bookingState.selectedServiceIds.join(',')
-      ),
-    [bookingState.kind, bookingState.selectedDiagnosticId, bookingState.selectedServiceIds]
-  )
+  const [booking, setBooking] = useState<BookingDto | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const subtotal = selection.selectedOptions.reduce(
-    (sum, option) => sum + parseBookingPrice(option.priceLabel),
-    0
-  )
-  const estimatedLabor = selection.selectedOptions.length * 22.5
-  const totalEstimate = subtotal + estimatedLabor
-  const selectedSlotLabel =
-    bookingTimeSlots.find((slot) => slot.id === bookingState.selectedSlotId)?.label ?? '09:15 AM'
-  const selectedDateLabel = formatBookingDateLabel(
-    bookingState.selectedMonthKey,
-    bookingState.selectedDate,
-    selectedSlotLabel
-  )
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadBooking() {
+      if (!bookingState.bookingId) {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+        return
+      }
+
+      setIsLoading(true)
+      setErrorMessage(null)
+
+      try {
+        const nextBooking = await getBookingByIdRequest(bookingState.bookingId, accessToken)
+
+        if (isMounted) {
+          setBooking(nextBooking)
+        }
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(
+            getBookingErrorMessage(error, 'Unable to load the created booking details.'),
+          )
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadBooking()
+
+    return () => {
+      isMounted = false
+    }
+  }, [accessToken, bookingState.bookingId])
+
+  const startAt = booking?.startAt ?? bookingState.selectedSlotStartAt
+  const selectedDateLabel = startAt
+    ? new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(startAt))
+    : 'Pending'
   const selectedVehicleLabel =
-    bookingState.vehicleYear || bookingState.vehicleMake || bookingState.vehicleModel
-      ? `${bookingState.vehicleYear ? `${bookingState.vehicleYear} ` : ''}${bookingState.vehicleMake} ${bookingState.vehicleModel}`.trim()
+    bookingState.vehicleMake || bookingState.vehicleModel
+      ? buildVehicleLabel({
+          year: Number.parseInt(bookingState.vehicleYear, 10) || 0,
+          make: bookingState.vehicleMake,
+          model: bookingState.vehicleModel,
+        })
       : 'Vehicle details pending'
+  const selectedVehicleDetails = buildVehicleDetailsLabel({
+    trim: bookingState.vehicleTrim,
+    engine: bookingState.vehicleEngine,
+  })
   const paymentLabel =
-    bookingState.paymentMethod === 'now' ? 'Card Payment' : 'Pay at Shop'
-  const paymentStatusLabel = bookingState.paymentMethod === 'now' ? 'Paid' : 'Pending'
+    booking?.paymentOption === 1 || bookingState.paymentMethod === 'now'
+      ? 'Card Payment'
+      : 'Pay at Shop'
+  const paymentStatusLabel =
+    booking?.paymentOption === 1 || bookingState.paymentMethod === 'now' ? 'Paid' : 'Pending'
   const paymentStatusClassName =
-    bookingState.paymentMethod === 'now'
+    booking?.paymentOption === 1 || bookingState.paymentMethod === 'now'
       ? 'bg-primary/10 text-primary'
       : 'bg-secondary/10 text-secondary'
-  const servicesLabel = selection.selectedOptions.map((option) => option.title).join(', ')
-  const bookingReference = createBookingReference(searchParams)
+  const servicesLabel =
+    booking?.services.map((service) => service.name).join(', ') || 'Pending'
+  const bookingReference = createBookingReference(booking?.id ?? bookingState.bookingId)
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-surface text-on-surface">
@@ -74,6 +122,12 @@ export function BookingConfirmationPage() {
       </header>
 
       <main className="relative z-10 mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:py-10">
+        {errorMessage ? (
+          <div className="mb-6 rounded-2xl border border-error/15 bg-error/5 px-5 py-4 text-sm text-error">
+            {errorMessage}
+          </div>
+        ) : null}
+
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.85fr)]">
           <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-surface-container-lowest shadow-[0_32px_64px_-16px_rgba(15,23,42,0.16)]">
             <div className="relative border-b border-slate-100 px-8 py-8 sm:px-10">
@@ -87,7 +141,7 @@ export function BookingConfirmationPage() {
                 Booking Successfully Created!
               </h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-on-surface-variant">
-                Your appointment is confirmed. A copy of your booking summary has been sent to your email.
+                Your appointment is confirmed and stored on the backend.
               </p>
             </div>
 
@@ -124,6 +178,12 @@ export function BookingConfirmationPage() {
                   <p className="mt-1 font-headline text-base font-bold text-slate-900">
                     {selectedVehicleLabel}
                   </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {bookingState.vehicleLicensePlate} • {bookingState.vehicleVin || 'No VIN'}
+                  </p>
+                  {selectedVehicleDetails ? (
+                    <p className="mt-1 text-sm text-slate-500">{selectedVehicleDetails}</p>
+                  ) : null}
                 </div>
 
                 <div className="rounded-2xl bg-surface-container-low/65 p-5 md:col-span-2">
@@ -199,20 +259,50 @@ export function BookingConfirmationPage() {
                 </div>
 
                 <div className="rounded-2xl bg-surface-container-low p-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Subtotal</span>
-                    <span className="font-medium text-slate-900">${subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="mt-3 flex justify-between text-sm">
-                    <span className="text-slate-500">Estimated Labor</span>
-                    <span className="font-medium text-slate-900">${estimatedLabor.toFixed(2)}</span>
-                  </div>
-                  <div className="mt-4 flex items-end justify-between border-t border-slate-200 pt-4">
-                    <span className="font-headline text-lg font-bold text-slate-900">Total</span>
-                    <span className="font-headline text-2xl font-extrabold tracking-tight text-slate-900">
-                      ${totalEstimate.toFixed(2)}
-                    </span>
-                  </div>
+                  {isLoading ? (
+                    <p className="text-sm text-slate-500">Loading booking totals...</p>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Subtotal</span>
+                        <span className="font-medium text-slate-900">
+                          {formatBookingCurrency(
+                            booking?.pricing.subtotal ?? 0,
+                            booking?.pricing.currency,
+                          )}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex justify-between text-sm">
+                        <span className="text-slate-500">Estimated Labor</span>
+                        <span className="font-medium text-slate-900">
+                          {formatBookingCurrency(
+                            booking?.pricing.estimatedLaborCost ?? 0,
+                            booking?.pricing.currency,
+                          )}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex justify-between text-sm">
+                        <span className="text-slate-500">Tax</span>
+                        <span className="font-medium text-slate-900">
+                          {formatBookingCurrency(
+                            booking?.pricing.taxAmount ?? 0,
+                            booking?.pricing.currency,
+                          )}
+                        </span>
+                      </div>
+                      <div className="mt-4 flex items-end justify-between border-t border-slate-200 pt-4">
+                        <span className="font-headline text-lg font-bold text-slate-900">
+                          Total
+                        </span>
+                        <span className="font-headline text-2xl font-extrabold tracking-tight text-slate-900">
+                          {formatBookingCurrency(
+                            booking?.pricing.totalEstimate ?? 0,
+                            booking?.pricing.currency,
+                          )}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -222,10 +312,10 @@ export function BookingConfirmationPage() {
                 <MaterialIcon name="mail" className="mt-0.5 text-primary" />
                 <div>
                   <p className="font-headline text-base font-bold text-on-primary-container">
-                    Confirmation sent
+                    Confirmation ready
                   </p>
                   <p className="mt-1 text-sm leading-6 text-on-primary-container/80">
-                    The booking summary and reference number were prepared for email delivery and future lookup.
+                    The booking summary is sourced from the created backend booking and can be used for future lookup.
                   </p>
                 </div>
               </div>

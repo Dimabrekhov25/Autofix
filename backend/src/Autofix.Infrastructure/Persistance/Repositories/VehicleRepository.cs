@@ -21,13 +21,39 @@ public sealed class VehicleRepository(ApplicationDbContext dbContext) : IVehicle
             .FirstOrDefaultAsync(vehicle => vehicle.Id == id && !vehicle.IsDeleted, cancellationToken);
     }
 
+    public Task<Vehicle?> GetByVinAsync(string vin, CancellationToken cancellationToken)
+    {
+        var normalizedVin = vin.Trim().ToUpperInvariant();
+
+        return dbContext.Vehicles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                vehicle => vehicle.Vin == normalizedVin && !vehicle.IsDeleted,
+                cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Vehicle>> GetPageAsync(
         PageRequest page,
+        Guid? ownerCustomerId,
+        string? vin,
         CancellationToken cancellationToken)
     {
-        var vehicles = await dbContext.Vehicles
+        var query = dbContext.Vehicles
             .AsNoTracking()
-            .Where(vehicle => !vehicle.IsDeleted)
+            .Where(vehicle => !vehicle.IsDeleted);
+
+        if (ownerCustomerId.HasValue)
+        {
+            query = query.Where(vehicle => vehicle.OwnerCustomerId == ownerCustomerId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(vin))
+        {
+            var normalizedVin = vin.Trim().ToUpperInvariant();
+            query = query.Where(vehicle => vehicle.Vin != null && vehicle.Vin.Contains(normalizedVin));
+        }
+
+        var vehicles = await query
             .OrderBy(vehicle => vehicle.LicensePlate)
             .Skip(page.Skip)
             .Take(page.Take)
@@ -36,10 +62,26 @@ public sealed class VehicleRepository(ApplicationDbContext dbContext) : IVehicle
         return vehicles;
     }
 
-    public Task<int> CountAsync(CancellationToken cancellationToken)
+    public Task<int> CountAsync(
+        Guid? ownerCustomerId,
+        string? vin,
+        CancellationToken cancellationToken)
     {
-        return dbContext.Vehicles
-            .CountAsync(vehicle => !vehicle.IsDeleted, cancellationToken);
+        var query = dbContext.Vehicles
+            .Where(vehicle => !vehicle.IsDeleted);
+
+        if (ownerCustomerId.HasValue)
+        {
+            query = query.Where(vehicle => vehicle.OwnerCustomerId == ownerCustomerId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(vin))
+        {
+            var normalizedVin = vin.Trim().ToUpperInvariant();
+            query = query.Where(vehicle => vehicle.Vin != null && vehicle.Vin.Contains(normalizedVin));
+        }
+
+        return query.CountAsync(cancellationToken);
     }
 
     public Task UpdateAsync(Vehicle vehicle, CancellationToken cancellationToken)

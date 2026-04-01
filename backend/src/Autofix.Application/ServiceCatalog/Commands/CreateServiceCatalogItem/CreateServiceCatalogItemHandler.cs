@@ -15,7 +15,10 @@ public sealed class CreateServiceCatalogItemHandler(
         var item = new ServiceCatalogItem
         {
             Name = request.Name,
+            Description = request.Description,
+            Category = request.Category,
             BasePrice = request.BasePrice,
+            EstimatedLaborCost = request.EstimatedLaborCost,
             EstimatedDuration = request.EstimatedDuration,
             IsActive = request.IsActive
         };
