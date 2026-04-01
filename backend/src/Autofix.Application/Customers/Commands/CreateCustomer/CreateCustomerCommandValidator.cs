@@ -1,0 +1,32 @@
+using FluentValidation;
+
+namespace Autofix.Application.Customers.Commands.CreateCustomer;
+
+public sealed class CreateCustomerCommandValidator : AbstractValidator<CreateCustomerCommand>
+{
+    public CreateCustomerCommandValidator()
+    {
+        RuleFor(x => x.UserId)
+            .NotEmpty();
+
+        RuleFor(x => x.FullName)
+            .NotEmpty()
+            .Must(name => !string.IsNullOrWhiteSpace(name))
+            .WithMessage("Full name must not be empty or whitespace.")
+            .MaximumLength(200);
+
+        RuleFor(x => x.Phone)
+            .NotEmpty()
+            .Must(phone => !string.IsNullOrWhiteSpace(phone))
+            .WithMessage("Phone must not be empty or whitespace.")
+            .MaximumLength(50);
+
+        RuleFor(x => x.Email)
+            .MaximumLength(320)
+            .EmailAddress()
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
+
+        RuleFor(x => x.Notes)
+            .MaximumLength(2000);
+    }
+}

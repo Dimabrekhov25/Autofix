@@ -1,0 +1,6 @@
+@Autofix.Api_HostAddress = http://localhost:5142
+
+GET {{Autofix.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
