@@ -1,15 +1,23 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
+import {
+  getBookingErrorMessage,
+  getServiceCatalogItemsRequest,
+  type ServiceCatalogItemDto,
+} from '../../apis/bookingApi'
+import { useAuth } from '../../features/auth/useAuth'
 import { BookingMobileStepNav } from '../../features/booking/components/BookingMobileStepNav'
 import { BookingProgressHeader } from '../../features/booking/components/BookingProgressHeader'
 import { BookingSelectionSummary } from '../../features/booking/components/BookingSelectionSummary'
 import {
-  bookingOptionGroups,
-  bookingTimeSlots,
-  parseBookingPrice,
-} from '../../features/booking/constants/booking-content'
-import { formatBookingDateLabel } from '../../features/booking/lib/booking-date'
+  formatBookingCurrency,
+  formatBookingDuration,
+  formatIsoSlotLabel,
+  getSelectedCatalogItemIds,
+  mapServiceTotal,
+  resolveBookingOptionIcon,
+} from '../../features/booking/lib/booking-api-helpers'
 import {
   createBookingSearchParams,
   hasScheduleSelection,
@@ -20,51 +28,133 @@ import { APP_ROUTES } from '../../shared/config/routes'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 
+function parseDurationMinutes(duration: string) {
+  const [hoursPart = '0', minutesPart = '0'] = duration.split(':')
+  const hours = Number.parseInt(hoursPart, 10) || 0
+  const minutes = Number.parseInt(minutesPart, 10) || 0
+  return hours * 60 + minutes
+}
+
+function formatCombinedDuration(items: ServiceCatalogItemDto[]) {
+  const totalMinutes = items.reduce(
+    (sum, item) => sum + parseDurationMinutes(item.estimatedDuration),
+    0,
+  )
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  if (hours > 0 && minutes > 0) {
+    return `${hours}h ${String(minutes).padStart(2, '0')}m`
+  }
+
+  if (hours > 0) {
+    return `${hours}h`
+  }
+
+  return `${minutes}m`
+}
+
 export function BookingPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const { tokens } = useAuth()
+  const accessToken = tokens?.accessToken
   const bookingState = useMemo(() => resolveBookingFlowState(searchParams), [searchParams])
-  const {
-    kind: activeKind,
-    selectedServiceIds,
-    selectedDiagnosticId,
-    diagnosticNotes,
-  } = bookingState
+  const [services, setServices] = useState<ServiceCatalogItemDto[]>([])
+  const [diagnostics, setDiagnostics] = useState<ServiceCatalogItemDto[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const options = bookingOptionGroups[activeKind]
-  const selectedOptions = useMemo(() => {
-    if (activeKind === 'service') {
-      return options.filter((option) => selectedServiceIds.includes(option.id))
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadCatalog() {
+      setIsLoading(true)
+      setErrorMessage(null)
+
+      try {
+        const [nextServices, nextDiagnostics] = await Promise.all([
+          getServiceCatalogItemsRequest({ category: 0, isActive: true }, accessToken),
+          getServiceCatalogItemsRequest({ category: 1, isActive: true }, accessToken),
+        ])
+
+        if (!isMounted) {
+          return
+        }
+
+        setServices(nextServices)
+        setDiagnostics(nextDiagnostics)
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(
+            getBookingErrorMessage(error, 'Unable to load the service catalog right now.'),
+          )
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
     }
 
-    const selectedDiagnostic =
-      options.find((option) => option.id === selectedDiagnosticId) ?? options[0]
+    void loadCatalog()
 
-    return [selectedDiagnostic]
-  }, [activeKind, options, selectedDiagnosticId, selectedServiceIds])
+    return () => {
+      isMounted = false
+    }
+  }, [accessToken])
 
+  useEffect(() => {
+    if (bookingState.kind !== 'service' || bookingState.selectedServiceIds.length > 0 || services.length === 0) {
+      return
+    }
+
+    setSearchParams(
+      createBookingSearchParams({
+        ...bookingState,
+        selectedServiceIds: [services[0].id],
+      }),
+      { replace: true },
+    )
+  }, [bookingState, services, setSearchParams])
+
+  useEffect(() => {
+    if (bookingState.kind !== 'diagnostic' || bookingState.selectedDiagnosticId || diagnostics.length === 0) {
+      return
+    }
+
+    setSearchParams(
+      createBookingSearchParams({
+        ...bookingState,
+        selectedDiagnosticId: diagnostics[0].id,
+      }),
+      { replace: true },
+    )
+  }, [bookingState, diagnostics, setSearchParams])
+
+  const activeKind = bookingState.kind
+  const options = activeKind === 'service' ? services : diagnostics
+  const selectedOptions = useMemo(() => {
+    if (activeKind === 'service') {
+      return services.filter((option) => bookingState.selectedServiceIds.includes(option.id))
+    }
+
+    return diagnostics.filter((option) => option.id === bookingState.selectedDiagnosticId)
+  }, [
+    activeKind,
+    bookingState.selectedDiagnosticId,
+    bookingState.selectedServiceIds,
+    diagnostics,
+    services,
+  ])
   const selectedOption = selectedOptions[0]
-  const totalPrice = selectedOptions.reduce(
-    (sum, option) => sum + parseBookingPrice(option.priceLabel),
-    0
-  )
-  const totalDurationMinutes = selectedOptions.reduce((sum, option) => {
-    const hoursMatch = option.duration.match(/(\d+)\s*h/i)
-    const minutesMatch = option.duration.match(/(\d+)\s*m/i)
-    const hours = hoursMatch ? Number.parseInt(hoursMatch[1], 10) : 0
-    const minutes = minutesMatch ? Number.parseInt(minutesMatch[1], 10) : 0
-
-    return sum + hours * 60 + minutes
-  }, 0)
+  const canContinue =
+    activeKind === 'diagnostic'
+      ? Boolean(selectedOption)
+      : getSelectedCatalogItemIds(bookingState).length > 0
+  const totalPrice = selectedOptions.reduce((sum, option) => sum + mapServiceTotal(option), 0)
   const totalDurationLabel =
-    totalDurationMinutes >= 60
-      ? `${Math.floor(totalDurationMinutes / 60)}h ${String(totalDurationMinutes % 60).padStart(2, '0')}m`
-      : `${totalDurationMinutes}m`
-  const canContinue = activeKind === 'diagnostic' ? Boolean(selectedOption) : selectedOptions.length > 0
-  const serviceSummaryLabel =
-    selectedOptions.length <= 1
-      ? selectedOption?.summaryLabel ?? selectedOption?.title ?? 'Workshop service'
-      : `${selectedOptions.length} services selected`
+    selectedOptions.length > 0 ? formatCombinedDuration(selectedOptions) : '0m'
   const completedSteps: BookingProgressStepId[] = hasScheduleSelection(bookingState)
     ? ['schedule']
     : []
@@ -86,10 +176,13 @@ export function BookingPage() {
   }
   const selectedVehicleLabel =
     bookingState.vehicleMake || bookingState.vehicleModel
-      ? `${bookingState.vehicleMake} ${bookingState.vehicleModel}`.trim()
+      ? `${bookingState.vehicleYear ? `${bookingState.vehicleYear} ` : ''}${bookingState.vehicleMake} ${bookingState.vehicleModel}`.trim()
       : undefined
-  const selectedSlotLabel =
-    bookingTimeSlots.find((slot) => slot.id === bookingState.selectedSlotId)?.label ?? '09:15 AM'
+  const selectedSlotLabel = formatIsoSlotLabel(bookingState.selectedSlotStartAt) || 'Pick a slot'
+  const serviceSummaryLabel =
+    selectedOptions.length <= 1
+      ? selectedOption?.name ?? 'Workshop service'
+      : `${selectedOptions.length} services selected`
 
   const updateBookingState = (partial: Partial<typeof bookingState>) => {
     setSearchParams(createBookingSearchParams({ ...bookingState, ...partial }), {
@@ -98,7 +191,7 @@ export function BookingPage() {
   }
 
   const handleContinue = () => {
-    if (!canContinue || !selectedOption) {
+    if (!canContinue) {
       return
     }
 
@@ -108,8 +201,8 @@ export function BookingPage() {
           ...bookingState,
           scheduleVisited: true,
         },
-        { includeScheduleState: true }
-      ).toString()}`
+        { includeScheduleState: true },
+      ).toString()}`,
     )
   }
 
@@ -119,7 +212,7 @@ export function BookingPage() {
         <BookingProgressHeader
           currentStep="services"
           title="Book a Service"
-          description="Select the maintenance or diagnostic services required for your vehicle."
+          description="Select the services or diagnostics required for your vehicle."
           completedSteps={completedSteps}
           stepLinks={stepLinks}
         />
@@ -135,9 +228,7 @@ export function BookingPage() {
                   activeKind === 'service'
                     ? 'bg-surface-container-lowest text-primary shadow-sm'
                     : 'text-on-surface-variant hover:bg-surface-container',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
+                ].join(' ')}
               >
                 Services
               </button>
@@ -149,86 +240,101 @@ export function BookingPage() {
                   activeKind === 'diagnostic'
                     ? 'bg-surface-container-lowest text-primary shadow-sm'
                     : 'text-on-surface-variant hover:bg-surface-container',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
+                ].join(' ')}
               >
                 Diagnostics
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {options.map((option) => {
-                const isSelected =
-                  activeKind === 'service'
-                    ? selectedServiceIds.includes(option.id)
-                    : option.id === selectedOption?.id
+            {errorMessage ? (
+              <div className="mb-6 rounded-2xl border border-error/15 bg-error/5 px-5 py-4 text-sm text-error">
+                {errorMessage}
+              </div>
+            ) : null}
 
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => {
-                      if (activeKind === 'service') {
-                        updateBookingState({
-                          selectedServiceIds: selectedServiceIds.includes(option.id)
-                            ? selectedServiceIds.filter((id) => id !== option.id)
-                            : [...selectedServiceIds, option.id],
-                        })
+            {isLoading ? (
+              <div className="rounded-2xl bg-surface-container-lowest p-8 text-sm text-on-surface-variant shadow-panel">
+                Loading live service catalog...
+              </div>
+            ) : options.length === 0 ? (
+              <div className="rounded-2xl bg-surface-container-lowest p-8 text-sm text-on-surface-variant shadow-panel">
+                No active catalog items found for this category.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {options.map((option) => {
+                  const isSelected =
+                    activeKind === 'service'
+                      ? bookingState.selectedServiceIds.includes(option.id)
+                      : option.id === selectedOption?.id
 
-                        return
-                      }
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => {
+                        if (activeKind === 'service') {
+                          updateBookingState({
+                            selectedServiceIds: bookingState.selectedServiceIds.includes(option.id)
+                              ? bookingState.selectedServiceIds.filter((id) => id !== option.id)
+                              : [...bookingState.selectedServiceIds, option.id],
+                          })
 
-                      updateBookingState({ selectedDiagnosticId: option.id })
-                    }}
-                    className={[
-                      'group relative rounded-xl border-2 p-5 text-left transition-all',
-                      isSelected
-                        ? 'border-primary bg-surface-container-lowest ring-4 ring-primary/5'
-                        : 'border-transparent bg-surface-container-lowest hover:border-primary/20 hover:bg-surface-container-low',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                  >
-                    <div className="mb-4 flex items-start justify-between gap-3">
-                      <div
-                        className={[
-                          'rounded-xl p-3 transition-colors',
-                          isSelected
-                            ? 'bg-primary/10 text-primary'
-                            : 'bg-surface-container text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                      >
-                        <MaterialIcon name={option.icon} className="text-2xl" />
-                      </div>
-                      <span className="text-lg font-bold text-on-surface">{option.priceLabel}</span>
-                    </div>
+                          return
+                        }
 
-                    <h3 className="mb-1 text-lg font-bold text-on-surface">{option.title}</h3>
-                    <p className="text-sm leading-relaxed text-on-surface-variant">
-                      {option.description}
-                    </p>
-
-                    <div className="mt-4 flex items-center justify-between gap-3">
-                      <span className="text-xs font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-                        {option.duration}
-                      </span>
-                      {isSelected ? (
-                        <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                        updateBookingState({ selectedDiagnosticId: option.id })
+                      }}
+                      className={[
+                        'group relative rounded-xl border-2 p-5 text-left transition-all',
+                        isSelected
+                          ? 'border-primary bg-surface-container-lowest ring-4 ring-primary/5'
+                          : 'border-transparent bg-surface-container-lowest hover:border-primary/20 hover:bg-surface-container-low',
+                      ].join(' ')}
+                    >
+                      <div className="mb-4 flex items-start justify-between gap-3">
+                        <div
+                          className={[
+                            'rounded-xl p-3 transition-colors',
+                            isSelected
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-surface-container text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary',
+                          ].join(' ')}
+                        >
                           <MaterialIcon
-                            name={activeKind === 'service' ? 'check_box' : 'check_circle'}
-                            className="text-sm"
+                            name={resolveBookingOptionIcon(option.name, option.category)}
+                            className="text-2xl"
                           />
-                          {activeKind === 'service' ? 'Added' : 'Selected'}
+                        </div>
+                        <span className="text-lg font-bold text-on-surface">
+                          {formatBookingCurrency(mapServiceTotal(option))}
                         </span>
-                      ) : null}
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
+                      </div>
+
+                      <h3 className="mb-1 text-lg font-bold text-on-surface">{option.name}</h3>
+                      <p className="text-sm leading-relaxed text-on-surface-variant">
+                        {option.description}
+                      </p>
+
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <span className="text-xs font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+                          {formatBookingDuration(option.estimatedDuration)}
+                        </span>
+                        {isSelected ? (
+                          <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                            <MaterialIcon
+                              name={activeKind === 'service' ? 'check_box' : 'check_circle'}
+                              className="text-sm"
+                            />
+                            {activeKind === 'service' ? 'Added' : 'Selected'}
+                          </span>
+                        ) : null}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
 
             {activeKind === 'diagnostic' ? (
               <div className="mt-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest p-6 shadow-panel">
@@ -241,7 +347,7 @@ export function BookingPage() {
                 <textarea
                   id="diagnostic-notes"
                   rows={4}
-                  value={diagnosticNotes}
+                  value={bookingState.diagnosticNotes}
                   onChange={(event) =>
                     updateBookingState({ diagnosticNotes: event.target.value })
                   }
@@ -266,16 +372,13 @@ export function BookingPage() {
                     {selectedOptions.map((option) => (
                       <div key={option.id} className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="text-sm font-bold text-on-surface">{option.title}</p>
+                          <p className="text-sm font-bold text-on-surface">{option.name}</p>
                           <p className="text-xs text-on-surface-variant">
-                            {option.summaryLabel ??
-                              (activeKind === 'service'
-                                ? 'Workshop service'
-                                : 'Diagnostic session')}
+                            {activeKind === 'service' ? 'Workshop service' : 'Diagnostic session'}
                           </p>
                         </div>
                         <span className="text-sm font-bold text-on-surface">
-                          {option.priceLabel}
+                          {formatBookingCurrency(mapServiceTotal(option))}
                         </span>
                       </div>
                     ))}
@@ -296,9 +399,9 @@ export function BookingPage() {
                       </span>
                     </div>
 
-                    {activeKind === 'diagnostic' && diagnosticNotes.trim() ? (
+                    {activeKind === 'diagnostic' && bookingState.diagnosticNotes.trim() ? (
                       <div className="rounded-xl bg-surface-container-low p-4 text-sm text-on-surface-variant">
-                        {diagnosticNotes.trim()}
+                        {bookingState.diagnosticNotes.trim()}
                       </div>
                     ) : null}
                   </div>
@@ -311,7 +414,7 @@ export function BookingPage() {
                           : 'Starting Price'}
                       </span>
                       <span className="text-2xl font-black text-primary">
-                        ${totalPrice.toFixed(2)}
+                        {formatBookingCurrency(totalPrice)}
                       </span>
                     </div>
                   </div>
@@ -325,9 +428,7 @@ export function BookingPage() {
                       canContinue
                         ? 'bg-gradient-to-r from-primary to-primary-dim shadow-lg shadow-primary/20 hover:-translate-y-0.5'
                         : 'cursor-not-allowed bg-surface-container text-on-surface-variant',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
+                    ].join(' ')}
                   >
                     Continue
                     <MaterialIcon name="arrow_forward" />
@@ -362,16 +463,16 @@ export function BookingPage() {
 
         <BookingSelectionSummary
           selectedDate={bookingState.selectedDate}
-          selectedDateLabel={formatBookingDateLabel(
-            bookingState.selectedMonthKey,
-            bookingState.selectedDate,
-            selectedSlotLabel
-          )}
+          selectedDateLabel={
+            bookingState.selectedSlotId || bookingState.selectedSlotStartAt
+              ? selectedSlotLabel
+              : undefined
+          }
           selectedSlotId={bookingState.selectedSlotId}
           selectedServiceLabel={
             selectedOptions.length <= 1
-              ? selectedOption?.title
-              : `${selectedOption?.title ?? 'Service'} +${selectedOptions.length - 1} more`
+              ? selectedOption?.name
+              : `${selectedOption?.name ?? 'Service'} +${selectedOptions.length - 1} more`
           }
           selectedVehicleLabel={selectedVehicleLabel}
           activeCardId="service"

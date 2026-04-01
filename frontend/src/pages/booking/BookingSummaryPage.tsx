@@ -1,16 +1,28 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
+import {
+  createBookingRequest,
+  getAvailableBookingSlotsRequest,
+  getBookingErrorMessage,
+  getBookingQuoteRequest,
+  getCurrentCustomerRequest,
+  type BookingQuoteDto,
+  type CustomerDto,
+} from '../../apis/bookingApi'
+import { useAuth } from '../../features/auth/useAuth'
 import { BookingPaymentModal } from '../../features/booking/components/BookingPaymentModal'
 import { BookingMobileStepNav } from '../../features/booking/components/BookingMobileStepNav'
 import { BookingProgressHeader } from '../../features/booking/components/BookingProgressHeader'
 import { BookingSelectionSummary } from '../../features/booking/components/BookingSelectionSummary'
 import {
-  bookingTimeSlots,
-  parseBookingPrice,
-  resolveBookingSelection,
-} from '../../features/booking/constants/booking-content'
-import { formatBookingDateLabel } from '../../features/booking/lib/booking-date'
+  buildVehicleDetailsLabel,
+  buildVehicleLabel,
+  formatBookingCurrency,
+  formatBookingDuration,
+  getSelectedCatalogItemIds,
+  resolveBookingOptionIcon,
+} from '../../features/booking/lib/booking-api-helpers'
 import {
   createBookingSearchParams,
   resolveBookingFlowState,
@@ -19,37 +31,52 @@ import { APP_ROUTES } from '../../shared/config/routes'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 
+function combineBookingNotes(summaryNotes: string, diagnosticNotes: string) {
+  return [summaryNotes.trim(), diagnosticNotes.trim()].filter(Boolean).join('\n\n')
+}
+
+function toDateQuery(startAt: string) {
+  const parsedDate = new Date(startAt)
+  if (Number.isNaN(parsedDate.getTime())) {
+    return null
+  }
+
+  const year = parsedDate.getFullYear()
+  const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
+  const day = String(parsedDate.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function isValidFutureSlotValue(value: string) {
+  if (!value) {
+    return false
+  }
+
+  const parsedDate = new Date(value)
+  return !Number.isNaN(parsedDate.getTime()) && parsedDate.getTime() > Date.now()
+}
+
 export function BookingSummaryPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const { tokens, user } = useAuth()
+  const accessToken = tokens?.accessToken
   const bookingState = useMemo(() => resolveBookingFlowState(searchParams), [searchParams])
-  const selection = useMemo(
-    () =>
-      resolveBookingSelection(
-        bookingState.kind,
-        bookingState.selectedDiagnosticId,
-        bookingState.selectedServiceIds.join(',')
-      ),
-    [bookingState.kind, bookingState.selectedDiagnosticId, bookingState.selectedServiceIds]
+  const [customer, setCustomer] = useState<CustomerDto | null>(null)
+  const [quote, setQuote] = useState<BookingQuoteDto | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const selectedCatalogItemIdsKey =
+    bookingState.kind === 'diagnostic'
+      ? bookingState.selectedDiagnosticId
+      : bookingState.selectedServiceIds.join(',')
+  const selectedCatalogItemIds = useMemo(
+    () => getSelectedCatalogItemIds(bookingState),
+    [bookingState.kind, selectedCatalogItemIdsKey],
   )
-
-  const subtotal = selection.selectedOptions.reduce(
-    (sum, option) => sum + parseBookingPrice(option.priceLabel),
-    0
-  )
-  const estimatedLabor = selection.selectedOptions.length * 22.5
-  const totalEstimate = subtotal + estimatedLabor
-  const selectedDateLabel = formatBookingDateLabel(
-    bookingState.selectedMonthKey,
-    bookingState.selectedDate
-  )
-  const selectedSlotLabel =
-    bookingTimeSlots.find((slot) => slot.id === bookingState.selectedSlotId)?.label ?? '09:15 AM'
-  const selectedVehicleLabel =
-    bookingState.vehicleYear || bookingState.vehicleMake || bookingState.vehicleModel
-      ? `${bookingState.vehicleYear ? `${bookingState.vehicleYear} ` : ''}${bookingState.vehicleMake} ${bookingState.vehicleModel}`.trim()
-      : undefined
+  const paymentOption = bookingState.paymentMethod === 'now' ? 1 : 0
   const summaryQuery = createBookingSearchParams(bookingState, {
     includeScheduleState: true,
   }).toString()
@@ -65,19 +92,221 @@ export function BookingSummaryPage() {
     vehicle: stepLinks.vehicle,
     estimate: stepLinks.summary,
   }
-  const confirmationLink = `${APP_ROUTES.bookingConfirmation}?${summaryQuery}`
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadSummary() {
+      if (
+        !user
+        || !bookingState.selectedVehicleId
+        || !bookingState.selectedSlotId
+        || !bookingState.selectedSlotStartAt
+        || selectedCatalogItemIds.length === 0
+      ) {
+        if (isMounted) {
+          setQuote(null)
+          setIsLoading(false)
+        }
+        return
+      }
+
+      setIsLoading(true)
+      setErrorMessage(null)
+
+      try {
+        if (!isValidFutureSlotValue(bookingState.selectedSlotStartAt)) {
+          throw new Error('Selected booking slot is invalid or already in the past.')
+        }
+
+        const selectedDate = toDateQuery(bookingState.selectedSlotStartAt)
+        if (!selectedDate) {
+          throw new Error('Selected booking slot is invalid.')
+        }
+
+        const currentCustomerPromise = customer
+          ? Promise.resolve(customer)
+          : getCurrentCustomerRequest(user.id, accessToken)
+        const [resolvedCustomer, availableSlots] = await Promise.all([
+          currentCustomerPromise,
+          getAvailableBookingSlotsRequest(
+            {
+              date: selectedDate,
+              serviceCatalogItemIds: selectedCatalogItemIds,
+            },
+            accessToken,
+          ),
+        ])
+
+        const matchedSlot = availableSlots.slots.find(
+          (slot) => slot.id === bookingState.selectedSlotId && slot.isAvailable,
+        )
+
+        if (!matchedSlot) {
+          throw new Error('Selected booking slot is no longer available. Please choose another time.')
+        }
+
+        if (
+          matchedSlot.startAt !== bookingState.selectedSlotStartAt
+          && isMounted
+        ) {
+          setSearchParams(
+            createBookingSearchParams(
+              {
+                ...bookingState,
+                selectedSlotStartAt: matchedSlot.startAt,
+              },
+              { includeScheduleState: true },
+            ),
+            { replace: true },
+          )
+        }
+
+        const nextQuote = await getBookingQuoteRequest(
+          {
+            vehicleId: bookingState.selectedVehicleId,
+            startAt: matchedSlot.startAt,
+            serviceCatalogItemIds: selectedCatalogItemIds,
+            paymentOption,
+          },
+          accessToken,
+        )
+
+        if (!isMounted) {
+          return
+        }
+
+        setCustomer(resolvedCustomer)
+        setQuote(nextQuote)
+      } catch (error) {
+        if (isMounted) {
+          setQuote(null)
+          setErrorMessage(
+            getBookingErrorMessage(error, 'Unable to load the booking quote right now.'),
+          )
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadSummary()
+
+    return () => {
+      isMounted = false
+    }
+  }, [
+    accessToken,
+    bookingState.selectedSlotId,
+    bookingState.selectedSlotStartAt,
+    bookingState.selectedVehicleId,
+    customer,
+    paymentOption,
+    selectedCatalogItemIdsKey,
+    user,
+  ])
+
+  useEffect(() => {
+    if (!quote) {
+      return
+    }
+
+    if (quote.availablePaymentOptions.includes(paymentOption)) {
+      return
+    }
+
+    setSearchParams(
+      createBookingSearchParams(
+        {
+          ...bookingState,
+          paymentMethod: quote.availablePaymentOptions.includes(0) ? 'shop' : 'now',
+        },
+        { includeScheduleState: true },
+      ),
+      { replace: true },
+    )
+  }, [bookingState, paymentOption, quote, setSearchParams])
+
+  const selectedDateLabel = quote
+    ? new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+      }).format(new Date(quote.schedule.startAt))
+    : undefined
+  const selectedSlotLabel = quote
+    ? new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(quote.schedule.startAt))
+    : undefined
+  const selectedVehicleLabel = quote
+    ? buildVehicleLabel(quote.vehicle)
+    : bookingState.vehicleMake || bookingState.vehicleModel
+      ? `${bookingState.vehicleYear ? `${bookingState.vehicleYear} ` : ''}${bookingState.vehicleMake} ${bookingState.vehicleModel}`.trim()
+      : undefined
 
   const updateBookingState = (partial: Partial<typeof bookingState>) => {
     setSearchParams(
       createBookingSearchParams({ ...bookingState, ...partial }, { includeScheduleState: true }),
-      { replace: true }
+      { replace: true },
     )
   }
+
+  const handleCreateBooking = async () => {
+    if (!customer || !quote) {
+      setErrorMessage('Booking quote is not ready yet.')
+      return
+    }
+
+    setIsSubmitting(true)
+    setErrorMessage(null)
+
+    try {
+      const createdBooking = await createBookingRequest(
+        {
+          customerId: customer.id,
+          vehicleId: bookingState.selectedVehicleId,
+          startAt: quote.schedule.startAt,
+          serviceCatalogItemIds: selectedCatalogItemIds,
+          paymentOption,
+          notes: combineBookingNotes(bookingState.bookingNotes, bookingState.diagnosticNotes) || null,
+        },
+        accessToken,
+      )
+
+      navigate(
+        `${APP_ROUTES.bookingConfirmation}?${createBookingSearchParams(
+          {
+            ...bookingState,
+            bookingId: createdBooking.id,
+          },
+          { includeScheduleState: true },
+        ).toString()}`,
+      )
+    } catch (error) {
+      setErrorMessage(
+        getBookingErrorMessage(error, 'Unable to create the booking right now.'),
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const canUsePayNow = quote?.availablePaymentOptions.includes(1) ?? true
+  const canUsePayAtShop = quote?.availablePaymentOptions.includes(0) ?? true
 
   return (
     <DashboardShell searchPlaceholder="Search bookings...">
       <div className="mx-auto max-w-7xl pb-24 pt-12">
         <BookingProgressHeader currentStep="summary" stepLinks={stepLinks} />
+
+        {errorMessage ? (
+          <div className="mb-6 rounded-2xl border border-error/15 bg-error/5 px-5 py-4 text-sm text-error">
+            {errorMessage}
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           <div className="space-y-8 lg:col-span-8">
@@ -96,23 +325,34 @@ export function BookingSummaryPage() {
                 </button>
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {selection.selectedOptions.map((option) => (
-                  <div
-                    key={option.id}
-                    className="flex items-start justify-between rounded-2xl border border-slate-50 bg-white p-6 shadow-sm transition-transform hover:scale-[1.01]"
-                  >
-                    <div>
-                      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary-container/30 text-primary">
-                        <MaterialIcon name={option.icon} />
-                      </div>
-                      <h4 className="font-bold text-slate-900">{option.title}</h4>
-                      <p className="mt-1 text-sm text-slate-500">
-                        {option.summaryLabel ?? option.description}
-                      </p>
-                    </div>
-                    <span className="font-bold text-slate-900">{option.priceLabel}</span>
+                {isLoading ? (
+                  <div className="rounded-2xl border border-slate-50 bg-white p-6 text-sm text-slate-500 shadow-sm md:col-span-2">
+                    Loading booking quote...
                   </div>
-                ))}
+                ) : (
+                  quote?.services.map((service) => (
+                    <div
+                      key={service.serviceCatalogItemId}
+                      className="flex items-start justify-between rounded-2xl border border-slate-50 bg-white p-6 shadow-sm transition-transform hover:scale-[1.01]"
+                    >
+                      <div>
+                        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary-container/30 text-primary">
+                          <MaterialIcon
+                            name={resolveBookingOptionIcon(service.name, service.category)}
+                          />
+                        </div>
+                        <h4 className="font-bold text-slate-900">{service.name}</h4>
+                        <p className="mt-1 text-sm text-slate-500">{service.description}</p>
+                        <p className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                          {formatBookingDuration(service.estimatedDuration)}
+                        </p>
+                      </div>
+                      <span className="font-bold text-slate-900">
+                        {formatBookingCurrency(service.basePrice + service.estimatedLaborCost)}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </section>
 
@@ -129,8 +369,10 @@ export function BookingSummaryPage() {
                     <p className="mb-1 text-sm font-bold uppercase leading-none tracking-widest text-slate-400">
                       Appointment
                     </p>
-                    <p className="text-lg font-bold text-slate-900">{selectedDateLabel}</p>
-                    <p className="text-sm text-slate-500">at {selectedSlotLabel}</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {selectedDateLabel ?? 'Pending schedule'}
+                    </p>
+                    <p className="text-sm text-slate-500">at {selectedSlotLabel ?? 'Pending'}</p>
                   </div>
                 </div>
               </section>
@@ -145,7 +387,7 @@ export function BookingSummaryPage() {
                   </div>
                   <div>
                     <p className="mb-1 text-sm font-bold uppercase leading-none tracking-widest text-slate-400">
-                      {bookingState.vehicleModel || 'Vehicle'}
+                      {quote?.vehicle.licensePlate || 'Vehicle'}
                     </p>
                     <p className="text-lg font-bold text-slate-900">
                       {selectedVehicleLabel ?? 'Vehicle details pending'}
@@ -153,26 +395,36 @@ export function BookingSummaryPage() {
                     <p className="text-sm text-slate-500">
                       VIN:{' '}
                       <span className="font-mono font-medium text-slate-900">
-                        {bookingState.vehicleVin || 'Not provided'}
+                        {quote?.vehicle.vin || bookingState.vehicleVin || 'Not provided'}
                       </span>
                     </p>
+                    {quote && buildVehicleDetailsLabel(quote.vehicle) ? (
+                      <p className="mt-1 text-sm text-slate-500">
+                        {buildVehicleDetailsLabel(quote.vehicle)}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </section>
             </div>
 
-            <div className="flex flex-col items-center rounded-2xl border-2 border-dashed border-outline-variant/20 bg-surface-container-low/50 p-8 text-center">
-              <MaterialIcon name="add_circle" className="mb-4 text-4xl text-slate-300" />
-              <h4 className="font-bold text-slate-900">Add Notes or Photos</h4>
-              <p className="mt-2 max-w-xs text-sm text-slate-500">
-                Provide extra context for the technician to ensure the highest precision service.
-              </p>
-              <button
-                type="button"
-                className="mt-4 rounded-full border border-slate-200 px-6 py-2 text-sm font-bold transition-colors hover:bg-white"
-              >
-                Attach Details
-              </button>
+            <div className="rounded-2xl border-2 border-dashed border-outline-variant/20 bg-surface-container-low/50 p-8">
+              <div className="mb-4 flex items-center gap-3">
+                <MaterialIcon name="sticky_note_2" className="text-3xl text-slate-300" />
+                <div>
+                  <h4 className="font-bold text-slate-900">Booking Notes</h4>
+                  <p className="text-sm text-slate-500">
+                    Add arrival details or anything the technician should know.
+                  </p>
+                </div>
+              </div>
+              <textarea
+                rows={4}
+                value={bookingState.bookingNotes}
+                onChange={(event) => updateBookingState({ bookingNotes: event.target.value })}
+                placeholder="Customer will arrive early, key drop-off, extra symptom details..."
+                className="w-full rounded-xl border-none bg-white p-4 text-sm text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
+              />
             </div>
           </div>
 
@@ -184,13 +436,14 @@ export function BookingSummaryPage() {
                 </h3>
 
                 <div className="mb-8 space-y-3">
-                  <label className="block cursor-pointer">
+                  <label className={`block cursor-pointer ${!canUsePayNow ? 'opacity-50' : ''}`}>
                     <input
                       type="radio"
                       name="payment"
                       value="now"
                       checked={bookingState.paymentMethod === 'now'}
                       onChange={() => updateBookingState({ paymentMethod: 'now' })}
+                      disabled={!canUsePayNow}
                       className="peer hidden"
                     />
                     <div className="rounded-xl border-2 border-slate-100 p-4 transition-all peer-checked:border-primary peer-checked:bg-primary-container/5">
@@ -207,13 +460,14 @@ export function BookingSummaryPage() {
                     </div>
                   </label>
 
-                  <label className="block cursor-pointer">
+                  <label className={`block cursor-pointer ${!canUsePayAtShop ? 'opacity-50' : ''}`}>
                     <input
                       type="radio"
                       name="payment"
                       value="shop"
                       checked={bookingState.paymentMethod === 'shop'}
                       onChange={() => updateBookingState({ paymentMethod: 'shop' })}
+                      disabled={!canUsePayAtShop}
                       className="peer hidden"
                     />
                     <div className="rounded-xl border-2 border-slate-100 p-4 transition-all peer-checked:border-primary peer-checked:bg-primary-container/5">
@@ -231,11 +485,24 @@ export function BookingSummaryPage() {
                 <div className="mb-8 space-y-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Subtotal</span>
-                    <span className="font-medium text-slate-900">${subtotal.toFixed(2)}</span>
+                    <span className="font-medium text-slate-900">
+                      {formatBookingCurrency(quote?.pricing.subtotal ?? 0, quote?.pricing.currency)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Estimated Labor</span>
-                    <span className="font-medium text-slate-900">${estimatedLabor.toFixed(2)}</span>
+                    <span className="font-medium text-slate-900">
+                      {formatBookingCurrency(
+                        quote?.pricing.estimatedLaborCost ?? 0,
+                        quote?.pricing.currency,
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Tax</span>
+                    <span className="font-medium text-slate-900">
+                      {formatBookingCurrency(quote?.pricing.taxAmount ?? 0, quote?.pricing.currency)}
+                    </span>
                   </div>
                   <div className="my-4 h-px bg-slate-100" />
                   <div className="flex items-end justify-between">
@@ -244,11 +511,16 @@ export function BookingSummaryPage() {
                         Total Estimate
                       </p>
                       <p className="text-3xl font-black tracking-tighter text-slate-900">
-                        ${totalEstimate.toFixed(2)}
+                        {formatBookingCurrency(
+                          quote?.pricing.totalEstimate ?? 0,
+                          quote?.pricing.currency,
+                        )}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[0.65rem] italic text-slate-400">Incl. all taxes</p>
+                      <p className="text-[0.65rem] italic text-slate-400">
+                        Quote from backend
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -257,28 +529,28 @@ export function BookingSummaryPage() {
                   type="button"
                   onClick={() => {
                     if (bookingState.paymentMethod === 'shop') {
-                      navigate(confirmationLink)
+                      void handleCreateBooking()
                       return
                     }
 
                     setIsPaymentModalOpen(true)
                   }}
-                  className="mb-4 w-full rounded-xl bg-primary py-4 font-black uppercase tracking-widest text-on-primary shadow-lg shadow-primary/30 transition-all hover:opacity-90 active:scale-95"
+                  disabled={isLoading || isSubmitting || !quote}
+                  className="mb-4 w-full rounded-xl bg-primary py-4 font-black uppercase tracking-widest text-on-primary shadow-lg shadow-primary/30 transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
                 >
-                  Confirm Booking
+                  {isSubmitting ? 'Creating booking...' : 'Confirm Booking'}
                 </button>
 
                 <p className="text-center text-[0.65rem] font-medium text-slate-400">
-                  No credit card required for <span className="text-primary">Pay at Shop</span>{' '}
-                  selection. You can cancel up to 24h before without penalty.
+                  Final pricing and duration are locked from the quote returned by the backend.
                 </p>
               </div>
 
               <div className="mt-6 flex items-start gap-3 rounded-xl bg-primary-container/20 p-4">
                 <MaterialIcon name="verified" className="text-primary" />
                 <p className="text-xs leading-relaxed text-on-primary-container">
-                  <strong>Precision Guarantee:</strong> Our Master Technicians verify all diagnostic
-                  data before service commencement.
+                  <strong>Precision Guarantee:</strong> The quote is generated from selected
+                  services, schedule, and vehicle before the booking is created.
                 </p>
               </div>
             </div>
@@ -287,19 +559,23 @@ export function BookingSummaryPage() {
 
         <BookingSelectionSummary
           selectedDate={bookingState.selectedDate}
-          selectedDateLabel={formatBookingDateLabel(
-            bookingState.selectedMonthKey,
-            bookingState.selectedDate,
-            selectedSlotLabel
-          )}
+          selectedDateLabel={
+            selectedDateLabel && selectedSlotLabel
+              ? `${selectedDateLabel}, ${selectedSlotLabel}`
+              : undefined
+          }
           selectedSlotId={bookingState.selectedSlotId}
           selectedServiceLabel={
-            selection.selectedOptions.length <= 1
-              ? selection.option.title
-              : `${selection.selectedOptions[0].title} +${selection.selectedOptions.length - 1} more`
+            quote?.services.length && quote.services.length > 1
+              ? `${quote.services[0].name} +${quote.services.length - 1} more`
+              : quote?.services[0]?.name
           }
           selectedVehicleLabel={selectedVehicleLabel}
-          selectedEstimateLabel={`$${totalEstimate.toFixed(2)}`}
+          selectedEstimateLabel={
+            quote
+              ? formatBookingCurrency(quote.pricing.totalEstimate, quote.pricing.currency)
+              : undefined
+          }
           activeCardId="estimate"
           cardLinks={summaryCardLinks}
         />
@@ -308,12 +584,12 @@ export function BookingSummaryPage() {
       <BookingMobileStepNav currentStep="summary" stepLinks={stepLinks} />
       <BookingPaymentModal
         open={isPaymentModalOpen}
-        totalAmount={totalEstimate}
+        totalAmount={quote?.pricing.totalEstimate ?? 0}
         paymentMethod={bookingState.paymentMethod}
         onClose={() => setIsPaymentModalOpen(false)}
         onConfirm={() => {
           setIsPaymentModalOpen(false)
-          navigate(confirmationLink)
+          void handleCreateBooking()
         }}
       />
     </DashboardShell>

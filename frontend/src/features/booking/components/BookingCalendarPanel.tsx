@@ -16,6 +16,8 @@ import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 interface BookingCalendarPanelProps {
   selectedMonthKey: string
   selectedDate: number
+  availableDays?: number[]
+  isAvailabilityLoading?: boolean
   onSelectDate: (date: number) => void
   onSelectMonthKey: (monthKey: string, suggestedDay: number) => void
 }
@@ -23,6 +25,8 @@ interface BookingCalendarPanelProps {
 export function BookingCalendarPanel({
   selectedMonthKey,
   selectedDate,
+  availableDays,
+  isAvailabilityLoading = false,
   onSelectDate,
   onSelectMonthKey,
 }: BookingCalendarPanelProps) {
@@ -34,13 +38,19 @@ export function BookingCalendarPanel({
   const trailingEmptyDays = (7 - ((leadingEmptyDays + daysInMonth) % 7 || 7)) % 7
   const previousMonthKey = shiftBookingMonth(selectedMonthKey, -1)
   const nextMonthKey = shiftBookingMonth(selectedMonthKey, 1)
+  const hasMonthAvailability = Array.isArray(availableDays)
+  const availableDaysSet = new Set(availableDays ?? [])
 
   return (
     <div className="bg-surface-container-low/30 p-8 md:col-span-7">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-on-surface">{monthLabel}</h2>
-          <p className="text-sm text-on-surface-variant">{bookingDefaults.monthDescription}</p>
+          <p className="text-sm text-on-surface-variant">
+            {isAvailabilityLoading
+              ? 'Loading dates with open booking slots...'
+              : bookingDefaults.monthDescription}
+          </p>
         </div>
         <div className="flex gap-2">
           <button
@@ -89,16 +99,18 @@ export function BookingCalendarPanel({
         ))}
 
         {Array.from({ length: daysInMonth }, (_, index) => index + 1).map((dayValue) => {
-          if (!isBookingDateAvailable(selectedMonthKey, dayValue)) {
+          const baseDateAvailable = isBookingDateAvailable(selectedMonthKey, dayValue)
+          const hasAvailableSlots = !hasMonthAvailability || availableDaysSet.has(dayValue)
+
+          if (!baseDateAvailable || !hasAvailableSlots) {
             return (
-              <button
+              <div
                 key={dayValue}
-                type="button"
-                disabled
-                className="cursor-not-allowed rounded-xl p-4 text-sm font-medium text-on-surface-variant/40"
+                className="rounded-xl p-4 text-sm font-medium text-on-surface-variant/20"
+                aria-hidden="true"
               >
-                {dayValue}
-              </button>
+                {baseDateAvailable && !hasAvailableSlots ? '' : dayValue}
+              </div>
             )
           }
 

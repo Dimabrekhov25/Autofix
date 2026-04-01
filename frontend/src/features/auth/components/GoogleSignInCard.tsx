@@ -37,7 +37,26 @@ function GoogleMark() {
 function loadGoogleScript() {
   const existingScript = document.getElementById(GOOGLE_SCRIPT_ID)
   if (existingScript) {
-    return Promise.resolve()
+    if (window.google?.accounts.id) {
+      return Promise.resolve()
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      const handleLoad = () => {
+        existingScript.removeEventListener('load', handleLoad)
+        existingScript.removeEventListener('error', handleError)
+        resolve()
+      }
+
+      const handleError = () => {
+        existingScript.removeEventListener('load', handleLoad)
+        existingScript.removeEventListener('error', handleError)
+        reject(new Error('Failed to load Google Identity Services.'))
+      }
+
+      existingScript.addEventListener('load', handleLoad, { once: true })
+      existingScript.addEventListener('error', handleError, { once: true })
+    })
   }
 
   return new Promise<void>((resolve, reject) => {
