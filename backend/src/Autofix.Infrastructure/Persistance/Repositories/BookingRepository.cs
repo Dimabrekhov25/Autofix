@@ -18,6 +18,7 @@ public sealed class BookingRepository(ApplicationDbContext dbContext) : IBooking
     {
         return dbContext.Bookings
             .AsNoTracking()
+            .Include(x => x.Vehicle)
             .Include(x => x.Services.Where(service => !service.IsDeleted))
             .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
     }
@@ -29,6 +30,7 @@ public sealed class BookingRepository(ApplicationDbContext dbContext) : IBooking
     {
         var query = dbContext.Bookings
             .AsNoTracking()
+            .Include(x => x.Vehicle)
             .Include(x => x.Services.Where(service => !service.IsDeleted))
             .Where(x => !x.IsDeleted);
 

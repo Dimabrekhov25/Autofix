@@ -20,6 +20,13 @@ public sealed class CustomerRepository(ApplicationDbContext dbContext) : ICustom
             .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
     }
 
+    public Task<Customer?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        return dbContext.Customers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == userId && !x.IsDeleted, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Customer>> GetAllAsync(CancellationToken cancellationToken)
     {
         var customers = await dbContext.Customers
