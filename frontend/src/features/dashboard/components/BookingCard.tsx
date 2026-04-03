@@ -1,6 +1,7 @@
 import type { Booking, BookingStatus } from '../types/booking'
-import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
+import { formatBookingCurrency } from '../../booking/lib/booking-api-helpers'
 import { cn } from '../../../shared/lib/cn'
+import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 
 interface BookingCardProps {
   booking: Booking
@@ -50,33 +51,32 @@ const statusConfig: Record<
 }
 
 export function BookingCard({ booking, isSelected = false, onClick }: BookingCardProps) {
-  const { vehicle } = booking.diagnosticData
   const config = statusConfig[booking.status]
-  const issuesCount = booking.diagnosticData.issues.filter((i: { priority: string }) => i.priority !== 'resolved').length
+  const servicesCount = booking.services.length
+  const secondaryLine = [booking.vehicle.plateNumber, booking.vehicle.trim].filter(Boolean).join(' | ')
 
   return (
     <button
       type="button"
       onClick={() => onClick?.(booking.id)}
       className={cn(
-        'w-full text-left rounded-xl p-5 transition-all duration-200',
-        'border-2 hover:shadow-lg hover:-translate-y-0.5',
+        'w-full rounded-xl p-5 text-left transition-all duration-200',
+        'border-2 hover:-translate-y-0.5 hover:shadow-lg',
         isSelected
           ? 'border-primary bg-primary/5 shadow-panel'
-          : 'border-white bg-white hover:border-primary/30'
+          : 'border-white bg-white hover:border-primary/30',
       )}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
-          <h3 className="font-headline font-bold text-lg text-on-surface mb-1">
-            {vehicle.year} {vehicle.make} {vehicle.model}
+          <h3 className="mb-1 font-headline text-lg font-bold text-on-surface">
+            {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
           </h3>
           <p className="text-sm text-on-surface-variant">
-            {vehicle.plateNumber} • {vehicle.trim}
+            {secondaryLine || 'Vehicle information'}
           </p>
         </div>
-        <div className={cn('flex items-center gap-1.5 px-2 py-1 rounded-full', config.bgColor)}>
+        <div className={cn('flex items-center gap-1.5 rounded-full px-2 py-1', config.bgColor)}>
           <MaterialIcon name={config.icon} className={cn('text-sm', config.textColor)} />
           <span className={cn('text-[10px] font-bold uppercase tracking-wider', config.textColor)}>
             {config.label}
@@ -84,34 +84,30 @@ export function BookingCard({ booking, isSelected = false, onClick }: BookingCar
         </div>
       </div>
 
-      {/* Details */}
-      <div className="space-y-2 mb-4">
+      <div className="mb-4 space-y-2">
         <div className="flex items-center gap-2 text-xs text-on-surface-variant">
           <MaterialIcon name="calendar_today" className="text-sm" />
           <span>{booking.scheduledDate} at {booking.scheduledTime}</span>
         </div>
-        {booking.estimatedCompletion && (
+        {booking.estimatedCompletion ? (
           <div className="flex items-center gap-2 text-xs text-on-surface-variant">
             <MaterialIcon name="schedule" className="text-sm" />
-            <span>Est. completion: {booking.estimatedCompletion}</span>
+            <span>Ends: {booking.estimatedCompletion}</span>
           </div>
-        )}
+        ) : null}
       </div>
 
-      {/* Summary Stats */}
-      <div className="flex items-center gap-4 pt-3 border-t border-outline-variant/10">
-        {issuesCount > 0 && (
-          <div className="flex items-center gap-1.5">
-            <MaterialIcon name="warning" className="text-secondary text-sm" />
-            <span className="text-xs font-bold text-on-surface">
-              {issuesCount} {issuesCount === 1 ? 'Issue' : 'Issues'}
-            </span>
-          </div>
-        )}
+      <div className="flex items-center gap-4 border-t border-outline-variant/10 pt-3">
+        <div className="flex items-center gap-1.5">
+          <MaterialIcon name="build" className="text-secondary text-sm" />
+          <span className="text-xs font-bold text-on-surface">
+            {servicesCount} {servicesCount === 1 ? 'Service' : 'Services'}
+          </span>
+        </div>
         <div className="flex items-center gap-1.5">
           <MaterialIcon name="attach_money" className="text-primary text-sm" />
           <span className="text-xs font-bold text-on-surface">
-            ${booking.diagnosticData.costBreakdown.grandTotal.toFixed(0)}
+            {formatBookingCurrency(booking.pricing.totalEstimate, booking.pricing.currency)}
           </span>
         </div>
       </div>

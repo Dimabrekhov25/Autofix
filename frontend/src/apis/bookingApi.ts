@@ -132,10 +132,23 @@ export interface BookingServiceItemDto {
   estimatedDuration: string
 }
 
+export interface BookingVehicleDto {
+  id: string
+  licensePlate: string
+  vin?: string | null
+  make: string
+  model: string
+  year: number
+  trim?: string | null
+  engine?: string | null
+  isDrivable: boolean
+}
+
 export interface BookingDto {
   id: string
   customerId: string
   vehicleId: string
+  vehicle?: BookingVehicleDto | null
   startAt: string
   endAt: string
   status: number
@@ -402,4 +415,8 @@ export function createBookingRequest(payload: CreateBookingPayload, accessToken?
 
 export function getBookingByIdRequest(id: string, accessToken?: string) {
   return request<BookingDto>(`/Bookings/${id}`, { method: 'GET' }, accessToken)
+}
+
+export function getMyBookingsRequest(accessToken?: string) {
+  return request<BookingDto[]>('/Bookings/my', { method: 'GET', cache: 'no-store' }, accessToken)
 }
