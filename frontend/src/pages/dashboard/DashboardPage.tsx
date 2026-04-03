@@ -1,17 +1,80 @@
-import { useState } from 'react'
-import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
-import { BookingList } from '../../features/dashboard/components/BookingList'
+import { useEffect, useState } from 'react'
+
+import { getBookingErrorMessage, getMyBookingsRequest } from '../../apis/bookingApi'
+import { useAuth } from '../../features/auth/useAuth'
 import { BookingDetailsView } from '../../features/dashboard/components/BookingDetailsView'
-import { mockBookings, getBookingSummary } from '../../features/dashboard/mock/dashboard-data'
+import { BookingList } from '../../features/dashboard/components/BookingList'
+import { getBookingSummary, mapBookingHistory } from '../../features/dashboard/lib/booking-history'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
+import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 
 export function DashboardPage() {
-  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
-    mockBookings.length > 0 ? mockBookings[0].id : null
-  )
+  const { tokens } = useAuth()
+  const accessToken = tokens?.accessToken
+  const [bookings, setBookings] = useState(() => [] as ReturnType<typeof mapBookingHistory>)
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const selectedBooking = mockBookings.find((b) => b.id === selectedBookingId) || null
-  const summary = getBookingSummary()
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadBookings() {
+      if (!accessToken) {
+        if (isMounted) {
+          setBookings([])
+          setSelectedBookingId(null)
+          setErrorMessage('Your session is missing an access token.')
+          setIsLoading(false)
+        }
+
+        return
+      }
+
+      setIsLoading(true)
+      setErrorMessage(null)
+
+      try {
+        const bookingHistory = await getMyBookingsRequest(accessToken)
+        const nextBookings = mapBookingHistory(bookingHistory)
+
+        if (!isMounted) {
+          return
+        }
+
+        setBookings(nextBookings)
+        setSelectedBookingId((currentSelectedBookingId) => {
+          if (
+            currentSelectedBookingId &&
+            nextBookings.some((booking) => booking.id === currentSelectedBookingId)
+          ) {
+            return currentSelectedBookingId
+          }
+
+          return nextBookings[0]?.id ?? null
+        })
+      } catch (error) {
+        if (isMounted) {
+          setBookings([])
+          setSelectedBookingId(null)
+          setErrorMessage(getBookingErrorMessage(error, 'Unable to load your booking history.'))
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadBookings()
+
+    return () => {
+      isMounted = false
+    }
+  }, [accessToken])
+
+  const selectedBooking = bookings.find((booking) => booking.id === selectedBookingId) || null
+  const summary = getBookingSummary(bookings)
 
   return (
     <DashboardShell>
@@ -20,15 +83,20 @@ export function DashboardPage() {
           Service Dashboard
         </h1>
         <p className="text-on-surface-variant">
-          Manage and track all your vehicle service bookings
+          Review and track your personal vehicle service bookings
         </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      {errorMessage ? (
+        <div className="mb-6 rounded-2xl border border-error/15 bg-error/5 px-5 py-4 text-sm text-error">
+          {errorMessage}
+        </div>
+      ) : null}
+
+      <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
         <div className="shell-panel p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <MaterialIcon name="event" className="text-primary text-2xl" />
+          <div className="mb-2 flex items-center gap-3">
+            <MaterialIcon name="event" className="text-2xl text-primary" />
             <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
               Total
             </span>
@@ -37,8 +105,8 @@ export function DashboardPage() {
         </div>
 
         <div className="shell-panel p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <MaterialIcon name="build_circle" className="text-primary text-2xl" />
+          <div className="mb-2 flex items-center gap-3">
+            <MaterialIcon name="build_circle" className="text-2xl text-primary" />
             <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
               Active
             </span>
@@ -47,8 +115,8 @@ export function DashboardPage() {
         </div>
 
         <div className="shell-panel p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <MaterialIcon name="event_available" className="text-blue-600 text-2xl" />
+          <div className="mb-2 flex items-center gap-3">
+            <MaterialIcon name="event_available" className="text-2xl text-blue-600" />
             <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
               Upcoming
             </span>
@@ -57,8 +125,8 @@ export function DashboardPage() {
         </div>
 
         <div className="shell-panel p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <MaterialIcon name="check_circle" className="text-green-600 text-2xl" />
+          <div className="mb-2 flex items-center gap-3">
+            <MaterialIcon name="check_circle" className="text-2xl text-green-600" />
             <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
               Completed
             </span>
@@ -67,29 +135,31 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Main Content: Bookings List + Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Bookings List */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-5 xl:col-span-4">
-          <h2 className="text-xl font-headline font-bold text-on-surface mb-4">
-            Your Bookings
-          </h2>
-          <BookingList
-            bookings={mockBookings}
-            selectedBookingId={selectedBookingId}
-            onSelectBooking={setSelectedBookingId}
-          />
+          <h2 className="mb-4 text-xl font-headline font-bold text-on-surface">Booking History</h2>
+          {isLoading ? (
+            <div className="shell-panel p-8 text-center text-sm text-on-surface-variant">
+              Loading your booking history...
+            </div>
+          ) : (
+            <BookingList
+              bookings={bookings}
+              selectedBookingId={selectedBookingId}
+              onSelectBooking={setSelectedBookingId}
+            />
+          )}
         </div>
 
-        {/* Right: Selected Booking Details */}
         <div className="lg:col-span-7 xl:col-span-8">
-          <h2 className="text-xl font-headline font-bold text-on-surface mb-4">
-            Booking Details
-          </h2>
-          <BookingDetailsView
-            booking={selectedBooking}
-            onBack={() => setSelectedBookingId(null)}
-          />
+          <h2 className="mb-4 text-xl font-headline font-bold text-on-surface">Booking Details</h2>
+          {isLoading ? (
+            <div className="shell-panel p-8 text-center text-sm text-on-surface-variant">
+              Preparing booking details...
+            </div>
+          ) : (
+            <BookingDetailsView booking={selectedBooking} onBack={() => setSelectedBookingId(null)} />
+          )}
         </div>
       </div>
     </DashboardShell>

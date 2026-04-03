@@ -1,10 +1,6 @@
 import type { Booking } from '../types/booking'
-import type { DiagnosticIssue } from '../../diagnostic/types/vehicle'
-import { VehicleHeader } from '../../diagnostic/components/VehicleHeader'
+import { formatBookingCurrency, formatBookingDuration } from '../../booking/lib/booking-api-helpers'
 import { VehicleInfoCard } from '../../diagnostic/components/VehicleInfoCard'
-import { IssueCard } from '../../diagnostic/components/IssueCard'
-import { CostCalculator } from '../../diagnostic/components/CostCalculator'
-import { ServiceHistory } from '../../diagnostic/components/ServiceHistory'
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 
 interface BookingDetailsViewProps {
@@ -16,94 +12,137 @@ export function BookingDetailsView({ booking, onBack }: BookingDetailsViewProps)
   if (!booking) {
     return (
       <div className="shell-panel p-12 text-center">
-        <div className="mx-auto w-16 h-16 mb-4 rounded-full bg-surface-container flex items-center justify-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-surface-container">
           <MaterialIcon name="touch_app" className="text-4xl text-on-surface-variant opacity-40" />
         </div>
-        <h3 className="font-headline font-bold text-lg text-on-surface mb-2">
-          Select a Booking
-        </h3>
+        <h3 className="mb-2 font-headline text-lg font-bold text-on-surface">Select a Booking</h3>
         <p className="text-sm text-on-surface-variant">
-          Click on a booking card to view detailed diagnostic information.
+          Click on a booking card to view the scheduled vehicle, services, and estimate.
         </p>
       </div>
     )
   }
 
-  const { vehicle, issues, costBreakdown, serviceHistory } = booking.diagnosticData
-  const activeIssues = issues.filter((issue: DiagnosticIssue) => issue.priority !== 'resolved')
-  const resolvedIssues = issues.filter((issue: DiagnosticIssue) => issue.priority === 'resolved')
+  const scheduledWindow = `${booking.scheduledDate} at ${booking.scheduledTime}`
+  const vehicleDetails = [booking.vehicle.trim, booking.vehicle.engine].filter(Boolean).join(' / ')
 
   return (
     <div className="space-y-8">
-      {/* Mobile Back Button */}
-      {onBack && (
+      {onBack ? (
         <button
           type="button"
           onClick={onBack}
-          className="lg:hidden flex items-center gap-2 text-primary font-medium text-sm"
+          className="flex items-center gap-2 text-sm font-medium text-primary lg:hidden"
         >
           <MaterialIcon name="arrow_back" className="text-lg" />
           <span>Back to Bookings</span>
         </button>
-      )}
+      ) : null}
 
-      {/* Vehicle Header */}
-      <VehicleHeader vehicle={vehicle} />
+      <div className="space-y-2">
+        <span className="text-[0.6875rem] font-label font-bold uppercase tracking-[0.1em] text-primary">
+          Booking Overview
+        </span>
+        <h1 className="text-4xl font-headline font-extrabold tracking-tighter text-on-surface">
+          {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
+        </h1>
+        <p className="font-medium text-on-surface-variant">
+          {vehicleDetails || 'Vehicle details'}
+        </p>
+      </div>
 
-      {/* Vehicle Info Cards */}
       <div className="grid grid-cols-2 gap-4">
-        <VehicleInfoCard label="VIN Number" value={vehicle.vin} mono />
+        <VehicleInfoCard label="Scheduled" value={scheduledWindow} />
+        <VehicleInfoCard label="Plate Number" value={booking.vehicle.plateNumber || 'Not provided'} />
+        <VehicleInfoCard label="VIN Number" value={booking.vehicle.vin || 'Not provided'} mono />
         <VehicleInfoCard
-          label="Odometer"
-          value={`${vehicle.odometer.toLocaleString()} ${vehicle.odometerUnit}`}
+          label="Driveability"
+          value={booking.vehicle.isDrivable ? 'Vehicle can be driven in' : 'Tow support recommended'}
         />
       </div>
 
-      {/* Diagnostic Issues */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-headline font-bold text-on-surface">Diagnostic Issues</h2>
-          {activeIssues.length > 0 && (
-            <span className="text-sm font-bold text-secondary">
-              {activeIssues.length} Active
-            </span>
-          )}
+          <h2 className="text-xl font-headline font-bold text-on-surface">Booked Services</h2>
+          <span className="text-sm font-bold text-secondary">
+            {booking.services.length} selected
+          </span>
         </div>
 
-        {issues.length === 0 ? (
+        {booking.services.length === 0 ? (
           <div className="shell-panel p-8 text-center">
-            <MaterialIcon name="check_circle" className="text-5xl text-primary opacity-40 mb-3" />
+            <MaterialIcon name="build_circle" className="mb-3 text-5xl text-primary opacity-40" />
             <p className="text-sm font-medium text-on-surface-variant">
-              No issues detected. Vehicle in good condition.
+              No service items were attached to this booking.
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {activeIssues.map((issue: DiagnosticIssue) => (
-              <IssueCard key={issue.id} issue={issue} />
-            ))}
-            {resolvedIssues.map((issue: DiagnosticIssue) => (
-              <IssueCard key={issue.id} issue={issue} />
+          <div className="space-y-3">
+            {booking.services.map((service) => (
+              <div key={service.id} className="shell-panel p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-headline text-lg font-bold text-on-surface">{service.name}</h3>
+                    <p className="mt-1 text-sm text-on-surface-variant">{service.description}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-on-surface">
+                      {formatBookingCurrency(
+                        service.basePrice + service.estimatedLaborCost,
+                        booking.pricing.currency,
+                      )}
+                    </p>
+                    <p className="mt-1 text-xs text-on-surface-variant">
+                      {formatBookingDuration(service.estimatedDuration)}
+                    </p>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Cost Calculator */}
-      {costBreakdown.grandTotal > 0 && <CostCalculator breakdown={costBreakdown} />}
+      <div className="shell-panel p-6">
+        <h3 className="mb-4 font-headline text-sm font-bold uppercase tracking-wider text-on-surface-variant">
+          Estimate Summary
+        </h3>
+        <div className="space-y-3 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-on-surface-variant">Subtotal</span>
+            <span className="font-bold text-on-surface">
+              {formatBookingCurrency(booking.pricing.subtotal, booking.pricing.currency)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-on-surface-variant">Estimated labor</span>
+            <span className="font-bold text-on-surface">
+              {formatBookingCurrency(booking.pricing.estimatedLaborCost, booking.pricing.currency)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-on-surface-variant">Tax</span>
+            <span className="font-bold text-on-surface">
+              {formatBookingCurrency(booking.pricing.taxAmount, booking.pricing.currency)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between border-t border-outline-variant/10 pt-3">
+            <span className="font-headline text-base font-bold text-on-surface">Total</span>
+            <span className="font-headline text-xl font-extrabold text-on-surface">
+              {formatBookingCurrency(booking.pricing.totalEstimate, booking.pricing.currency)}
+            </span>
+          </div>
+        </div>
+      </div>
 
-      {/* Service History */}
-      {serviceHistory.length > 0 && <ServiceHistory records={serviceHistory} />}
-
-      {/* Booking Notes */}
-      {booking.notes && (
+      {booking.notes ? (
         <div className="shell-panel p-6">
-          <h3 className="font-headline font-bold text-sm uppercase tracking-wider text-on-surface-variant mb-3">
+          <h3 className="mb-3 font-headline text-sm font-bold uppercase tracking-wider text-on-surface-variant">
             Booking Notes
           </h3>
           <p className="text-sm text-on-surface">{booking.notes}</p>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

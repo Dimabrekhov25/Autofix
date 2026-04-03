@@ -10,6 +10,18 @@ public static class BookingMapper
             entity.Id,
             entity.CustomerId,
             entity.VehicleId,
+            entity.Vehicle is null
+                ? null
+                : new BookingVehicleDto(
+                    entity.Vehicle.Id,
+                    entity.Vehicle.LicensePlate,
+                    entity.Vehicle.Vin,
+                    entity.Vehicle.Make,
+                    entity.Vehicle.Model,
+                    entity.Vehicle.Year,
+                    entity.Vehicle.Trim,
+                    entity.Vehicle.Engine,
+                    entity.Vehicle.IsDrivable),
             entity.BookingTimeSlotId,
             entity.StartAt,
             entity.EndAt,

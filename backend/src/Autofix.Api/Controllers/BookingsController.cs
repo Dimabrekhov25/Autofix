@@ -5,8 +5,11 @@ using Autofix.Application.Bookings.Commands.UpdateBooking;
 using Autofix.Application.Bookings.Queries.GetAvailableBookingSlots;
 using Autofix.Application.Bookings.Queries.GetBookingById;
 using Autofix.Application.Bookings.Queries.GetBookingQuote;
+using Autofix.Application.Bookings.Queries.GetCurrentUserBookings;
 using Autofix.Application.Bookings.Queries.GetBookings;
+using Autofix.Application.Common.Security;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Autofix.Api.Controllers;
@@ -24,6 +27,14 @@ public sealed class BookingsController(IMediator mediator) : BaseController
     public async Task<IActionResult> GetAll([FromQuery] GetBookingsQuery query, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(query, cancellationToken);
+        return OkResult(result);
+    }
+
+    [Authorize(Policy = PolicyNames.ActiveUser)]
+    [HttpGet("my")]
+    public async Task<IActionResult> GetMyBookings(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetCurrentUserBookingsQuery(), cancellationToken);
         return OkResult(result);
     }
 

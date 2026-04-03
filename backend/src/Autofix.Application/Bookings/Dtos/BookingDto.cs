@@ -6,6 +6,7 @@ public sealed record BookingDto(
     Guid Id,
     Guid CustomerId,
     Guid VehicleId,
+    BookingVehicleDto? Vehicle,
     Guid? BookingTimeSlotId,
     DateTime StartAt,
     DateTime EndAt,
