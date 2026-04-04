@@ -346,6 +346,28 @@ export function BookingSummaryPage() {
                         <p className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
                           {formatBookingDuration(service.estimatedDuration)}
                         </p>
+                        {service.category === 0 ? (
+                          service.requiredParts.length > 0 ? (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {service.requiredParts.map((requiredPart) => (
+                                <span
+                                  key={`${service.serviceCatalogItemId}-${requiredPart.partId}`}
+                                  className="rounded-full bg-primary-container/20 px-3 py-1 text-[0.6875rem] font-semibold text-primary"
+                                >
+                                  {requiredPart.partName} x{requiredPart.quantity}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="mt-3 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-slate-400">
+                              No automatic part reservation
+                            </p>
+                          )
+                        ) : (
+                          <p className="mt-3 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-amber-700">
+                            Diagnostic only · no stock reserved
+                          </p>
+                        )}
                       </div>
                       <span className="font-bold text-slate-900">
                         {formatBookingCurrency(service.basePrice + service.estimatedLaborCost)}
@@ -483,6 +505,14 @@ export function BookingSummaryPage() {
                 </div>
 
                 <div className="mb-8 space-y-4">
+                  {quote?.services.some((service) => service.category === 0 && service.requiredParts.length > 0) ? (
+                    <div className="rounded-xl bg-primary-container/10 px-4 py-4 text-sm text-slate-700">
+                      <p className="font-bold text-slate-900">Reserved parts</p>
+                      <p className="mt-1 text-slate-600">
+                        Stock is reserved for required parts as soon as this booking is created. Diagnostics do not reserve inventory.
+                      </p>
+                    </div>
+                  ) : null}
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Subtotal</span>
                     <span className="font-medium text-slate-900">

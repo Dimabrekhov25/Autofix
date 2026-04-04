@@ -38,6 +38,14 @@ export interface ServiceCatalogItemDto {
   estimatedLaborCost: number
   estimatedDuration: string
   isActive: boolean
+  requiredParts: ServiceCatalogRequiredPartDto[]
+}
+
+export interface ServiceCatalogRequiredPartDto {
+  partId: string
+  partName: string
+  unitPrice: number
+  quantity: number
 }
 
 export interface BookingAvailableSlotDto {
@@ -111,6 +119,7 @@ export interface BookingQuoteServiceDto {
   basePrice: number
   estimatedLaborCost: number
   estimatedDuration: string
+  requiredParts: ServiceCatalogRequiredPartDto[]
 }
 
 export interface BookingQuoteDto {
@@ -294,6 +303,7 @@ export function getServiceCatalogItemsRequest(
   options: {
     category: 0 | 1
     isActive?: boolean
+    bookableOnly?: boolean
   },
   accessToken?: string,
 ) {
@@ -301,6 +311,9 @@ export function getServiceCatalogItemsRequest(
   params.set('category', String(options.category))
   if (typeof options.isActive === 'boolean') {
     params.set('isActive', String(options.isActive))
+  }
+  if (typeof options.bookableOnly === 'boolean') {
+    params.set('bookableOnly', String(options.bookableOnly))
   }
 
   return request<ServiceCatalogItemDto[]>(
@@ -415,6 +428,27 @@ export function createBookingRequest(payload: CreateBookingPayload, accessToken?
 
 export function getBookingByIdRequest(id: string, accessToken?: string) {
   return request<BookingDto>(`/Bookings/${id}`, { method: 'GET' }, accessToken)
+}
+
+export function getBookingsRequest(
+  options: {
+    customerId?: string
+    vehicleId?: string
+  } = {},
+  accessToken?: string,
+) {
+  const params = new URLSearchParams()
+
+  if (options.customerId?.trim()) {
+    params.set('customerId', options.customerId.trim())
+  }
+
+  if (options.vehicleId?.trim()) {
+    params.set('vehicleId', options.vehicleId.trim())
+  }
+
+  const suffix = params.size > 0 ? `?${params.toString()}` : ''
+  return request<BookingDto[]>(`/Bookings${suffix}`, { method: 'GET', cache: 'no-store' }, accessToken)
 }
 
 export function getMyBookingsRequest(accessToken?: string) {

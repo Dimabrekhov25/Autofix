@@ -19,6 +19,45 @@ export interface CatalogPartDto {
   isActive: boolean
 }
 
+export interface ServiceCatalogRequiredPartDto {
+  partId: string
+  partName: string
+  unitPrice: number
+  quantity: number
+}
+
+export interface ServiceCatalogRequiredPartInputDto {
+  partId: string
+  quantity: number
+}
+
+export interface ServiceCatalogItemDto {
+  id: string
+  name: string
+  description: string
+  category: 0 | 1
+  basePrice: number
+  estimatedLaborCost: number
+  estimatedDuration: string
+  isActive: boolean
+  requiredParts: ServiceCatalogRequiredPartDto[]
+}
+
+export interface CreateServiceCatalogItemPayload {
+  name: string
+  description: string
+  category: 0 | 1
+  basePrice: number
+  estimatedLaborCost: number
+  estimatedDuration: string
+  isActive: boolean
+  requiredParts?: ServiceCatalogRequiredPartInputDto[]
+}
+
+export interface UpdateServiceCatalogItemPayload extends CreateServiceCatalogItemPayload {
+  id: string
+}
+
 export interface CreateCatalogPartPayload {
   name: string
   unitPrice: number
@@ -139,6 +178,70 @@ export function getCatalogErrorMessage(
 
 export function getPartsRequest(accessToken?: string) {
   return request<CatalogPartDto[]>('/Parts', { method: 'GET' }, accessToken)
+}
+
+export function getServiceCatalogItemsRequest(
+  options: {
+    category?: 0 | 1
+    isActive?: boolean
+    bookableOnly?: boolean
+  } = {},
+  accessToken?: string,
+) {
+  const params = new URLSearchParams()
+
+  if (typeof options.category === 'number') {
+    params.set('category', String(options.category))
+  }
+
+  if (typeof options.isActive === 'boolean') {
+    params.set('isActive', String(options.isActive))
+  }
+
+  if (typeof options.bookableOnly === 'boolean') {
+    params.set('bookableOnly', String(options.bookableOnly))
+  }
+
+  const suffix = params.size > 0 ? `?${params.toString()}` : ''
+  return request<ServiceCatalogItemDto[]>(`/ServiceCatalog${suffix}`, { method: 'GET' }, accessToken)
+}
+
+export function createServiceCatalogItemRequest(
+  payload: CreateServiceCatalogItemPayload,
+  accessToken?: string,
+) {
+  return request<ServiceCatalogItemDto>(
+    '/ServiceCatalog',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    accessToken,
+  )
+}
+
+export function updateServiceCatalogItemRequest(
+  payload: UpdateServiceCatalogItemPayload,
+  accessToken?: string,
+) {
+  return request<ServiceCatalogItemDto>(
+    `/ServiceCatalog/${payload.id}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    },
+    accessToken,
+  )
+}
+
+export async function deleteServiceCatalogItemRequest(id: string, accessToken?: string) {
+  await request<Record<string, never>>(
+    `/ServiceCatalog/${id}`,
+    {
+      method: 'DELETE',
+    },
+    accessToken,
+  )
 }
 
 export function createPartRequest(
