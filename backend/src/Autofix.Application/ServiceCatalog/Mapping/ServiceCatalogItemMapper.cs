@@ -14,5 +14,14 @@ public static class ServiceCatalogItemMapper
             entity.BasePrice,
             entity.EstimatedLaborCost,
             entity.EstimatedDuration,
-            entity.IsActive);
+            entity.IsActive,
+            entity.RequiredParts
+                .Where(part => !part.IsDeleted && part.Part is not null)
+                .OrderBy(part => part.Part!.Name)
+                .Select(part => new ServiceCatalogRequiredPartDto(
+                    part.PartId,
+                    part.Part!.Name,
+                    part.Part.UnitPrice,
+                    part.Quantity))
+                .ToList());
 }

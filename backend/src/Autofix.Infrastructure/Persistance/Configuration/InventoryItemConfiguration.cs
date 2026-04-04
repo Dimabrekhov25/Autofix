@@ -13,6 +13,10 @@ public sealed class InventoryItemConfiguration : IEntityTypeConfiguration<Invent
         builder.HasOne<Part>(x => x.Part)
             .WithMany()
             .HasForeignKey(x => x.PartId);
+
+        builder.HasIndex(x => x.PartId)
+            .IsUnique()
+            .HasFilter("\"is_deleted\" = false");
     }
 }
 

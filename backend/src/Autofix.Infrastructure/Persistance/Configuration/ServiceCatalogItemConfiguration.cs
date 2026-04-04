@@ -21,6 +21,10 @@ public sealed class ServiceCatalogItemConfiguration : IEntityTypeConfiguration<S
 
         builder.Property(x => x.EstimatedLaborCost)
             .HasPrecision(18, 2);
+
+        builder.HasMany(x => x.RequiredParts)
+            .WithOne(x => x.ServiceCatalogItem)
+            .HasForeignKey(x => x.ServiceCatalogItemId);
     }
 }
 

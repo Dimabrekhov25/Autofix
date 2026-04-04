@@ -10,5 +10,6 @@ public sealed record ServiceCatalogItemDto(
     decimal BasePrice,
     decimal EstimatedLaborCost,
     TimeSpan EstimatedDuration,
-    bool IsActive
+    bool IsActive,
+    IReadOnlyList<ServiceCatalogRequiredPartDto> RequiredParts
 );

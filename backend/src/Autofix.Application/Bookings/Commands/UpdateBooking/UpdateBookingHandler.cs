@@ -2,7 +2,9 @@ using Autofix.Application.Bookings.Dtos;
 using Autofix.Application.Bookings.Mapping;
 using Autofix.Application.Bookings.Services;
 using Autofix.Application.Common.Interfaces;
+using Autofix.Application.Common.Interfaces.Bookings;
 using Autofix.Application.Common.Interfaces.BookingFlow;
+using Autofix.Domain.Entities.Booking;
 using Autofix.Domain.Exceptions;
 using MediatR;
 
@@ -10,6 +12,7 @@ namespace Autofix.Application.Bookings.Commands.UpdateBooking;
 
 public sealed class UpdateBookingHandler(
     IBookingRepository bookingRepository,
+    IBookingLifecycleService bookingLifecycleService,
     IBookingTimeSlotRepository bookingTimeSlotRepository,
     ICustomerRepository customerRepository,
     IVehicleRepository vehicleRepository,
@@ -19,8 +22,8 @@ public sealed class UpdateBookingHandler(
 {
     public async Task<BookingDto?> Handle(UpdateBookingCommand request, CancellationToken cancellationToken)
     {
-        var booking = await bookingRepository.GetByIdAsync(request.Id, cancellationToken);
-        if (booking is null)
+        var existingBooking = await bookingRepository.GetByIdAsync(request.Id, cancellationToken);
+        if (existingBooking is null)
         {
             return null;
         }
@@ -75,24 +78,33 @@ public sealed class UpdateBookingHandler(
             throw new BadRequestException("Selected time slot is unavailable");
         }
 
-        booking.CustomerId = request.CustomerId;
-        booking.VehicleId = request.VehicleId;
-        booking.BookingTimeSlotId = timeSlot.Id;
-        booking.StartAt = timeSlot.StartAt;
-        booking.EndAt = endAt;
-        booking.Status = request.Status;
-        booking.PaymentOption = request.PaymentOption;
-        booking.Currency = pricing.Currency;
-        booking.Subtotal = pricing.Subtotal;
-        booking.EstimatedLaborCost = pricing.EstimatedLaborCost;
-        booking.TaxAmount = pricing.TaxAmount;
-        booking.TotalEstimate = pricing.TotalEstimate;
-        booking.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
-        booking.UpdatedAt = DateTime.UtcNow;
-        booking.Services = BookingFlowCalculator.CreateSnapshots(services);
+        if (request.Status == Autofix.Domain.Enum.BookingStatus.Cancelled)
+        {
+            throw new BadRequestException("Use the delete endpoint to cancel a booking and release reserved parts.");
+        }
 
-        await bookingRepository.UpdateAsync(booking, cancellationToken);
-        return booking.ToDto();
+        var booking = new Booking
+        {
+            Id = request.Id,
+            CustomerId = request.CustomerId,
+            VehicleId = request.VehicleId,
+            BookingTimeSlotId = timeSlot.Id,
+            StartAt = timeSlot.StartAt,
+            EndAt = endAt,
+            Status = request.Status,
+            PaymentOption = request.PaymentOption,
+            Currency = pricing.Currency,
+            Subtotal = pricing.Subtotal,
+            EstimatedLaborCost = pricing.EstimatedLaborCost,
+            TaxAmount = pricing.TaxAmount,
+            TotalEstimate = pricing.TotalEstimate,
+            Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+            UpdatedAt = DateTime.UtcNow,
+            Services = BookingFlowCalculator.CreateSnapshots(services)
+        };
+
+        var updated = await bookingLifecycleService.UpdateAsync(booking, services, cancellationToken);
+        return updated?.ToDto();
     }
 
     private async Task<IReadOnlyList<Autofix.Domain.Entities.Catalog.ServiceCatalogItem>> LoadRequestedServicesAsync(

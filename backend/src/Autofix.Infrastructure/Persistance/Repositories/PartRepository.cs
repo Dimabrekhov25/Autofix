@@ -20,6 +20,22 @@ public sealed class PartRepository(ApplicationDbContext dbContext) : IPartReposi
             .FirstOrDefaultAsync(part => part.Id == id && !part.IsDeleted, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Part>> GetByIdsAsync(
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        return await dbContext.Parts
+            .AsNoTracking()
+            .Where(part => ids.Contains(part.Id) && !part.IsDeleted && part.IsActive)
+            .OrderBy(part => part.Name)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Part>> GetAllAsync(CancellationToken cancellationToken)
     {
         var parts = await dbContext.Parts

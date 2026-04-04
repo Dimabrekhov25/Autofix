@@ -6,4 +6,5 @@ namespace Autofix.Application.ServiceCatalog.Queries.GetServiceCatalogItems;
 
 public sealed record GetServiceCatalogItemsQuery(
     ServiceCatalogCategory? Category = null,
-    bool? IsActive = null) : IRequest<IReadOnlyList<ServiceCatalogItemDto>>;
+    bool? IsActive = null,
+    bool BookableOnly = false) : IRequest<IReadOnlyList<ServiceCatalogItemDto>>;

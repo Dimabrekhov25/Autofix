@@ -2,6 +2,7 @@ using Autofix.Application.Bookings.Dtos;
 using Autofix.Application.Bookings.Services;
 using Autofix.Application.Common.Interfaces;
 using Autofix.Application.Common.Interfaces.BookingFlow;
+using Autofix.Application.ServiceCatalog.Dtos;
 using Autofix.Domain.Entities.Catalog;
 using Autofix.Domain.Enum;
 using Autofix.Domain.Exceptions;
@@ -70,7 +71,15 @@ public sealed class GetBookingQuoteHandler(
                     service.Category,
                     service.BasePrice,
                     service.EstimatedLaborCost,
-                    service.EstimatedDuration))
+                    service.EstimatedDuration,
+                    service.RequiredParts
+                        .Where(part => !part.IsDeleted && part.Part is not null)
+                        .Select(part => new ServiceCatalogRequiredPartDto(
+                            part.PartId,
+                            part.Part!.Name,
+                            part.Part.UnitPrice,
+                            part.Quantity))
+                        .ToList()))
                 .ToList(),
             [BookingPaymentOption.PayNow, BookingPaymentOption.PayAtShop]);
     }

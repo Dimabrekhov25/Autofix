@@ -305,6 +305,55 @@ namespace Autofix.Infrastructure.Migrations
                     b.ToTable("service_catalog_items", (string)null);
                 });
 
+            modelBuilder.Entity("Autofix.Domain.Entities.Catalog.ServiceCatalogPartRequirement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<Guid>("PartId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("part_id");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<Guid>("ServiceCatalogItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_catalog_item_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_service_catalog_part_requirements");
+
+                    b.HasIndex("PartId")
+                        .HasDatabaseName("ix_service_catalog_part_requirements_part_id");
+
+                    b.HasIndex("ServiceCatalogItemId", "PartId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_service_catalog_part_requirements_service_catalog_item_id_p")
+                        .HasFilter("\"is_deleted\" = false");
+
+                    b.ToTable("service_catalog_part_requirements", (string)null);
+                });
+
             modelBuilder.Entity("Autofix.Domain.Entities.Finance.Invoice", b =>
                 {
                     b.Property<Guid>("Id")
@@ -526,7 +575,9 @@ namespace Autofix.Infrastructure.Migrations
                         .HasName("pk_inventory_items");
 
                     b.HasIndex("PartId")
-                        .HasDatabaseName("ix_inventory_items_part_id");
+                        .IsUnique()
+                        .HasDatabaseName("ix_inventory_items_part_id")
+                        .HasFilter("\"is_deleted\" = false");
 
                     b.ToTable("inventory_items", (string)null);
                 });
@@ -837,7 +888,9 @@ namespace Autofix.Infrastructure.Migrations
                         .HasName("pk_service_orders");
 
                     b.HasIndex("BookingId")
-                        .HasDatabaseName("ix_service_orders_booking_id");
+                        .IsUnique()
+                        .HasDatabaseName("ix_service_orders_booking_id")
+                        .HasFilter("\"is_deleted\" = false");
 
                     b.HasIndex("CustomerId")
                         .HasDatabaseName("ix_service_orders_customer_id");
@@ -1427,6 +1480,27 @@ namespace Autofix.Infrastructure.Migrations
                     b.Navigation("ServiceCatalogItem");
                 });
 
+            modelBuilder.Entity("Autofix.Domain.Entities.Catalog.ServiceCatalogPartRequirement", b =>
+                {
+                    b.HasOne("Autofix.Domain.Entities.Inventory.Part", "Part")
+                        .WithMany()
+                        .HasForeignKey("PartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_service_catalog_part_requirements_parts_part_id");
+
+                    b.HasOne("Autofix.Domain.Entities.Catalog.ServiceCatalogItem", "ServiceCatalogItem")
+                        .WithMany("RequiredParts")
+                        .HasForeignKey("ServiceCatalogItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_service_catalog_part_requirements_service_catalog_items_ser");
+
+                    b.Navigation("Part");
+
+                    b.Navigation("ServiceCatalogItem");
+                });
+
             modelBuilder.Entity("Autofix.Domain.Entities.Finance.Invoice", b =>
                 {
                     b.HasOne("Autofix.Domain.Entities.ServiceOrders.ServiceOrder", "ServiceOrder")
@@ -1678,6 +1752,11 @@ namespace Autofix.Infrastructure.Migrations
             modelBuilder.Entity("Autofix.Domain.Entities.Booking.BookingTimeSlot", b =>
                 {
                     b.Navigation("Bookings");
+                });
+
+            modelBuilder.Entity("Autofix.Domain.Entities.Catalog.ServiceCatalogItem", b =>
+                {
+                    b.Navigation("RequiredParts");
                 });
 
             modelBuilder.Entity("Autofix.Domain.Entities.Finance.Invoice", b =>
