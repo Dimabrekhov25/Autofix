@@ -1,4 +1,5 @@
 using FluentValidation;
+using Autofix.Domain.Enum;
 
 namespace Autofix.Application.ServiceCatalog.Commands.CreateServiceCatalogItem;
 
@@ -24,5 +25,19 @@ public sealed class CreateServiceCatalogItemCommandValidator : AbstractValidator
 
         RuleFor(x => x.EstimatedDuration)
             .GreaterThan(TimeSpan.Zero);
+
+        RuleForEach(x => x.RequiredParts)
+            .ChildRules(part =>
+            {
+                part.RuleFor(x => x.PartId)
+                    .NotEmpty();
+
+                part.RuleFor(x => x.Quantity)
+                    .GreaterThan(0);
+            });
+
+        RuleFor(x => x)
+            .Must(command => command.Category == ServiceCatalogCategory.Service || command.RequiredParts is not { Count: > 0 })
+            .WithMessage("Diagnostic catalog items cannot have required parts.");
     }
 }

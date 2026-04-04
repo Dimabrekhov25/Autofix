@@ -1,4 +1,5 @@
 using Autofix.Domain.Enum;
+using Autofix.Application.ServiceCatalog.Dtos;
 
 namespace Autofix.Application.Bookings.Dtos;
 
@@ -9,5 +10,6 @@ public sealed record BookingQuoteServiceDto(
     ServiceCatalogCategory Category,
     decimal BasePrice,
     decimal EstimatedLaborCost,
-    TimeSpan EstimatedDuration
+    TimeSpan EstimatedDuration,
+    IReadOnlyList<ServiceCatalogRequiredPartDto> RequiredParts
 );

@@ -72,10 +72,10 @@ export function BookingPage() {
       setIsLoading(true)
       setErrorMessage(null)
 
-      try {
-        const [nextServices, nextDiagnostics] = await Promise.all([
-          getServiceCatalogItemsRequest({ category: 0, isActive: true }, accessToken),
-          getServiceCatalogItemsRequest({ category: 1, isActive: true }, accessToken),
+        try {
+          const [nextServices, nextDiagnostics] = await Promise.all([
+          getServiceCatalogItemsRequest({ category: 0, isActive: true, bookableOnly: true }, accessToken),
+          getServiceCatalogItemsRequest({ category: 1, isActive: true, bookableOnly: true }, accessToken),
         ])
 
         if (!isMounted) {
@@ -311,15 +311,35 @@ export function BookingPage() {
                         </span>
                       </div>
 
-                      <h3 className="mb-1 text-lg font-bold text-on-surface">{option.name}</h3>
-                      <p className="text-sm leading-relaxed text-on-surface-variant">
-                        {option.description}
-                      </p>
+                       <h3 className="mb-1 text-lg font-bold text-on-surface">{option.name}</h3>
+                       <p className="text-sm leading-relaxed text-on-surface-variant">
+                         {option.description}
+                       </p>
 
-                      <div className="mt-4 flex items-center justify-between gap-3">
-                        <span className="text-xs font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-                          {formatBookingDuration(option.estimatedDuration)}
-                        </span>
+                        {option.category === 0 ? (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <span className="rounded-full bg-primary/10 px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-primary">
+                              {option.requiredParts.length} reserved parts
+                            </span>
+                            {option.requiredParts.slice(0, 2).map((requiredPart) => (
+                              <span
+                                key={`${option.id}-${requiredPart.partId}`}
+                                className="rounded-full bg-surface-container px-3 py-1 text-[0.6875rem] font-semibold text-on-surface-variant"
+                              >
+                                {requiredPart.partName} x{requiredPart.quantity}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="mt-4 inline-flex rounded-full bg-amber-100 px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-amber-700">
+                            No stock reserved on booking
+                          </div>
+                        )}
+
+                       <div className="mt-4 flex items-center justify-between gap-3">
+                         <span className="text-xs font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+                           {formatBookingDuration(option.estimatedDuration)}
+                         </span>
                         {isSelected ? (
                           <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">
                             <MaterialIcon
@@ -376,6 +396,11 @@ export function BookingPage() {
                           <p className="text-xs text-on-surface-variant">
                             {activeKind === 'service' ? 'Workshop service' : 'Diagnostic session'}
                           </p>
+                          {option.category === 0 && option.requiredParts.length > 0 ? (
+                            <p className="mt-1 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-primary">
+                              Reserves {option.requiredParts.length} part{option.requiredParts.length === 1 ? '' : 's'}
+                            </p>
+                          ) : null}
                         </div>
                         <span className="text-sm font-bold text-on-surface">
                           {formatBookingCurrency(mapServiceTotal(option))}

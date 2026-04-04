@@ -17,6 +17,8 @@ public sealed class ServiceCatalogRepository(ApplicationDbContext dbContext) : I
     {
         return dbContext.ServiceCatalogItems
             .AsNoTracking()
+            .Include(item => item.RequiredParts.Where(part => !part.IsDeleted))
+            .ThenInclude(requirement => requirement.Part)
             .FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted, cancellationToken);
     }
 
@@ -31,6 +33,8 @@ public sealed class ServiceCatalogRepository(ApplicationDbContext dbContext) : I
 
         var items = await dbContext.ServiceCatalogItems
             .AsNoTracking()
+            .Include(item => item.RequiredParts.Where(part => !part.IsDeleted))
+            .ThenInclude(requirement => requirement.Part)
             .Where(item => ids.Contains(item.Id) && item.IsActive && !item.IsDeleted)
             .OrderBy(item => item.Name)
             .ToListAsync(cancellationToken);
@@ -48,6 +52,8 @@ public sealed class ServiceCatalogRepository(ApplicationDbContext dbContext) : I
     {
         var query = dbContext.ServiceCatalogItems
             .AsNoTracking()
+            .Include(item => item.RequiredParts.Where(part => !part.IsDeleted))
+            .ThenInclude(requirement => requirement.Part)
             .Where(item => !item.IsDeleted);
 
         if (isActive.HasValue)
@@ -65,10 +71,49 @@ public sealed class ServiceCatalogRepository(ApplicationDbContext dbContext) : I
             .ToListAsync(cancellationToken);
     }
 
-    public Task UpdateAsync(ServiceCatalogItem item, CancellationToken cancellationToken)
+    public async Task UpdateAsync(ServiceCatalogItem item, CancellationToken cancellationToken)
     {
-        dbContext.ServiceCatalogItems.Update(item);
-        return dbContext.SaveChangesAsync(cancellationToken);
+        var existingItem = await dbContext.ServiceCatalogItems
+            .Include(x => x.RequiredParts)
+            .FirstOrDefaultAsync(x => x.Id == item.Id && !x.IsDeleted, cancellationToken);
+
+        if (existingItem is null)
+        {
+            return;
+        }
+
+        existingItem.Name = item.Name;
+        existingItem.Description = item.Description;
+        existingItem.Category = item.Category;
+        existingItem.BasePrice = item.BasePrice;
+        existingItem.EstimatedLaborCost = item.EstimatedLaborCost;
+        existingItem.EstimatedDuration = item.EstimatedDuration;
+        existingItem.IsActive = item.IsActive;
+        existingItem.UpdatedAt = item.UpdatedAt ?? DateTime.UtcNow;
+
+        var now = DateTime.UtcNow;
+        foreach (var requirement in existingItem.RequiredParts.Where(requirement => !requirement.IsDeleted))
+        {
+            requirement.IsDeleted = true;
+            requirement.DeletedAt = now;
+            requirement.UpdatedAt = now;
+        }
+
+        var newRequirements = item.RequiredParts
+            .Select(requirement => new ServiceCatalogPartRequirement
+            {
+                ServiceCatalogItemId = existingItem.Id,
+                PartId = requirement.PartId,
+                Quantity = requirement.Quantity
+            })
+            .ToList();
+
+        if (newRequirements.Count > 0)
+        {
+            await dbContext.ServiceCatalogPartRequirements.AddRangeAsync(newRequirements, cancellationToken);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)

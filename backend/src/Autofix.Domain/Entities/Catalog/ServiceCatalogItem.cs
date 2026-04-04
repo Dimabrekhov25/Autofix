@@ -12,4 +12,5 @@ public sealed class ServiceCatalogItem : BaseEntity
     public decimal EstimatedLaborCost { get; set; }
     public TimeSpan EstimatedDuration { get; set; }
     public bool IsActive { get; set; } = true;
+    public List<ServiceCatalogPartRequirement> RequiredParts { get; set; } = new();
 }
