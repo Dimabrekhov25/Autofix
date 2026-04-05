@@ -8,6 +8,7 @@ import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 interface ServicesDropdownProps {
   isActive: boolean
   to: string
+  triggerClassName?: string
 }
 
 interface ServiceCategory {
@@ -167,7 +168,7 @@ const serviceCategories: ServiceCategory[] = [
   },
 ]
 
-export function ServicesDropdown({ isActive, to }: ServicesDropdownProps) {
+export function ServicesDropdown({ isActive, to, triggerClassName }: ServicesDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedCategoryId, setSelectedCategoryId] = useState(serviceCategories[0].id)
 
@@ -197,8 +198,9 @@ export function ServicesDropdown({ isActive, to }: ServicesDropdownProps) {
         aria-expanded={isOpen}
         aria-haspopup="menu"
         className={cn(
-          'flex items-center gap-1 font-heading text-sm font-bold tracking-tight text-slate-600 transition-colors duration-300 hover:text-slate-900',
-          (isActive || isOpen) && 'border-b-2 border-cyan-500 pb-1 text-cyan-600',
+          'flex items-center gap-1',
+          triggerClassName,
+          (isActive || isOpen) && 'border-b-2 border-primary/85 pb-1 text-primary',
         )}
       >
         <span>Services</span>

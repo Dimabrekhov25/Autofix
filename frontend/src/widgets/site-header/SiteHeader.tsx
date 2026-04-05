@@ -16,6 +16,8 @@ export function SiteHeader() {
   const { isAuthenticated, logout, user } = useAuth()
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement | null>(null)
+  const desktopNavItemClass =
+    'font-heading text-sm font-bold tracking-tight text-slate-600 transition-colors duration-300 hover:text-slate-900'
 
   useEffect(() => {
     if (!isProfileMenuOpen) {
@@ -45,10 +47,10 @@ export function SiteHeader() {
 
   return (
     <header className="glass-nav fixed inset-x-0 top-0 z-50">
-      <Container className="flex items-center justify-between gap-6 py-4">
+      <Container className="relative flex items-center justify-between gap-6 py-4">
         <BrandHomeLink brandClassName="relative font-heading text-2xl font-black tracking-[-0.08em] text-slate-900" />
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
           {siteNavigation.map((item) => {
             const matchesPath = item.matchPaths?.includes(location.pathname) ?? false
             const matchesHash = item.matchHashes
@@ -62,6 +64,7 @@ export function SiteHeader() {
                   key={item.label}
                   isActive={isActive}
                   to={item.to}
+                  triggerClassName={desktopNavItemClass}
                 />
               )
             }
@@ -71,8 +74,8 @@ export function SiteHeader() {
                 key={item.label}
                 to={item.to}
                 className={cn(
-                  'font-heading text-sm font-bold tracking-tight text-slate-600 transition-colors duration-300 hover:text-slate-900',
-                  isActive && 'border-b-2 border-cyan-500 pb-1 text-cyan-600',
+                  desktopNavItemClass,
+                  isActive && 'border-b-2 border-primary/85 pb-1 text-primary',
                 )}
               >
                 {item.label}
