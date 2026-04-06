@@ -553,7 +553,7 @@ export function updateBookingPaymentOptionRequest(
 export function updateBookingServiceOrderStatusRequest(
   payload: {
     id: string
-    status: 3 | 4
+    status: 7 | 3 | 4
   },
   accessToken?: string,
 ) {

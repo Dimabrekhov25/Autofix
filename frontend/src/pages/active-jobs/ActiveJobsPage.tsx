@@ -71,6 +71,7 @@ export function ActiveJobsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isStatusUpdating, setIsStatusUpdating] = useState(false)
+  const [pendingStatusValue, setPendingStatusValue] = useState<7 | 3 | 4>(7)
   const [statusActionErrorMessage, setStatusActionErrorMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -123,7 +124,7 @@ export function ActiveJobsPage() {
     }
   }
 
-  async function handleStatusUpdate(nextStatus: 3 | 4) {
+  async function handleStatusUpdate(nextStatus: 7 | 3 | 4) {
     if (!selectedBooking) {
       return
     }
@@ -179,13 +180,21 @@ export function ActiveJobsPage() {
     ?? bookings.find((booking) => booking.id === selectedBookingId)
     ?? null
 
+  useEffect(() => {
+    if (selectedBooking?.status === 7 || selectedBooking?.status === 3 || selectedBooking?.status === 4) {
+      setPendingStatusValue(selectedBooking.status)
+      return
+    }
+
+    setPendingStatusValue(7)
+  }, [selectedBooking?.id, selectedBooking?.status])
+
   const approvedCount = bookings.filter((booking) => booking.status === 7).length
   const inProgressCount = bookings.filter((booking) => booking.status === 3).length
   const completedCount = bookings.filter((booking) => booking.status === 4).length
   const estimateTotal = selectedBooking?.estimate?.estimatedTotalCost ?? selectedBooking?.pricing.totalEstimate ?? 0
   const partUnits = selectedBooking?.estimate?.partItems.reduce((total, item) => total + item.quantity, 0) ?? 0
-  const canStartRepair = selectedBooking?.status === 7
-  const canCompleteRepair = selectedBooking?.status === 3
+  const hasStatusSelectionChanged = selectedBooking != null && pendingStatusValue !== selectedBooking.status
 
   return (
     <DashboardShell searchPlaceholder="Search active vehicles, plates, or requests...">
@@ -355,32 +364,6 @@ export function ActiveJobsPage() {
                         <span className={['rounded-full px-4 py-2 text-sm font-black uppercase tracking-[0.18em]', getStatusBadgeClass(selectedBooking.status)].join(' ')}>
                           {getBookingStatusLabel(selectedBooking.status)}
                         </span>
-                        {canStartRepair ? (
-                          <Button
-                            type="button"
-                            onClick={() => {
-                              void handleStatusUpdate(3)
-                            }}
-                            disabled={isStatusUpdating}
-                            className="min-w-52"
-                          >
-                            <MaterialIcon name="play_arrow" className="text-lg" />
-                            <span>{isStatusUpdating ? 'Updating...' : 'Mark In Progress'}</span>
-                          </Button>
-                        ) : null}
-                        {canCompleteRepair ? (
-                          <Button
-                            type="button"
-                            onClick={() => {
-                              void handleStatusUpdate(4)
-                            }}
-                            disabled={isStatusUpdating}
-                            className="min-w-52"
-                          >
-                            <MaterialIcon name="task_alt" className="text-lg" />
-                            <span>{isStatusUpdating ? 'Updating...' : 'Mark Completed'}</span>
-                          </Button>
-                        ) : null}
                         <Button
                           type="button"
                           tone="secondary"
@@ -514,13 +497,39 @@ export function ActiveJobsPage() {
                             {getBookingStatusLabel(selectedBooking.status)}
                           </p>
                           <p>
-                            <span className="font-semibold text-slate-900">Next action:</span>{' '}
-                            {canStartRepair
-                              ? 'Use the button above to move this job into repair.'
-                              : canCompleteRepair
-                                ? 'Use the button above to close this repair as completed.'
-                                : 'This job is already completed on the board.'}
+                            <span className="font-semibold text-slate-900">Status selector:</span>{' '}
+                            Choose the correct repair stage and apply it. If someone selected the wrong stage by mistake, you can switch it back here.
                           </p>
+                        </div>
+
+                        <div className="mt-5 space-y-3">
+                          <label className="block">
+                            <span className="mb-2 block text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
+                              Repair Status
+                            </span>
+                            <select
+                              value={String(pendingStatusValue)}
+                              onChange={(event) => setPendingStatusValue(Number(event.target.value) as 7 | 3 | 4)}
+                              disabled={isStatusUpdating}
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/10"
+                            >
+                              <option value="7">Approved</option>
+                              <option value="3">In Progress</option>
+                              <option value="4">Completed</option>
+                            </select>
+                          </label>
+
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              void handleStatusUpdate(pendingStatusValue)
+                            }}
+                            disabled={!hasStatusSelectionChanged || isStatusUpdating}
+                            className="w-full"
+                          >
+                            <MaterialIcon name="sync" className={isStatusUpdating ? 'animate-spin text-lg' : 'text-lg'} />
+                            <span>{isStatusUpdating ? 'Updating Status...' : 'Apply Status'}</span>
+                          </Button>
                         </div>
                       </article>
 
