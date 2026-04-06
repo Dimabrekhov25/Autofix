@@ -550,6 +550,23 @@ export function updateBookingPaymentOptionRequest(
   )
 }
 
+export function updateBookingServiceOrderStatusRequest(
+  payload: {
+    id: string
+    status: 3 | 4
+  },
+  accessToken?: string,
+) {
+  return request<BookingDto>(
+    `/Bookings/${payload.id}/service-order-status`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    },
+    accessToken,
+  )
+}
+
 export function getBookingByIdRequest(id: string, accessToken?: string) {
   return request<BookingDto>(`/Bookings/${id}`, { method: 'GET' }, accessToken)
 }

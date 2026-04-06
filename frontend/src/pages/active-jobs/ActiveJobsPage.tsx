@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { getBookingErrorMessage, getBookingsRequest, type BookingDto } from '../../apis/bookingApi'
+import {
+  getBookingErrorMessage,
+  getBookingsRequest,
+  updateBookingServiceOrderStatusRequest,
+  type BookingDto,
+} from '../../apis/bookingApi'
 import { useAuth } from '../../features/auth/useAuth'
 import { APP_ROUTES } from '../../shared/config/routes'
 import { Button } from '../../shared/ui/Button'
@@ -65,7 +70,22 @@ export function ActiveJobsPage() {
   const [searchValue, setSearchValue] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isStatusUpdating, setIsStatusUpdating] = useState(false)
+  const [statusActionErrorMessage, setStatusActionErrorMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  function upsertBooking(nextBooking: BookingDto) {
+    setBookings((currentBookings) => {
+      const nextActiveBookings = currentBookings
+        .filter((booking) => booking.id !== nextBooking.id)
+        .concat(nextBooking)
+        .filter((booking) => booking.status === 7 || booking.status === 3 || booking.status === 4)
+
+      return sortActiveJobs(nextActiveBookings)
+    })
+
+    setSelectedBookingId(nextBooking.id)
+  }
 
   async function loadActiveJobs(options?: { background?: boolean }) {
     const isBackgroundRefresh = options?.background ?? false
@@ -77,6 +97,7 @@ export function ActiveJobsPage() {
     }
 
     setErrorMessage(null)
+    setStatusActionErrorMessage(null)
 
     try {
       const nextBookings = await getBookingsRequest({}, accessToken)
@@ -99,6 +120,31 @@ export function ActiveJobsPage() {
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
+    }
+  }
+
+  async function handleStatusUpdate(nextStatus: 3 | 4) {
+    if (!selectedBooking) {
+      return
+    }
+
+    setIsStatusUpdating(true)
+    setStatusActionErrorMessage(null)
+
+    try {
+      const nextBooking = await updateBookingServiceOrderStatusRequest(
+        {
+          id: selectedBooking.id,
+          status: nextStatus,
+        },
+        accessToken,
+      )
+
+      upsertBooking(nextBooking)
+    } catch (error) {
+      setStatusActionErrorMessage(getBookingErrorMessage(error, 'Unable to update the repair status.'))
+    } finally {
+      setIsStatusUpdating(false)
     }
   }
 
@@ -138,6 +184,8 @@ export function ActiveJobsPage() {
   const completedCount = bookings.filter((booking) => booking.status === 4).length
   const estimateTotal = selectedBooking?.estimate?.estimatedTotalCost ?? selectedBooking?.pricing.totalEstimate ?? 0
   const partUnits = selectedBooking?.estimate?.partItems.reduce((total, item) => total + item.quantity, 0) ?? 0
+  const canStartRepair = selectedBooking?.status === 7
+  const canCompleteRepair = selectedBooking?.status === 3
 
   return (
     <DashboardShell searchPlaceholder="Search active vehicles, plates, or requests...">
@@ -307,6 +355,32 @@ export function ActiveJobsPage() {
                         <span className={['rounded-full px-4 py-2 text-sm font-black uppercase tracking-[0.18em]', getStatusBadgeClass(selectedBooking.status)].join(' ')}>
                           {getBookingStatusLabel(selectedBooking.status)}
                         </span>
+                        {canStartRepair ? (
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              void handleStatusUpdate(3)
+                            }}
+                            disabled={isStatusUpdating}
+                            className="min-w-52"
+                          >
+                            <MaterialIcon name="play_arrow" className="text-lg" />
+                            <span>{isStatusUpdating ? 'Updating...' : 'Mark In Progress'}</span>
+                          </Button>
+                        ) : null}
+                        {canCompleteRepair ? (
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              void handleStatusUpdate(4)
+                            }}
+                            disabled={isStatusUpdating}
+                            className="min-w-52"
+                          >
+                            <MaterialIcon name="task_alt" className="text-lg" />
+                            <span>{isStatusUpdating ? 'Updating...' : 'Mark Completed'}</span>
+                          </Button>
+                        ) : null}
                         <Button
                           type="button"
                           tone="secondary"
@@ -317,6 +391,12 @@ export function ActiveJobsPage() {
                         </Button>
                       </div>
                     </div>
+
+                    {statusActionErrorMessage ? (
+                      <div className="mt-6 rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                        {statusActionErrorMessage}
+                      </div>
+                    ) : null}
                   </article>
 
                   <div className="grid gap-4 md:grid-cols-3">
@@ -423,31 +503,53 @@ export function ActiveJobsPage() {
                       </div>
                     </article>
 
-                    <article className="rounded-[1.75rem] border border-white/70 bg-white/90 p-6 shadow-panel">
-                      <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-                        Handoff Summary
-                      </p>
-                      <div className="mt-5 space-y-4 text-sm text-slate-600">
-                        <p>
-                          <span className="font-semibold text-slate-900">Vehicle:</span>{' '}
-                          {selectedBooking.vehicle
-                            ? `${selectedBooking.vehicle.year} ${selectedBooking.vehicle.make} ${selectedBooking.vehicle.model}`
-                            : 'Vehicle pending'}
+                    <div className="space-y-6">
+                      <article className="rounded-[1.75rem] border border-white/70 bg-white/90 p-6 shadow-panel">
+                        <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
+                          Repair Controls
                         </p>
-                        <p>
-                          <span className="font-semibold text-slate-900">Plate:</span>{' '}
-                          {selectedBooking.vehicle?.licensePlate ?? 'Pending'}
+                        <div className="mt-5 space-y-4 text-sm text-slate-600">
+                          <p>
+                            <span className="font-semibold text-slate-900">Current stage:</span>{' '}
+                            {getBookingStatusLabel(selectedBooking.status)}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-slate-900">Next action:</span>{' '}
+                            {canStartRepair
+                              ? 'Use the button above to move this job into repair.'
+                              : canCompleteRepair
+                                ? 'Use the button above to close this repair as completed.'
+                                : 'This job is already completed on the board.'}
+                          </p>
+                        </div>
+                      </article>
+
+                      <article className="rounded-[1.75rem] border border-white/70 bg-white/90 p-6 shadow-panel">
+                        <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
+                          Handoff Summary
                         </p>
-                        <p>
-                          <span className="font-semibold text-slate-900">Booked:</span>{' '}
-                          {getBookingServicesLabel(selectedBooking)}
-                        </p>
-                        <p>
-                          <span className="font-semibold text-slate-900">Customer note:</span>{' '}
-                          {selectedBooking.notes?.trim() || 'No extra note attached.'}
-                        </p>
-                      </div>
-                    </article>
+                        <div className="mt-5 space-y-4 text-sm text-slate-600">
+                          <p>
+                            <span className="font-semibold text-slate-900">Vehicle:</span>{' '}
+                            {selectedBooking.vehicle
+                              ? `${selectedBooking.vehicle.year} ${selectedBooking.vehicle.make} ${selectedBooking.vehicle.model}`
+                              : 'Vehicle pending'}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-slate-900">Plate:</span>{' '}
+                            {selectedBooking.vehicle?.licensePlate ?? 'Pending'}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-slate-900">Booked:</span>{' '}
+                            {getBookingServicesLabel(selectedBooking)}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-slate-900">Customer note:</span>{' '}
+                            {selectedBooking.notes?.trim() || 'No extra note attached.'}
+                          </p>
+                        </div>
+                      </article>
+                    </div>
                   </div>
                 </>
               )}

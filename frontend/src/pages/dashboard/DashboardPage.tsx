@@ -87,6 +87,7 @@ export function DashboardPage() {
   const bookingsInIntake = bookings.filter((booking) =>
     booking.status === 'pending' || booking.status === 'changes-requested')
   const bookingsInProgress = bookings.filter((booking) => booking.status === 'in-progress')
+  const bookingsCompleted = bookings.filter((booking) => booking.status === 'completed')
 
   const upsertBooking = (nextBooking: Parameters<typeof mapBookingHistory>[0][number]) => {
     const nextMappedBooking = mapBookingHistory([nextBooking])[0]
@@ -149,7 +150,7 @@ export function DashboardPage() {
         </div>
       ) : null}
 
-      <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
+      <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-6">
         <div className="shell-panel p-4">
           <div className="mb-2 flex items-center gap-3">
             <MaterialIcon name="event" className="text-2xl text-primary" />
@@ -198,6 +199,16 @@ export function DashboardPage() {
             </span>
           </div>
           <p className="text-3xl font-headline font-black text-green-600">{bookingsInProgress.length}</p>
+        </div>
+
+        <div className="shell-panel p-4">
+          <div className="mb-2 flex items-center gap-3">
+            <MaterialIcon name="check_circle" className="text-2xl text-emerald-700" />
+            <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+              Completed
+            </span>
+          </div>
+          <p className="text-3xl font-headline font-black text-emerald-700">{bookingsCompleted.length}</p>
         </div>
       </div>
 
