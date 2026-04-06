@@ -23,6 +23,18 @@ import {
   getBookingStatusLabel,
 } from '../../features/diagnostic/lib/service-order'
 
+type ActiveJobStatusFilter = 'all' | 'approved' | 'in-progress' | 'completed'
+
+const activeJobStatusFilters: Array<{
+  value: ActiveJobStatusFilter
+  label: string
+}> = [
+  { value: 'all', label: 'All Jobs' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+]
+
 function getActiveJobPriority(status: number) {
   switch (status) {
     case 7:
@@ -47,6 +59,19 @@ function sortActiveJobs(bookings: BookingDto[]) {
   })
 }
 
+function matchesActiveJobStatusFilter(status: number, filter: ActiveJobStatusFilter) {
+  switch (filter) {
+    case 'approved':
+      return status === 7
+    case 'in-progress':
+      return status === 3
+    case 'completed':
+      return status === 4
+    default:
+      return status === 7 || status === 3 || status === 4
+  }
+}
+
 function getStatusBadgeClass(status: number) {
   switch (status) {
     case 7:
@@ -68,6 +93,7 @@ export function ActiveJobsPage() {
   const [bookings, setBookings] = useState<BookingDto[]>([])
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null)
   const [searchValue, setSearchValue] = useState('')
+  const [statusFilterValue, setStatusFilterValue] = useState<ActiveJobStatusFilter>('all')
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isStatusUpdating, setIsStatusUpdating] = useState(false)
@@ -155,11 +181,15 @@ export function ActiveJobsPage() {
 
   const filteredBookings = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase()
-    if (!normalizedSearch) {
-      return bookings
-    }
-
     return bookings.filter((booking) => {
+      if (!matchesActiveJobStatusFilter(booking.status, statusFilterValue)) {
+        return false
+      }
+
+      if (!normalizedSearch) {
+        return true
+      }
+
       const searchIndex = [
         booking.id,
         booking.vehicle?.licensePlate,
@@ -174,7 +204,7 @@ export function ActiveJobsPage() {
 
       return searchIndex.includes(normalizedSearch)
     })
-  }, [bookings, searchValue])
+  }, [bookings, searchValue, statusFilterValue])
 
   const selectedBooking = filteredBookings.find((booking) => booking.id === selectedBookingId)
     ?? bookings.find((booking) => booking.id === selectedBookingId)
@@ -271,6 +301,31 @@ export function ActiveJobsPage() {
                     placeholder="Search by plate, VIN, request, or service..."
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10"
                   />
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {activeJobStatusFilters.map((filter) => {
+                    const count = filter.value === 'all'
+                      ? bookings.length
+                      : bookings.filter((booking) => matchesActiveJobStatusFilter(booking.status, filter.value)).length
+                    const isActive = statusFilterValue === filter.value
+
+                    return (
+                      <button
+                        key={filter.value}
+                        type="button"
+                        onClick={() => setStatusFilterValue(filter.value)}
+                        className={[
+                          'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[0.6875rem] font-black uppercase tracking-[0.18em] transition-all',
+                          isActive
+                            ? 'border-primary/20 bg-primary text-white shadow-sm'
+                            : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-primary/20 hover:bg-white hover:text-slate-900',
+                        ].join(' ')}
+                      >
+                        <span>{filter.label}</span>
+                        <span className={isActive ? 'text-white/80' : 'text-slate-400'}>{count}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 

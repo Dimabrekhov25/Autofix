@@ -80,6 +80,37 @@ function getWorkflowMessage(status: number) {
   }
 }
 
+const inlineRemoveButtonClass =
+  'inline-flex items-center gap-1 rounded-full bg-error/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-error transition-colors hover:bg-error/15 disabled:cursor-not-allowed disabled:opacity-60'
+
+const compactSaveButtonClass = 'px-5 py-3 md:self-start'
+
+function SectionCountBadge({
+  value,
+  label,
+  tone,
+}: {
+  value: number
+  label: string
+  tone: 'primary' | 'cyan'
+}) {
+  const toneClassName = tone === 'primary'
+    ? 'bg-gradient-to-br from-primary/15 via-primary/10 to-cyan-100 text-primary ring-primary/10'
+    : 'bg-gradient-to-br from-cyan-100 via-sky-50 to-white text-cyan-700 ring-cyan-100'
+
+  return (
+    <div
+      className={[
+        'flex min-h-20 min-w-20 flex-col items-center justify-center rounded-[1.6rem] px-4 py-3 text-center shadow-sm ring-1',
+        toneClassName,
+      ].join(' ')}
+    >
+      <span className="font-headline text-2xl font-extrabold leading-none">{value}</span>
+      <span className="mt-1 text-[0.7rem] font-black uppercase tracking-[0.18em]">{label}</span>
+    </div>
+  )
+}
+
 export function ServiceOrderDetailsPanel({
   booking,
   serviceOrder,
@@ -342,9 +373,11 @@ export function ServiceOrderDetailsPanel({
                   Add any service the mechanic will actually perform. Then adjust the final service price below if complexity makes the job more expensive than the starting price.
                 </p>
               </div>
-              <span className="rounded-full bg-primary/10 px-4 py-2 text-sm font-black text-primary">
-                {serviceOrder.workItems.length} items
-              </span>
+              <SectionCountBadge
+                value={serviceOrder.workItems.length}
+                label="Items"
+                tone="primary"
+              />
             </div>
 
             <div className="mt-5 space-y-4">
@@ -373,53 +406,57 @@ export function ServiceOrderDetailsPanel({
                             type="button"
                             onClick={() => onRemoveWorkItem(workItem.id)}
                             disabled={isSubmitting}
-                            className="rounded-full bg-error/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-error disabled:opacity-60"
+                            className={inlineRemoveButtonClass}
                           >
-                            Remove
+                            <MaterialIcon name="delete" className="text-sm" />
+                            <span>Remove</span>
                           </button>
                         ) : null}
                       </div>
 
-                      <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
-                        <label className="space-y-2">
+                      <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-start">
+                        <div className="space-y-2">
                           <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
                             Service Price
                           </span>
-                          <input
-                            type="number"
-                            min={minimumServicePrice || 0}
-                            step="0.01"
-                            value={editingState.servicePrice}
-                            disabled={isLocked}
-                            onChange={(event) => {
-                              setEditingWorkItems((current) => ({
-                                ...current,
-                                [workItem.id]: {
-                                  servicePrice: event.target.value,
-                                },
-                              }))
-                            }}
-                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:border-primary/30 focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:opacity-60"
-                            placeholder="Final service price"
-                          />
+                          <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+                            <input
+                              type="number"
+                              min={minimumServicePrice || 0}
+                              step="0.01"
+                              value={editingState.servicePrice}
+                              disabled={isLocked}
+                              onChange={(event) => {
+                                setEditingWorkItems((current) => ({
+                                  ...current,
+                                  [workItem.id]: {
+                                    servicePrice: event.target.value,
+                                  },
+                                }))
+                              }}
+                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:border-primary/30 focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:opacity-60"
+                              placeholder="Final service price"
+                            />
+                            <Button
+                              type="button"
+                              onClick={() => {
+                                const servicePrice = Number.parseFloat(editingState.servicePrice)
+                                if (!Number.isFinite(servicePrice) || servicePrice < minimumServicePrice) {
+                                  return
+                                }
+
+                                onUpdateWorkItem(workItem.id, servicePrice)
+                              }}
+                              disabled={isSubmitting || isLocked}
+                              className={compactSaveButtonClass}
+                            >
+                              Save
+                            </Button>
+                          </div>
                           <span className="block text-xs text-slate-500">
                             Minimum from {formatCurrency(minimumServicePrice)}
                           </span>
-                        </label>
-                        <Button
-                          type="button"
-                          onClick={() => {
-                            const servicePrice = Number.parseFloat(editingState.servicePrice)
-                            if (!Number.isFinite(servicePrice) || servicePrice < minimumServicePrice) {
-                              return
-                            }
-
-                            onUpdateWorkItem(workItem.id, servicePrice)
-                          }}
-                          disabled={isSubmitting || isLocked}
-                        >
-                          Save
-                        </Button>
+                        </div>
                       </div>
                     </div>
                   )
@@ -438,9 +475,11 @@ export function ServiceOrderDetailsPanel({
                   Estimate parts list
                 </h3>
               </div>
-              <span className="rounded-full bg-cyan-100 px-4 py-2 text-sm font-black text-cyan-700">
-                {totalPartQuantity} parts
-              </span>
+              <SectionCountBadge
+                value={totalPartQuantity}
+                label="Parts"
+                tone="cyan"
+              />
             </div>
 
             <div className="mt-5 space-y-4">
@@ -467,7 +506,7 @@ export function ServiceOrderDetailsPanel({
                             type="button"
                             onClick={() => onRemovePart(partItem.id)}
                             disabled={isSubmitting}
-                            className="mt-2 inline-flex items-center gap-1 rounded-full bg-error/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-error transition-colors hover:bg-error/15 disabled:cursor-not-allowed disabled:opacity-60"
+                            className={`mt-2 ${inlineRemoveButtonClass}`}
                           >
                             <MaterialIcon name="delete" className="text-sm" />
                             <span>Remove</span>
