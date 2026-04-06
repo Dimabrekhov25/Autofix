@@ -9,6 +9,8 @@ import { BookingSchedulePage } from '../pages/booking/BookingSchedulePage'
 import { BookingSummaryPage } from '../pages/booking/BookingSummaryPage'
 import { BookingVehiclePage } from '../pages/booking/BookingVehiclePage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
+import { ActiveJobsPage } from '../pages/active-jobs/ActiveJobsPage'
+import { AwaitingCustomerPage } from '../pages/awaiting-customer/AwaitingCustomerPage'
 import { HomePage } from '../pages/home/HomePage'
 import { InventoryAddPartPage } from '../pages/inventory/InventoryAddPartPage'
 import { InventoryPage } from '../pages/inventory/InventoryPage'
@@ -147,6 +149,22 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <BookingConfirmationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.activeJobs}
+          element={
+            <ProtectedRoute requireAdmin>
+              <ActiveJobsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.awaitingCustomer}
+          element={
+            <ProtectedRoute requireAdmin>
+              <AwaitingCustomerPage />
             </ProtectedRoute>
           }
         />

@@ -1,6 +1,10 @@
+import { useEffect, useState } from 'react'
+
 import type { BookingDto } from '../../../apis/bookingApi'
 import type { CatalogPartDto, ServiceCatalogItemDto } from '../../../apis/catalogApi'
+import type { InventoryItemDto } from '../../../apis/inventoryApi'
 import type { ServiceOrderDto } from '../../../apis/serviceOrdersApi'
+import { formatBookingReference } from '../../booking/lib/booking-api-helpers'
 import { Button } from '../../../shared/ui/Button'
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 import {
@@ -8,9 +12,10 @@ import {
   formatCurrency,
   getBookingCardSubtitle,
   getBookingCardTitle,
+  getBookingPaymentMethodLabel,
+  getBookingSettlementLabel,
   getBookingServicesLabel,
   getServiceOrderStatusLabel,
-  serviceOrderStatusOptions,
 } from '../lib/service-order'
 
 interface ServiceOrderDetailsPanelProps {
@@ -20,21 +25,59 @@ interface ServiceOrderDetailsPanelProps {
   errorMessage: string | null
   actionErrorMessage: string | null
   actionSuccessMessage: string | null
-  selectedStatus: number
   selectedServiceCatalogItemIds: string[]
   manualPartId: string
   manualPartQuantity: string
   serviceCatalogItems: ServiceCatalogItemDto[]
-  parts: CatalogPartDto[]
+  inventoryParts: Array<CatalogPartDto & InventoryItemDto & { availableQuantity: number }>
   isSubmitting: boolean
-  onStatusChange: (value: number) => void
   onServiceSelectionChange: (ids: string[]) => void
   onManualPartIdChange: (value: string) => void
   onManualPartQuantityChange: (value: string) => void
-  onApplyStatus: () => void
+  onSendEstimate: () => void
+  onStartRepair: () => void
+  onMarkCompleted: () => void
   onAddSelectedServices: () => void
   onAddManualPart: () => void
   onRemovePart: (partItemId: string) => void
+  onRemoveWorkItem: (workItemId: string) => void
+  onUpdateWorkItem: (workItemId: string, servicePrice: number) => void
+}
+
+function getPrimaryActionLabel(status: number) {
+  switch (status) {
+    case 1:
+      return 'Send Estimate To Customer'
+    case 7:
+      return 'Start Repair'
+    case 3:
+      return 'Mark Repair Completed'
+    case 6:
+      return 'Resend Updated Estimate'
+    default:
+      return 'No Action Available'
+  }
+}
+
+function getWorkflowMessage(status: number) {
+  switch (status) {
+    case 1:
+      return 'Estimate is still internal. Finish the work scope and send it to the customer dashboard.'
+    case 2:
+      return 'Estimate was sent. Wait for customer approval in the dashboard before starting the repair.'
+    case 7:
+      return 'Customer approved the estimate. Review the final approved scope and start the repair when the vehicle is ready to move into the bay.'
+    case 3:
+      return 'Repair is in progress and approved parts are already consumed from inventory.'
+    case 4:
+      return 'Repair is completed. This request is now part of service history.'
+    case 5:
+      return 'This request was cancelled. No further mechanic action is available.'
+    case 6:
+      return 'Customer requested changes. Update the estimate and send the revised version back to the dashboard.'
+    default:
+      return 'Manage the service order from this workspace.'
+  }
 }
 
 export function ServiceOrderDetailsPanel({
@@ -44,34 +87,56 @@ export function ServiceOrderDetailsPanel({
   errorMessage,
   actionErrorMessage,
   actionSuccessMessage,
-  selectedStatus,
   selectedServiceCatalogItemIds,
   manualPartId,
   manualPartQuantity,
   serviceCatalogItems,
-  parts,
+  inventoryParts,
   isSubmitting,
-  onStatusChange,
   onServiceSelectionChange,
   onManualPartIdChange,
   onManualPartQuantityChange,
-  onApplyStatus,
+  onSendEstimate,
+  onStartRepair,
+  onMarkCompleted,
   onAddSelectedServices,
   onAddManualPart,
   onRemovePart,
+  onRemoveWorkItem,
+  onUpdateWorkItem,
 }: ServiceOrderDetailsPanelProps) {
+  const [editingWorkItems, setEditingWorkItems] = useState<Record<string, { servicePrice: string }>>({})
+
+  useEffect(() => {
+    if (!serviceOrder) {
+      setEditingWorkItems({})
+      return
+    }
+
+    setEditingWorkItems(
+      Object.fromEntries(
+        serviceOrder.workItems.map((workItem) => [
+          workItem.id,
+          {
+            servicePrice: workItem.lineTotal.toString(),
+          },
+        ]),
+      ),
+    )
+  }, [serviceOrder])
+
   if (!booking) {
     return (
       <section className="flex min-h-[32rem] items-center justify-center rounded-[1.75rem] border border-dashed border-slate-300 bg-white/80 p-10 text-center shadow-panel">
         <div>
           <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-            Service Order
+            Estimate Workspace
           </p>
           <h2 className="mt-3 font-headline text-3xl font-extrabold tracking-tight text-slate-900">
             Choose a booking from the queue
           </h2>
           <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
-            The right panel becomes the live mechanic workspace: update status, add repair services, reserve manual parts, and release parts when they are removed.
+            Review the intake note, build the estimate, and send it to the client dashboard only when the scope is clear.
           </p>
         </div>
       </section>
@@ -96,7 +161,34 @@ export function ServiceOrderDetailsPanel({
     )
   }
 
-  const isCompleted = serviceOrder.status === 6
+  const isLocked = serviceOrder.status === 2 || serviceOrder.status === 7 || serviceOrder.status === 3 || serviceOrder.status === 4 || serviceOrder.status === 5
+  const canSendEstimate = (serviceOrder.status === 1 || serviceOrder.status === 6)
+    && (serviceOrder.workItems.length > 0 || serviceOrder.partItems.length > 0)
+  const canStartRepair = serviceOrder.status === 7
+  const canMarkCompleted = serviceOrder.status === 3
+  const requestedServiceNames = booking.services.map((service) => service.name).join(', ')
+  const existingWorkItemDescriptions = new Set(
+    serviceOrder.workItems.map((workItem) => workItem.description.trim().toLowerCase()).filter(Boolean),
+  )
+  const addableServiceCatalogItems = serviceCatalogItems.filter(
+    (item) => !existingWorkItemDescriptions.has(item.name.trim().toLowerCase()),
+  )
+  const totalPartQuantity = serviceOrder.partItems.reduce((total, item) => total + item.quantity, 0)
+  const getMinimumServicePrice = (description: string) => {
+    const normalizedDescription = description.trim().toLowerCase()
+
+    const catalogPrice = serviceCatalogItems.find(
+      (item) => item.name.trim().toLowerCase() === normalizedDescription,
+    )?.basePrice
+
+    if (typeof catalogPrice === 'number') {
+      return catalogPrice
+    }
+
+    return booking.services.find(
+      (service) => service.name.trim().toLowerCase() === normalizedDescription,
+    )?.basePrice ?? 0
+  }
 
   return (
     <section className="space-y-6">
@@ -104,14 +196,17 @@ export function ServiceOrderDetailsPanel({
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
             <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-cyan-200">
-              Live Service Order
+              Mechanic Estimate Desk
             </p>
             <h2 className="mt-3 font-headline text-3xl font-extrabold tracking-tight">
               {getBookingCardTitle(booking)}
             </h2>
+            <p className="mt-2 text-[0.6875rem] font-black uppercase tracking-[0.22em] text-cyan-200">
+              Request #{formatBookingReference(booking.id)}
+            </p>
             <p className="mt-2 text-sm text-slate-300">{getBookingCardSubtitle(booking)}</p>
             <p className="mt-2 text-sm text-slate-300">
-              Booked: {getBookingServicesLabel(booking)} · {formatBookingDate(booking.startAt)}
+              Booked: {getBookingServicesLabel(booking)} | {formatBookingDate(booking.startAt)}
             </p>
           </div>
 
@@ -124,13 +219,45 @@ export function ServiceOrderDetailsPanel({
             </p>
           </div>
         </div>
-
-        {booking.notes ? (
-          <div className="mt-6 rounded-[1.25rem] bg-white/10 px-5 py-4 text-sm text-slate-200">
-            {booking.notes}
-          </div>
-        ) : null}
       </article>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <article className="rounded-[1.5rem] border border-white/70 bg-white/90 p-5 shadow-panel">
+          <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
+            Step 1
+          </p>
+          <h3 className="mt-2 font-headline text-xl font-extrabold tracking-tight text-slate-900">
+            Intake
+          </h3>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Review the customer complaint and the originally booked service before creating the repair plan.
+          </p>
+        </article>
+
+        <article className="rounded-[1.5rem] border border-white/70 bg-white/90 p-5 shadow-panel">
+          <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
+            Step 2
+          </p>
+          <h3 className="mt-2 font-headline text-xl font-extrabold tracking-tight text-slate-900">
+            Estimate
+          </h3>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Add the labor lines and the exact parts this vehicle needs from real inventory.
+          </p>
+        </article>
+
+        <article className="rounded-[1.5rem] border border-white/70 bg-white/90 p-5 shadow-panel">
+          <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
+            Step 3
+          </p>
+          <h3 className="mt-2 font-headline text-xl font-extrabold tracking-tight text-slate-900">
+            Client Approval
+          </h3>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Send the estimate to the dashboard. After the client approves it, the mechanic still starts the repair manually.
+          </p>
+        </article>
+      </div>
 
       {actionErrorMessage ? (
         <div className="rounded-2xl border border-error/15 bg-error/5 px-5 py-4 text-sm text-error">
@@ -144,17 +271,76 @@ export function ServiceOrderDetailsPanel({
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
+      <div className="rounded-[1.5rem] border border-cyan-200 bg-cyan-50 px-6 py-5 shadow-panel">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-cyan-700">
+            <MaterialIcon name="receipt_long" className="text-2xl" />
+          </div>
+          <div>
+            <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-cyan-700">
+              Client Estimate
+            </p>
+            <p className="mt-2 text-base font-bold text-slate-900">
+              Everything added here goes to the customer dashboard estimate.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              Add repair services, add required parts, and adjust the service price when the job is more complex than the standard starting price.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]">
         <div className="space-y-6">
           <article className="rounded-[1.75rem] border border-white/70 bg-white/90 p-6 shadow-panel">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-                  Work Items
+                  Intake Brief
                 </p>
                 <h3 className="mt-2 text-2xl font-headline font-extrabold tracking-tight text-slate-900">
-                  Repair plan
+                  Reported issue and booking scope
                 </h3>
+              </div>
+              <span className="rounded-full bg-slate-100 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700">
+                Arrival info
+              </span>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl bg-slate-50 px-5 py-4">
+                <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
+                  Customer booked
+                </p>
+                <p className="mt-2 text-sm font-bold text-slate-900">
+                  {requestedServiceNames || 'No service selected'}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 px-5 py-4">
+                <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
+                  Customer complaint
+                </p>
+                <p className="mt-2 text-sm text-slate-700">
+                  {booking.notes?.trim()
+                    ? booking.notes
+                    : 'No additional issue was written by the customer.'}
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <article className="rounded-[1.75rem] border border-white/70 bg-white/90 p-6 shadow-panel">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
+                  Estimate Services
+                </p>
+                <h3 className="mt-2 text-2xl font-headline font-extrabold tracking-tight text-slate-900">
+                  Services included in the estimate
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Add any service the mechanic will actually perform. Then adjust the final service price below if complexity makes the job more expensive than the starting price.
+                </p>
               </div>
               <span className="rounded-full bg-primary/10 px-4 py-2 text-sm font-black text-primary">
                 {serviceOrder.workItems.length} items
@@ -164,24 +350,80 @@ export function ServiceOrderDetailsPanel({
             <div className="mt-5 space-y-4">
               {serviceOrder.workItems.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-sm text-slate-500">
-                  No work items yet. Add repair services below after diagnostics are complete.
+                  No work items yet. Add repair services below after the vehicle inspection.
                 </div>
               ) : (
-                serviceOrder.workItems.map((workItem) => (
-                  <div key={workItem.id} className="rounded-2xl bg-slate-50 px-5 py-4">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">{workItem.description}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
-                          {workItem.laborHours.toFixed(2)}h · {formatCurrency(workItem.hourlyRate)}/hr
-                        </p>
+                serviceOrder.workItems.map((workItem) => {
+                  const editingState = editingWorkItems[workItem.id] ?? {
+                    servicePrice: workItem.lineTotal.toString(),
+                  }
+                  const minimumServicePrice = getMinimumServicePrice(workItem.description)
+
+                  return (
+                    <div key={workItem.id} className="rounded-2xl bg-slate-50 px-5 py-4">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-bold text-slate-900">{workItem.description}</p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                            Current total {formatCurrency(workItem.lineTotal)}
+                          </p>
+                        </div>
+                        {!isLocked ? (
+                          <button
+                            type="button"
+                            onClick={() => onRemoveWorkItem(workItem.id)}
+                            disabled={isSubmitting}
+                            className="rounded-full bg-error/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-error disabled:opacity-60"
+                          >
+                            Remove
+                          </button>
+                        ) : null}
                       </div>
-                      <span className="text-sm font-black text-slate-900">
-                        {formatCurrency(workItem.lineTotal)}
-                      </span>
+
+                      <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
+                        <label className="space-y-2">
+                          <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                            Service Price
+                          </span>
+                          <input
+                            type="number"
+                            min={minimumServicePrice || 0}
+                            step="0.01"
+                            value={editingState.servicePrice}
+                            disabled={isLocked}
+                            onChange={(event) => {
+                              setEditingWorkItems((current) => ({
+                                ...current,
+                                [workItem.id]: {
+                                  servicePrice: event.target.value,
+                                },
+                              }))
+                            }}
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:border-primary/30 focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:opacity-60"
+                            placeholder="Final service price"
+                          />
+                          <span className="block text-xs text-slate-500">
+                            Minimum from {formatCurrency(minimumServicePrice)}
+                          </span>
+                        </label>
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            const servicePrice = Number.parseFloat(editingState.servicePrice)
+                            if (!Number.isFinite(servicePrice) || servicePrice < minimumServicePrice) {
+                              return
+                            }
+
+                            onUpdateWorkItem(workItem.id, servicePrice)
+                          }}
+                          disabled={isSubmitting || isLocked}
+                        >
+                          Save
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </article>
@@ -190,21 +432,21 @@ export function ServiceOrderDetailsPanel({
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-                  Reserved Parts
+                  Parts
                 </p>
                 <h3 className="mt-2 text-2xl font-headline font-extrabold tracking-tight text-slate-900">
-                  Inventory impact
+                  Estimate parts list
                 </h3>
               </div>
               <span className="rounded-full bg-cyan-100 px-4 py-2 text-sm font-black text-cyan-700">
-                {serviceOrder.partItems.length} lines
+                {totalPartQuantity} parts
               </span>
             </div>
 
             <div className="mt-5 space-y-4">
               {serviceOrder.partItems.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-sm text-slate-500">
-                  No reserved parts yet.
+                  No parts added to the estimate yet.
                 </div>
               ) : (
                 serviceOrder.partItems.map((partItem) => (
@@ -213,14 +455,14 @@ export function ServiceOrderDetailsPanel({
                       <div>
                         <p className="text-sm font-bold text-slate-900">{partItem.partName}</p>
                         <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
-                          Qty {partItem.quantity} · {partItem.availability === 1 ? 'In Stock' : 'Back Order'}
+                          Qty {partItem.quantity} | {partItem.availability === 1 ? 'In Stock' : 'Back Order'}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-black text-slate-900">
                           {formatCurrency(partItem.lineTotal)}
                         </p>
-                        {!isCompleted ? (
+                        {!isLocked ? (
                           <button
                             type="button"
                             onClick={() => onRemovePart(partItem.id)}
@@ -228,7 +470,7 @@ export function ServiceOrderDetailsPanel({
                             className="mt-2 inline-flex items-center gap-1 rounded-full bg-error/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-error transition-colors hover:bg-error/15 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             <MaterialIcon name="delete" className="text-sm" />
-                            <span>Release</span>
+                            <span>Remove</span>
                           </button>
                         ) : null}
                       </div>
@@ -243,32 +485,96 @@ export function ServiceOrderDetailsPanel({
         <div className="space-y-6">
           <article className="rounded-[1.75rem] border border-white/70 bg-white/90 p-6 shadow-panel">
             <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-              Status
+              Publish And Repair
             </p>
             <h3 className="mt-2 text-2xl font-headline font-extrabold tracking-tight text-slate-900">
-              Update workflow state
+              Mechanic actions
             </h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Completing the order converts the reserved parts into actual stock consumption.
+              The estimate must be sent to the customer dashboard first. Inventory is consumed only when the mechanic starts the approved repair.
             </p>
 
-            <div className="mt-5 space-y-3">
-              <select
-                value={selectedStatus}
-                onChange={(event) => onStatusChange(Number(event.target.value))}
-                disabled={isCompleted}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-primary/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {serviceOrderStatusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+            <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
+              {getWorkflowMessage(serviceOrder.status)}
+            </div>
 
-              <Button type="button" onClick={onApplyStatus} disabled={isSubmitting || isCompleted}>
-                {isSubmitting ? 'Saving...' : 'Apply Status'}
-              </Button>
+            <div className="mt-5 space-y-3">
+              {(serviceOrder.status === 1 || serviceOrder.status === 6) ? (
+                <Button
+                  type="button"
+                  onClick={onSendEstimate}
+                  disabled={isSubmitting || !canSendEstimate}
+                  className="w-full"
+                >
+                  {isSubmitting ? 'Saving...' : getPrimaryActionLabel(serviceOrder.status)}
+                </Button>
+              ) : null}
+
+              {serviceOrder.status === 2 ? (
+                <Button
+                  type="button"
+                  tone="secondary"
+                  disabled
+                  className="w-full"
+                >
+                  Waiting For Customer Approval
+                </Button>
+              ) : null}
+
+              {canStartRepair ? (
+                <Button
+                  type="button"
+                  onClick={onStartRepair}
+                  disabled={isSubmitting}
+                  className="w-full"
+                >
+                  {isSubmitting ? 'Saving...' : getPrimaryActionLabel(serviceOrder.status)}
+                </Button>
+              ) : null}
+
+              {canMarkCompleted ? (
+                <Button
+                  type="button"
+                  onClick={onMarkCompleted}
+                  disabled={isSubmitting}
+                  className="w-full"
+                >
+                  {isSubmitting ? 'Saving...' : getPrimaryActionLabel(serviceOrder.status)}
+                </Button>
+              ) : null}
+
+              {(serviceOrder.status === 1 || serviceOrder.status === 6) && !canSendEstimate ? (
+                <p className="text-sm text-slate-500">
+                  Add at least one labor line or one part before sending the estimate to the customer.
+                </p>
+              ) : null}
+            </div>
+          </article>
+
+          <article className="rounded-[1.75rem] border border-white/70 bg-white/90 p-6 shadow-panel">
+            <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
+              Payment Setup
+            </p>
+            <h3 className="mt-2 text-2xl font-headline font-extrabold tracking-tight text-slate-900">
+              Workshop handoff
+            </h3>
+            <div className="mt-5 grid gap-4">
+              <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
+                  Payment method
+                </p>
+                <p className="mt-2 text-sm font-bold text-slate-900">
+                  {getBookingPaymentMethodLabel(booking.paymentOption)}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
+                  Settlement status
+                </p>
+                <p className="mt-2 text-sm font-bold text-slate-900">
+                  {getBookingSettlementLabel(booking)}
+                </p>
+              </div>
             </div>
           </article>
 
@@ -277,14 +583,14 @@ export function ServiceOrderDetailsPanel({
               Add Services
             </p>
             <h3 className="mt-2 text-2xl font-headline font-extrabold tracking-tight text-slate-900">
-              Post-diagnostic work
+              Add service to estimate
             </h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Adding a service here also reserves its required parts immediately.
+              If the customer wants extra work or inspection reveals more issues, add those services here. They will appear in the client estimate and can be repriced in the service list above.
             </p>
 
             <div className="mt-5 max-h-72 space-y-3 overflow-y-auto pr-1">
-              {serviceCatalogItems.map((item) => {
+              {addableServiceCatalogItems.map((item) => {
                 const isSelected = selectedServiceCatalogItemIds.includes(item.id)
 
                 return (
@@ -300,10 +606,10 @@ export function ServiceOrderDetailsPanel({
                     <input
                       type="checkbox"
                       checked={isSelected}
-                      disabled={isCompleted}
+                      disabled={isLocked}
                       onChange={(event) => {
                         const nextIds = event.target.checked
-                          ? [...selectedServiceCatalogItemIds, item.id]
+                          ? Array.from(new Set([...selectedServiceCatalogItemIds, item.id]))
                           : selectedServiceCatalogItemIds.filter((id) => id !== item.id)
                         onServiceSelectionChange(nextIds)
                       }}
@@ -313,44 +619,53 @@ export function ServiceOrderDetailsPanel({
                       <p className="text-sm font-bold text-slate-900">{item.name}</p>
                       <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
                       <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">
-                        {formatCurrency(item.basePrice + item.estimatedLaborCost)} · {item.requiredParts.length} required parts
+                        Starts at {formatCurrency(item.basePrice)} | {item.estimatedDuration}
                       </p>
                     </div>
                   </label>
                 )
               })}
+              {addableServiceCatalogItems.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-sm text-slate-500">
+                  All catalog services already exist in this estimate. Adjust the existing lines above if pricing or scope changed.
+                </div>
+              ) : null}
+
             </div>
 
             <div className="mt-5">
               <Button
                 type="button"
                 onClick={onAddSelectedServices}
-                disabled={isSubmitting || isCompleted || selectedServiceCatalogItemIds.length === 0}
+                disabled={isSubmitting || isLocked || selectedServiceCatalogItemIds.length === 0 || addableServiceCatalogItems.length === 0}
                 className="w-full"
               >
-                {isSubmitting ? 'Saving...' : 'Add Selected Services'}
+                {isSubmitting ? 'Saving...' : 'Add Selected Services To Estimate'}
               </Button>
             </div>
           </article>
 
           <article className="rounded-[1.75rem] border border-white/70 bg-white/90 p-6 shadow-panel">
             <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-              Manual Part
+              Add Part
             </p>
             <h3 className="mt-2 text-2xl font-headline font-extrabold tracking-tight text-slate-900">
-              Edge-case inventory add
+              Add part to estimate
             </h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Add only the parts that will actually be used for this vehicle. These lines also go to the customer estimate.
+            </p>
             <div className="mt-5 grid gap-4">
               <select
                 value={manualPartId}
                 onChange={(event) => onManualPartIdChange(event.target.value)}
-                disabled={isCompleted}
+                disabled={isLocked}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-primary/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                <option value="">Select part</option>
-                {parts.map((part) => (
-                  <option key={part.id} value={part.id}>
-                    {part.name} · {formatCurrency(part.unitPrice)}
+                <option value="">Select inventory part</option>
+                {inventoryParts.map((part) => (
+                  <option key={part.partId} value={part.partId}>
+                    {part.name} | {formatCurrency(part.unitPrice)} | available {part.availableQuantity}
                   </option>
                 ))}
               </select>
@@ -360,17 +675,17 @@ export function ServiceOrderDetailsPanel({
                 step="1"
                 value={manualPartQuantity}
                 onChange={(event) => onManualPartQuantityChange(event.target.value)}
-                disabled={isCompleted}
+                disabled={isLocked}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-primary/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-70"
                 placeholder="Quantity"
               />
               <Button
                 type="button"
                 onClick={onAddManualPart}
-                disabled={isSubmitting || isCompleted || !manualPartId || !manualPartQuantity}
+                disabled={isSubmitting || isLocked || !manualPartId || !manualPartQuantity}
                 className="w-full"
               >
-                {isSubmitting ? 'Saving...' : 'Reserve Manual Part'}
+                {isSubmitting ? 'Saving...' : 'Add Part To Estimate'}
               </Button>
             </div>
           </article>

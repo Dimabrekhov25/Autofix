@@ -1,4 +1,5 @@
 import type {
+  BookingPricingDto,
   BookingQuoteServiceDto,
   BookingQuoteVehicleDto,
   ServiceCatalogItemDto,
@@ -30,6 +31,18 @@ export function formatBookingCurrency(value: number, currency = 'USD') {
     currency,
     minimumFractionDigits: 2,
   }).format(value)
+}
+
+export function formatStartingPrice(value: number, currency = 'USD') {
+  return `From ${formatBookingCurrency(value, currency)}`
+}
+
+export function formatBookingReference(bookingId?: string | null) {
+  if (!bookingId) {
+    return 'AF-PENDING'
+  }
+
+  return `AF-${bookingId.replace(/-/g, '').slice(0, 8).toUpperCase()}`
 }
 
 export function formatBookingDuration(duration: string) {
@@ -110,6 +123,12 @@ export function buildVehicleDetailsLabel(
   return [vehicle.trim, vehicle.engine].filter(Boolean).join(' / ')
 }
 
-export function mapServiceTotal(item: Pick<ServiceCatalogItemDto, 'basePrice' | 'estimatedLaborCost'> | Pick<BookingQuoteServiceDto, 'basePrice' | 'estimatedLaborCost'>) {
-  return item.basePrice + item.estimatedLaborCost
+export function mapServiceTotal(item: Pick<ServiceCatalogItemDto, 'basePrice'> | Pick<BookingQuoteServiceDto, 'basePrice'>) {
+  return item.basePrice
+}
+
+export function getBookingStartingPrice(
+  pricing: Pick<BookingPricingDto, 'subtotal'>,
+) {
+  return pricing.subtotal
 }

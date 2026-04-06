@@ -11,8 +11,8 @@ import { BookingMobileStepNav } from '../../features/booking/components/BookingM
 import { BookingProgressHeader } from '../../features/booking/components/BookingProgressHeader'
 import { BookingSelectionSummary } from '../../features/booking/components/BookingSelectionSummary'
 import {
-  formatBookingCurrency,
   formatBookingDuration,
+  formatStartingPrice,
   formatIsoSlotLabel,
   getSelectedCatalogItemIds,
   mapServiceTotal,
@@ -72,10 +72,10 @@ export function BookingPage() {
       setIsLoading(true)
       setErrorMessage(null)
 
-        try {
-          const [nextServices, nextDiagnostics] = await Promise.all([
-          getServiceCatalogItemsRequest({ category: 0, isActive: true, bookableOnly: true }, accessToken),
-          getServiceCatalogItemsRequest({ category: 1, isActive: true, bookableOnly: true }, accessToken),
+      try {
+        const [nextServices, nextDiagnostics] = await Promise.all([
+          getServiceCatalogItemsRequest({ category: 0, isActive: true }, accessToken),
+          getServiceCatalogItemsRequest({ category: 1, isActive: true }, accessToken),
         ])
 
         if (!isMounted) {
@@ -307,7 +307,7 @@ export function BookingPage() {
                           />
                         </div>
                         <span className="text-lg font-bold text-on-surface">
-                          {formatBookingCurrency(mapServiceTotal(option))}
+                          {formatStartingPrice(mapServiceTotal(option))}
                         </span>
                       </div>
 
@@ -316,25 +316,11 @@ export function BookingPage() {
                          {option.description}
                        </p>
 
-                        {option.category === 0 ? (
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            <span className="rounded-full bg-primary/10 px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-primary">
-                              {option.requiredParts.length} reserved parts
-                            </span>
-                            {option.requiredParts.slice(0, 2).map((requiredPart) => (
-                              <span
-                                key={`${option.id}-${requiredPart.partId}`}
-                                className="rounded-full bg-surface-container px-3 py-1 text-[0.6875rem] font-semibold text-on-surface-variant"
-                              >
-                                {requiredPart.partName} x{requiredPart.quantity}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="mt-4 inline-flex rounded-full bg-amber-100 px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-amber-700">
-                            No stock reserved on booking
-                          </div>
-                        )}
+                        <div className="mt-4 inline-flex rounded-full bg-surface-container px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+                          {option.category === 0
+                            ? 'Parts chosen after inspection'
+                            : 'Diagnostic request only'}
+                        </div>
 
                        <div className="mt-4 flex items-center justify-between gap-3">
                          <span className="text-xs font-bold uppercase tracking-[0.18em] text-on-surface-variant">
@@ -384,7 +370,7 @@ export function BookingPage() {
                 <div className="bg-primary p-6 text-on-primary">
                   <h2 className="text-xl font-extrabold tracking-tight">Booking Summary</h2>
                   <p className="mt-1 text-xs font-medium opacity-80">
-                    Estimating your maintenance plan
+                    Starting labor view before inspection
                   </p>
                 </div>
                 <div className="p-6">
@@ -396,14 +382,12 @@ export function BookingPage() {
                           <p className="text-xs text-on-surface-variant">
                             {activeKind === 'service' ? 'Workshop service' : 'Diagnostic session'}
                           </p>
-                          {option.category === 0 && option.requiredParts.length > 0 ? (
-                            <p className="mt-1 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-primary">
-                              Reserves {option.requiredParts.length} part{option.requiredParts.length === 1 ? '' : 's'}
-                            </p>
-                          ) : null}
+                          <p className="mt-1 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+                            {option.category === 0 ? 'Parts added after inspection' : 'Diagnostic labor from'}
+                          </p>
                         </div>
                         <span className="text-sm font-bold text-on-surface">
-                          {formatBookingCurrency(mapServiceTotal(option))}
+                          {formatStartingPrice(mapServiceTotal(option))}
                         </span>
                       </div>
                     ))}
@@ -434,12 +418,10 @@ export function BookingPage() {
                   <div className="mb-8 rounded-xl bg-surface-container-low p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-bold text-on-surface-variant">
-                        {activeKind === 'service' && selectedOptions.length > 1
-                          ? 'Estimated Total'
-                          : 'Starting Price'}
+                        Starting labor from
                       </span>
                       <span className="text-2xl font-black text-primary">
-                        {formatBookingCurrency(totalPrice)}
+                        {formatStartingPrice(totalPrice)}
                       </span>
                     </div>
                   </div>

@@ -31,7 +31,7 @@ export function ServiceCatalogCustomerView({
 
       try {
         const nextItems = await getServiceCatalogItemsRequest(
-          { isActive: true, bookableOnly: true },
+          { isActive: true },
           accessToken,
         )
 
@@ -85,7 +85,7 @@ export function ServiceCatalogCustomerView({
             Standard Services
           </p>
           <h2 className="mt-2 font-headline text-3xl font-extrabold tracking-tight text-slate-900">
-            Reserve-ready services
+            Bookable services
           </h2>
         </div>
 
@@ -98,7 +98,7 @@ export function ServiceCatalogCustomerView({
                   <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
                 </div>
                 <div className="rounded-full bg-primary/10 px-4 py-2 text-sm font-black text-primary">
-                  {formatCurrency(item.basePrice + item.estimatedLaborCost)}
+                  From {formatCurrency(item.basePrice)}
                 </div>
               </div>
 
@@ -106,28 +106,10 @@ export function ServiceCatalogCustomerView({
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-600">
                   {formatDurationLabel(item.estimatedDuration)}
                 </span>
-                <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-cyan-700">
-                  {item.requiredParts.length} required parts
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                  Parts quoted after inspection
                 </span>
               </div>
-
-              {item.requiredParts.length > 0 ? (
-                <div className="mt-5 rounded-2xl bg-slate-50 p-4">
-                  <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-                    Reserved Parts
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {item.requiredParts.map((requiredPart) => (
-                      <span
-                        key={`${item.id}-${requiredPart.partId}`}
-                        className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm"
-                      >
-                        {requiredPart.partName} x{requiredPart.quantity}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </article>
           ))}
         </div>
@@ -152,7 +134,7 @@ export function ServiceCatalogCustomerView({
                   <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
                 </div>
                 <div className="rounded-full bg-amber-100 px-4 py-2 text-sm font-black text-amber-700">
-                  {formatCurrency(item.basePrice + item.estimatedLaborCost)}
+                  From {formatCurrency(item.basePrice)}
                 </div>
               </div>
 
@@ -161,7 +143,7 @@ export function ServiceCatalogCustomerView({
                   {formatDurationLabel(item.estimatedDuration)}
                 </span>
                 <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-amber-700">
-                  No stock reserved on booking
+                  Diagnostic request only
                 </span>
               </div>
             </article>

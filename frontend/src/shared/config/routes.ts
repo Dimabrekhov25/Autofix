@@ -14,6 +14,8 @@ export const APP_ROUTES = {
   inventory: '/inventory',
   inventoryAddPart: '/inventory/new-part',
   partsCatalog: '/parts-catalog',
+  activeJobs: '/active-jobs',
+  awaitingCustomer: '/awaiting-customer',
   booking: '/booking',
   bookingSchedule: '/booking/schedule',
   bookingVehicle: '/booking/vehicle',

@@ -14,6 +14,8 @@ interface DashboardShellProps extends PropsWithChildren {
 const dashboardNavItems = [
   { label: 'Dashboard', to: APP_ROUTES.dashboard, icon: 'dashboard', adminOnly: false },
   { label: 'Diagnostic', to: APP_ROUTES.diagnostics, icon: 'build', adminOnly: true },
+  { label: 'Awaiting Customer', to: APP_ROUTES.awaitingCustomer, icon: 'schedule', adminOnly: true },
+  { label: 'Active Jobs', to: APP_ROUTES.activeJobs, icon: 'directions_car', adminOnly: true },
   { label: 'Inventory', to: APP_ROUTES.inventory, icon: 'inventory_2', adminOnly: true },
   { label: 'Parts Catalog', to: APP_ROUTES.partsCatalog, icon: 'settings_suggest', adminOnly: true },
   { label: 'Booking', to: APP_ROUTES.booking, icon: 'event', adminOnly: false },
