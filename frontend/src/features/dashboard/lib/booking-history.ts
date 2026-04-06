@@ -23,26 +23,27 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
 
 export function mapBookingHistory(bookings: BookingDto[], now = new Date()): Booking[] {
   return bookings
-    .filter((booking): booking is BookingDto & { vehicle: NonNullable<BookingDto['vehicle']> } => Boolean(booking.vehicle))
     .map((booking) => {
       const status = resolveBookingStatus(booking, now)
       const startAt = new Date(booking.startAt)
       const endAt = new Date(booking.endAt)
+      const vehicle = booking.vehicle
+      const vehicleTitleFromServices = booking.services[0]?.name ?? 'Service request'
 
       return {
         id: booking.id,
         customerId: booking.customerId,
         vehicleId: booking.vehicleId,
         vehicle: {
-          id: booking.vehicle.id,
-          make: booking.vehicle.make,
-          model: booking.vehicle.model,
-          year: booking.vehicle.year,
-          trim: booking.vehicle.trim ?? '',
-          engine: booking.vehicle.engine ?? '',
-          plateNumber: booking.vehicle.licensePlate,
-          vin: booking.vehicle.vin ?? '',
-          isDrivable: booking.vehicle.isDrivable,
+          id: vehicle?.id ?? booking.vehicleId,
+          make: vehicle?.make ?? vehicleTitleFromServices,
+          model: vehicle?.model ?? 'Vehicle pending',
+          year: vehicle?.year ?? 0,
+          trim: vehicle?.trim ?? '',
+          engine: vehicle?.engine ?? '',
+          plateNumber: vehicle?.licensePlate ?? 'Pending',
+          vin: vehicle?.vin ?? '',
+          isDrivable: vehicle?.isDrivable ?? true,
         },
         status,
         scheduledAt: booking.startAt,
@@ -60,18 +61,47 @@ export function mapBookingHistory(bookings: BookingDto[], now = new Date()): Boo
           basePrice: service.basePrice,
           estimatedLaborCost: service.estimatedLaborCost,
         })),
+        estimate: booking.estimate
+          ? {
+              serviceOrderId: booking.estimate.serviceOrderId,
+              status: booking.estimate.status,
+              estimatedLaborCost: booking.estimate.estimatedLaborCost,
+              estimatedPartsCost: booking.estimate.estimatedPartsCost,
+              estimatedTotalCost: booking.estimate.estimatedTotalCost,
+              workItems: booking.estimate.workItems.map((item) => ({
+                id: item.id,
+                description: item.description,
+                laborHours: item.laborHours,
+                hourlyRate: item.hourlyRate,
+                lineTotal: item.lineTotal,
+              })),
+              partItems: booking.estimate.partItems.map((item) => ({
+                id: item.id,
+                partId: item.partId,
+                partName: item.partName,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                availability: item.availability,
+                lineTotal: item.lineTotal,
+              })),
+            }
+          : undefined,
         notes: booking.notes ?? undefined,
-        createdAt: booking.startAt,
-        updatedAt: booking.endAt,
+        createdAt: booking.createdAt,
+        updatedAt: booking.updatedAt ?? booking.createdAt,
       }
     })
-    .sort((left, right) => Date.parse(right.scheduledAt) - Date.parse(left.scheduledAt))
+    .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
 }
 
 export function getBookingSummary(bookings: Booking[], now = new Date()): BookingSummary {
   return {
     totalBookings: bookings.length,
-    active: bookings.filter((booking) => booking.status === 'in-service').length,
+    active: bookings.filter((booking) =>
+      booking.status === 'awaiting-approval'
+      || booking.status === 'approved'
+      || booking.status === 'in-progress'
+      || booking.status === 'changes-requested').length,
     completed: bookings.filter((booking) => booking.status === 'completed').length,
     upcoming: bookings.filter((booking) => {
       if (booking.status === 'cancelled' || booking.status === 'completed') {
@@ -84,23 +114,30 @@ export function getBookingSummary(bookings: Booking[], now = new Date()): Bookin
 }
 
 function resolveBookingStatus(booking: BookingDto, now: Date): BookingStatus {
-  const startAt = Date.parse(booking.startAt)
   const endAt = Date.parse(booking.endAt)
 
-  if (booking.status === 3) {
+  if (booking.status === 5) {
     return 'cancelled'
   }
 
-  if (Number.isFinite(endAt) && endAt < now.getTime()) {
-    return 'completed'
-  }
-
-  if (Number.isFinite(startAt) && Number.isFinite(endAt) && startAt <= now.getTime() && endAt >= now.getTime()) {
-    return 'in-service'
+  if (booking.status === 6) {
+    return 'changes-requested'
   }
 
   if (booking.status === 2) {
-    return 'confirmed'
+    return 'awaiting-approval'
+  }
+
+  if (booking.status === 7) {
+    return 'approved'
+  }
+
+  if (booking.status === 3) {
+    return 'in-progress'
+  }
+
+  if (booking.status === 4 || (Number.isFinite(endAt) && endAt < now.getTime())) {
+    return 'completed'
   }
 
   return 'pending'

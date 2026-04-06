@@ -138,6 +138,82 @@ internal sealed class InventoryMutationService(ApplicationDbContext dbContext)
         }
     }
 
+    public async Task ConsumeAvailableAsync(
+        IReadOnlyCollection<InventoryPartMutation> mutations,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        if (mutations.Count == 0)
+        {
+            return;
+        }
+
+        var inventoryByPartId = await LoadInventoryByPartIdAsync(mutations, cancellationToken);
+        var now = DateTime.UtcNow;
+
+        foreach (var mutation in mutations)
+        {
+            if (!inventoryByPartId.TryGetValue(mutation.PartId, out var inventoryItem))
+            {
+                throw new ConflictException(
+                    $"Required part '{mutation.PartName}' is not configured in inventory, so it cannot be consumed.");
+            }
+
+            if (inventoryItem.QuantityOnHand < mutation.Quantity)
+            {
+                throw new ConflictException(
+                    $"Cannot consume {mutation.Quantity} units for part '{mutation.PartName}'. Only {inventoryItem.QuantityOnHand} on hand.");
+            }
+
+            inventoryItem.QuantityOnHand -= mutation.Quantity;
+            inventoryItem.UpdatedAt = now;
+
+            dbContext.InventoryMovements.Add(new InventoryMovement
+            {
+                PartId = mutation.PartId,
+                MovementType = InventoryMovementType.Outbound,
+                Quantity = mutation.Quantity,
+                Reason = reason,
+                OccurredAt = now
+            });
+        }
+    }
+
+    public async Task RestoreAvailableAsync(
+        IReadOnlyCollection<InventoryPartMutation> mutations,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        if (mutations.Count == 0)
+        {
+            return;
+        }
+
+        var inventoryByPartId = await LoadInventoryByPartIdAsync(mutations, cancellationToken);
+        var now = DateTime.UtcNow;
+
+        foreach (var mutation in mutations)
+        {
+            if (!inventoryByPartId.TryGetValue(mutation.PartId, out var inventoryItem))
+            {
+                throw new ConflictException(
+                    $"Required part '{mutation.PartName}' is not configured in inventory, so it cannot be restored.");
+            }
+
+            inventoryItem.QuantityOnHand += mutation.Quantity;
+            inventoryItem.UpdatedAt = now;
+
+            dbContext.InventoryMovements.Add(new InventoryMovement
+            {
+                PartId = mutation.PartId,
+                MovementType = InventoryMovementType.Inbound,
+                Quantity = mutation.Quantity,
+                Reason = reason,
+                OccurredAt = now
+            });
+        }
+    }
+
     private async Task<Dictionary<Guid, InventoryItem>> LoadInventoryByPartIdAsync(
         IReadOnlyCollection<InventoryPartMutation> mutations,
         CancellationToken cancellationToken)

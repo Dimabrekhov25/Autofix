@@ -10,21 +10,15 @@ import { useAuth } from '../../features/auth/useAuth'
 import {
   buildVehicleDetailsLabel,
   buildVehicleLabel,
-  formatBookingCurrency,
+  formatBookingReference,
+  formatStartingPrice,
+  getBookingStartingPrice,
 } from '../../features/booking/lib/booking-api-helpers'
 import { resolveBookingFlowState } from '../../features/booking/lib/booking-flow'
 import { APP_ROUTES } from '../../shared/config/routes'
 import { BrandHomeLink } from '../../shared/ui/BrandHomeLink'
 import { Button } from '../../shared/ui/Button'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
-
-function createBookingReference(bookingId?: string) {
-  if (!bookingId) {
-    return 'AF-PENDING'
-  }
-
-  return `AF-${bookingId.replace(/-/g, '').slice(0, 8).toUpperCase()}`
-}
 
 export function BookingConfirmationPage() {
   const [searchParams] = useSearchParams()
@@ -96,19 +90,9 @@ export function BookingConfirmationPage() {
     trim: bookingState.vehicleTrim,
     engine: bookingState.vehicleEngine,
   })
-  const paymentLabel =
-    booking?.paymentOption === 1 || bookingState.paymentMethod === 'now'
-      ? 'Card Payment'
-      : 'Pay at Shop'
-  const paymentStatusLabel =
-    booking?.paymentOption === 1 || bookingState.paymentMethod === 'now' ? 'Paid' : 'Pending'
-  const paymentStatusClassName =
-    booking?.paymentOption === 1 || bookingState.paymentMethod === 'now'
-      ? 'bg-primary/10 text-primary'
-      : 'bg-secondary/10 text-secondary'
   const servicesLabel =
     booking?.services.map((service) => service.name).join(', ') || 'Pending'
-  const bookingReference = createBookingReference(booking?.id ?? bookingState.bookingId)
+  const bookingReference = formatBookingReference(booking?.id ?? bookingState.bookingId)
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-surface text-on-surface">
@@ -202,19 +186,19 @@ export function BookingConfirmationPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary/10 text-secondary">
-                        <MaterialIcon name="payments" className="text-[22px]" />
+                        <MaterialIcon name="approval" className="text-[22px]" />
                       </div>
                       <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                        Payment Method
+                        Next Step
                       </p>
                       <p className="mt-1 font-headline text-base font-bold text-slate-900">
-                        {paymentLabel}
+                        Mechanic Estimate
                       </p>
                     </div>
                     <span
-                      className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] ${paymentStatusClassName}`}
+                      className="rounded-full bg-secondary/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-secondary"
                     >
-                      {paymentStatusLabel}
+                      Pending
                     </span>
                   </div>
                 </div>
@@ -251,56 +235,30 @@ export function BookingConfirmationPage() {
               <div className="mt-6 space-y-4">
                 <div className="rounded-2xl bg-surface-container-low p-4">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                    Payment Status
+                    Request Status
                   </p>
                   <p className="mt-1 font-headline text-xl font-extrabold text-slate-900">
-                    {paymentStatusLabel}
+                    Pending
                   </p>
                 </div>
 
                 <div className="rounded-2xl bg-surface-container-low p-4">
                   {isLoading ? (
-                    <p className="text-sm text-slate-500">Loading booking totals...</p>
+                    <p className="text-sm text-slate-500">Loading booking pricing...</p>
                   ) : (
                     <>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-500">Subtotal</span>
-                        <span className="font-medium text-slate-900">
-                          {formatBookingCurrency(
-                            booking?.pricing.subtotal ?? 0,
-                            booking?.pricing.currency,
-                          )}
-                        </span>
-                      </div>
-                      <div className="mt-3 flex justify-between text-sm">
-                        <span className="text-slate-500">Estimated Labor</span>
-                        <span className="font-medium text-slate-900">
-                          {formatBookingCurrency(
-                            booking?.pricing.estimatedLaborCost ?? 0,
-                            booking?.pricing.currency,
-                          )}
-                        </span>
-                      </div>
-                      <div className="mt-3 flex justify-between text-sm">
-                        <span className="text-slate-500">Tax</span>
-                        <span className="font-medium text-slate-900">
-                          {formatBookingCurrency(
-                            booking?.pricing.taxAmount ?? 0,
-                            booking?.pricing.currency,
-                          )}
-                        </span>
-                      </div>
-                      <div className="mt-4 flex items-end justify-between border-t border-slate-200 pt-4">
-                        <span className="font-headline text-lg font-bold text-slate-900">
-                          Total
-                        </span>
-                        <span className="font-headline text-2xl font-extrabold tracking-tight text-slate-900">
-                          {formatBookingCurrency(
-                            booking?.pricing.totalEstimate ?? 0,
-                            booking?.pricing.currency,
-                          )}
-                        </span>
-                      </div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                        Starting labor from
+                      </p>
+                      <p className="mt-2 font-headline text-3xl font-extrabold tracking-tight text-slate-900">
+                        {formatStartingPrice(
+                          booking ? getBookingStartingPrice(booking.pricing) : 0,
+                          booking?.pricing.currency,
+                        )}
+                      </p>
+                      <p className="mt-3 text-sm leading-6 text-slate-500">
+                        This is the booking-time service price only. Parts and any vehicle-specific adjustments are prepared later in the mechanic estimate.
+                      </p>
                     </>
                   )}
                 </div>

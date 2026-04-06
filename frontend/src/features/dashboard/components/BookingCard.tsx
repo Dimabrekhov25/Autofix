@@ -1,5 +1,5 @@
 import type { Booking, BookingStatus } from '../types/booking'
-import { formatBookingCurrency } from '../../booking/lib/booking-api-helpers'
+import { formatBookingCurrency, formatBookingReference, formatStartingPrice, getBookingStartingPrice } from '../../booking/lib/booking-api-helpers'
 import { cn } from '../../../shared/lib/cn'
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 
@@ -18,8 +18,8 @@ const statusConfig: Record<
     icon: string
   }
 > = {
-  'in-service': {
-    label: 'In Service',
+  'in-progress': {
+    label: 'In Progress',
     bgColor: 'bg-primary/10',
     textColor: 'text-primary',
     icon: 'build_circle',
@@ -30,11 +30,17 @@ const statusConfig: Record<
     textColor: 'text-green-700',
     icon: 'check_circle',
   },
-  confirmed: {
-    label: 'Confirmed',
+  'awaiting-approval': {
+    label: 'Awaiting Approval',
     bgColor: 'bg-blue-500/10',
     textColor: 'text-blue-700',
-    icon: 'event_available',
+    icon: 'approval',
+  },
+  approved: {
+    label: 'Approved',
+    bgColor: 'bg-cyan-500/10',
+    textColor: 'text-cyan-700',
+    icon: 'task_alt',
   },
   pending: {
     label: 'Pending',
@@ -48,12 +54,21 @@ const statusConfig: Record<
     textColor: 'text-error',
     icon: 'cancel',
   },
+  'changes-requested': {
+    label: 'Changes Requested',
+    bgColor: 'bg-amber-500/10',
+    textColor: 'text-amber-700',
+    icon: 'sync_problem',
+  },
 }
 
 export function BookingCard({ booking, isSelected = false, onClick }: BookingCardProps) {
   const config = statusConfig[booking.status]
   const servicesCount = booking.services.length
   const secondaryLine = [booking.vehicle.plateNumber, booking.vehicle.trim].filter(Boolean).join(' | ')
+  const priceLabel = booking.estimate
+    ? formatBookingCurrency(booking.estimate.estimatedTotalCost, booking.pricing.currency)
+    : formatStartingPrice(getBookingStartingPrice(booking.pricing), booking.pricing.currency)
 
   return (
     <button
@@ -72,6 +87,9 @@ export function BookingCard({ booking, isSelected = false, onClick }: BookingCar
           <h3 className="mb-1 font-headline text-lg font-bold text-on-surface">
             {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
           </h3>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+            #{formatBookingReference(booking.id)}
+          </p>
           <p className="text-sm text-on-surface-variant">
             {secondaryLine || 'Vehicle information'}
           </p>
@@ -107,7 +125,7 @@ export function BookingCard({ booking, isSelected = false, onClick }: BookingCar
         <div className="flex items-center gap-1.5">
           <MaterialIcon name="attach_money" className="text-primary text-sm" />
           <span className="text-xs font-bold text-on-surface">
-            {formatBookingCurrency(booking.pricing.totalEstimate, booking.pricing.currency)}
+            {priceLabel}
           </span>
         </div>
       </div>

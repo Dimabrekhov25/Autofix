@@ -4,8 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   createVehicleRequest,
   decodeVinRequest,
+  ensureCurrentCustomerRequest,
   getBookingErrorMessage,
-  getCurrentCustomerRequest,
   getServiceCatalogItemsRequest,
   getVehiclesRequest,
   type CustomerDto,
@@ -19,8 +19,8 @@ import { BookingSelectionSummary } from '../../features/booking/components/Booki
 import {
   buildVehicleDetailsLabel,
   buildVehicleLabel,
-  formatBookingCurrency,
   formatBookingDuration,
+  formatStartingPrice,
   getSelectedCatalogItemIds,
   mapServiceTotal,
   resolveBookingOptionIcon,
@@ -83,7 +83,14 @@ export function BookingVehiclePage() {
       setErrorMessage(null)
 
       try {
-        const currentCustomer = await getCurrentCustomerRequest(user.id, accessToken)
+        const currentCustomer = await ensureCurrentCustomerRequest(
+          {
+            userId: user.id,
+            fullName: user.fullName,
+            email: user.email,
+          },
+          accessToken,
+        )
         const [vehiclesResult, services, diagnostics] = await Promise.all([
           getVehiclesRequest({ ownerCustomerId: currentCustomer.id }, accessToken),
           getServiceCatalogItemsRequest({ category: 0, isActive: true }, accessToken),
@@ -97,6 +104,22 @@ export function BookingVehiclePage() {
         setCustomer(currentCustomer)
         setVehicles(vehiclesResult.items)
         setCatalogItems([...services, ...diagnostics])
+
+        const hasSelectedVehicle = bookingState.selectedVehicleId
+          && vehiclesResult.items.some((vehicle) => vehicle.id === bookingState.selectedVehicleId)
+
+        if (!hasSelectedVehicle && bookingState.selectedVehicleId) {
+          updateManualVehicleState({
+            vehicleVin: '',
+            vehicleLicensePlate: '',
+            vehicleMake: '',
+            vehicleModel: '',
+            vehicleYear: '',
+            vehicleTrim: '',
+            vehicleEngine: '',
+          })
+          setErrorMessage('The previously selected vehicle belongs to a different customer. Please choose or add a vehicle for this account.')
+        }
       } catch (error) {
         if (isMounted) {
           setErrorMessage(
@@ -121,12 +144,7 @@ export function BookingVehiclePage() {
     () => catalogItems.filter((item) => selectedCatalogItemIds.includes(item.id)),
     [catalogItems, selectedCatalogItemIds],
   )
-  const subtotal = selectedOptions.reduce((sum, option) => sum + option.basePrice, 0)
-  const estimatedLabor = selectedOptions.reduce(
-    (sum, option) => sum + option.estimatedLaborCost,
-    0,
-  )
-  const totalEstimate = subtotal + estimatedLabor
+  const startingLaborFrom = selectedOptions.reduce((sum, option) => sum + mapServiceTotal(option), 0)
   const scheduledFor = bookingState.selectedSlotStartAt
     ? new Intl.DateTimeFormat('en-US', {
         month: 'short',
@@ -500,7 +518,7 @@ export function BookingVehiclePage() {
                           </div>
                         </div>
                         <span className="text-sm font-bold">
-                          {formatBookingCurrency(mapServiceTotal(option))}
+                          {formatStartingPrice(mapServiceTotal(option))}
                         </span>
                       </div>
                     ))}
@@ -523,29 +541,17 @@ export function BookingVehiclePage() {
                   <hr className="border-surface-container" />
 
                   <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-on-surface-variant">Subtotal</span>
-                      <span className="font-semibold">
-                        {formatBookingCurrency(subtotal)}
-                      </span>
+                    <div className="rounded-xl bg-surface-container-low px-4 py-4">
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+                        Starting labor from
+                      </p>
+                      <p className="mt-2 text-2xl font-black leading-none text-primary">
+                        {formatStartingPrice(startingLaborFrom)}
+                      </p>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-on-surface-variant">Estimated Labor</span>
-                      <span className="font-semibold">
-                        {formatBookingCurrency(estimatedLabor)}
-                      </span>
-                    </div>
-                    <div className="flex items-end justify-between border-t border-surface-container pt-3">
-                      <span className="text-sm font-bold text-slate-900">Total Estimate</span>
-                      <div className="text-right">
-                        <span className="mb-1 block text-xs leading-none text-on-surface-variant">
-                          Total USD
-                        </span>
-                        <span className="text-2xl font-black leading-none text-primary">
-                          {formatBookingCurrency(totalEstimate)}
-                        </span>
-                      </div>
-                    </div>
+                    <p className="text-sm leading-6 text-on-surface-variant">
+                      This is the service-only starting price. Parts are not included here and will be added later by the mechanic after inspection.
+                    </p>
                   </div>
 
                   <button
@@ -559,7 +565,7 @@ export function BookingVehiclePage() {
                   </button>
 
                   <p className="text-center text-[10px] leading-relaxed text-on-surface-variant">
-                    Price here is informative. Final source of truth comes from the booking quote.
+                    This is a starting labor view only. Final repair scope and parts are approved later from the dashboard.
                   </p>
                 </div>
               </div>

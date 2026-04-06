@@ -11,7 +11,6 @@ public sealed class UpdateServiceOrderStatusCommandValidator : AbstractValidator
             .NotEmpty();
 
         RuleFor(x => x.Status)
-            .IsInEnum()
-            .Must(status => status is >= ServiceOrderStatus.Created and <= ServiceOrderStatus.Completed);
+            .IsInEnum();
     }
 }

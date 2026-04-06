@@ -1,12 +1,14 @@
 import type { BookingDto } from '../../../apis/bookingApi'
+import { formatBookingReference } from '../../booking/lib/booking-api-helpers'
 
 export const serviceOrderStatusOptions = [
-  { value: 1 as const, label: 'Created', description: 'Booking created, not yet diagnosed.' },
-  { value: 2 as const, label: 'In Diagnosis', description: 'Mechanic is inspecting the vehicle.' },
-  { value: 3 as const, label: 'Waiting Approval', description: 'Waiting for customer approval.' },
-  { value: 4 as const, label: 'Approved In Repair', description: 'Repair approved and in progress.' },
-  { value: 5 as const, label: 'Ready For Pickup', description: 'Vehicle is ready for pickup.' },
-  { value: 6 as const, label: 'Completed', description: 'Repair is completed and stock is consumed.' },
+  { value: 1 as const, label: 'Pending', description: 'Request created and estimate can still be edited.' },
+  { value: 2 as const, label: 'Awaiting Approval', description: 'Estimate is waiting for customer approval.' },
+  { value: 7 as const, label: 'Approved', description: 'Customer approved the estimate and the workshop can now start the repair.' },
+  { value: 3 as const, label: 'In Progress', description: 'Estimate approved and repair is now in progress.' },
+  { value: 4 as const, label: 'Completed', description: 'Repair is completed.' },
+  { value: 5 as const, label: 'Cancelled', description: 'Request was cancelled before repair started.' },
+  { value: 6 as const, label: 'Changes Requested', description: 'Customer requested estimate changes.' },
 ] as const
 
 export function formatCurrency(value: number) {
@@ -36,10 +38,10 @@ export function getBookingCardTitle(booking: BookingDto) {
 
 export function getBookingCardSubtitle(booking: BookingDto) {
   if (booking.vehicle) {
-    return `${booking.vehicle.licensePlate} · ${booking.vehicle.vin ?? 'VIN unavailable'}`
+    return `${formatBookingReference(booking.id)} | ${booking.vehicle.licensePlate} | ${booking.vehicle.vin ?? 'VIN unavailable'}`
   }
 
-  return booking.id
+  return formatBookingReference(booking.id)
 }
 
 export function getBookingServicesLabel(booking: BookingDto) {
@@ -61,11 +63,19 @@ export function isDiagnosticOnlyBooking(booking: BookingDto) {
 export function getBookingStatusLabel(status: number) {
   switch (status) {
     case 1:
-      return 'Created'
+      return 'Pending'
     case 2:
-      return 'Confirmed'
+      return 'Awaiting Approval'
+    case 7:
+      return 'Approved'
     case 3:
+      return 'In Progress'
+    case 4:
+      return 'Completed'
+    case 5:
       return 'Cancelled'
+    case 6:
+      return 'Changes Requested'
     default:
       return 'Unknown'
   }
@@ -73,4 +83,25 @@ export function getBookingStatusLabel(status: number) {
 
 export function getServiceOrderStatusLabel(status: number) {
   return serviceOrderStatusOptions.find((option) => option.value === status)?.label ?? 'Unknown'
+}
+
+export function getBookingPaymentMethodLabel(paymentOption: number) {
+  return paymentOption === 1 ? 'Online checkout' : 'Pay at shop'
+}
+
+export function getBookingSettlementLabel(booking: BookingDto) {
+  switch (booking.status) {
+    case 4:
+      return booking.paymentOption === 1
+        ? 'Online checkout selected'
+        : 'Collect payment at pickup'
+    case 7:
+      return 'Approved, waiting for repair start'
+    case 3:
+      return 'Repair in progress, settlement pending'
+    case 2:
+      return 'Estimate not approved yet'
+    default:
+      return 'Settlement not ready yet'
+  }
 }

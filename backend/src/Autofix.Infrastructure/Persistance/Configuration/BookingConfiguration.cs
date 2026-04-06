@@ -45,10 +45,14 @@ public sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
 
         builder.HasIndex(x => x.BookingTimeSlotId)
             .IsUnique()
-            .HasFilter("\"booking_time_slot_id\" IS NOT NULL AND \"is_deleted\" = false AND \"status\" <> 3");
+            .HasFilter("\"booking_time_slot_id\" IS NOT NULL AND \"is_deleted\" = false AND \"status\" <> 5");
 
         builder.HasMany(x => x.Services)
             .WithOne(x => x.Booking)
             .HasForeignKey(x => x.BookingId);
+
+        builder.HasOne(x => x.ServiceOrder)
+            .WithOne(x => x.Booking)
+            .HasForeignKey<Domain.Entities.ServiceOrders.ServiceOrder>(x => x.BookingId);
     }
 }

@@ -39,7 +39,7 @@ export interface ServiceOrderDto {
   customerId: string
   vehicleId: string
   mechanicId?: string | null
-  status: 1 | 2 | 3 | 4 | 5 | 6
+  status: 1 | 2 | 3 | 4 | 5 | 6 | 7
   estimatedLaborCost: number
   estimatedPartsCost: number
   estimatedTotalCost: number
@@ -212,10 +212,43 @@ export async function removeServiceOrderPartItemRequest(
   )
 }
 
+export async function removeServiceOrderWorkItemRequest(
+  serviceOrderId: string,
+  workItemId: string,
+  accessToken?: string,
+) {
+  return request<ServiceOrderDto>(
+    `/ServiceOrders/${serviceOrderId}/work-items/${workItemId}`,
+    {
+      method: 'DELETE',
+    },
+    accessToken,
+  )
+}
+
+export function updateServiceOrderWorkItemRequest(
+  payload: {
+    id: string
+    workItemId: string
+    laborHours: number
+    hourlyRate: number
+  },
+  accessToken?: string,
+) {
+  return request<ServiceOrderDto>(
+    `/ServiceOrders/${payload.id}/work-items/${payload.workItemId}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    },
+    accessToken,
+  )
+}
+
 export function updateServiceOrderStatusRequest(
   payload: {
     id: string
-    status: 1 | 2 | 3 | 4 | 5 | 6
+    status: 1 | 2 | 3 | 4 | 5 | 6 | 7
   },
   accessToken?: string,
 ) {

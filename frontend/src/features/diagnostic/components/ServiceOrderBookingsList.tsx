@@ -28,15 +28,33 @@ export function ServiceOrderBookingsList({
   onSearchChange,
   onBookingSelect,
 }: ServiceOrderBookingsListProps) {
+  const sections = [
+    {
+      key: 'needs-estimate',
+      title: 'Needs Estimate',
+      description: 'Fresh arrivals and requests returned for changes.',
+      bookings: bookings.filter((booking) => booking.status === 1 || booking.status === 6),
+    },
+    {
+      key: 'cancelled',
+      title: 'Cancelled',
+      description: 'Cancelled requests kept for reference.',
+      bookings: bookings.filter((booking) => booking.status === 5),
+    },
+  ].filter((section) => section.bookings.length > 0)
+
   return (
     <section className="rounded-[1.75rem] border border-white/70 bg-white/90 shadow-panel">
       <div className="border-b border-slate-100 p-6">
         <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-          Booking Queue
+          Estimate Queue
         </p>
         <h2 className="mt-2 font-headline text-2xl font-extrabold tracking-tight text-slate-900">
           Select a booking
         </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Mechanics receive the vehicle, review the complaint, prepare the estimate, and only then send it to the customer dashboard.
+        </p>
         <div className="relative mt-5">
           <MaterialIcon
             name="search"
@@ -52,7 +70,7 @@ export function ServiceOrderBookingsList({
         </div>
       </div>
 
-      <div className="max-h-[calc(100vh-16rem)] overflow-y-auto p-4">
+      <div className="h-[calc(100vh-11rem)] overflow-y-auto overflow-x-hidden p-4 pr-3">
         {isLoading ? (
           <div className="rounded-2xl bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">
             Loading live bookings...
@@ -66,63 +84,81 @@ export function ServiceOrderBookingsList({
             No bookings matched this view.
           </div>
         ) : (
-          <div className="space-y-3">
-            {bookings.map((booking) => {
-              const isSelected = booking.id === selectedBookingId
-              const isDiagnosticOnly = isDiagnosticOnlyBooking(booking)
-
-              return (
-                <button
-                  key={booking.id}
-                  type="button"
-                  onClick={() => onBookingSelect(booking)}
-                  className={[
-                    'w-full rounded-[1.5rem] border p-5 text-left transition-all',
-                    isSelected
-                      ? 'border-primary bg-primary/5 shadow-sm'
-                      : 'border-slate-200 bg-white hover:border-primary/25 hover:bg-slate-50',
-                  ].join(' ')}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-base font-bold text-slate-900">{getBookingCardTitle(booking)}</p>
-                      <p className="mt-1 text-sm text-slate-500">{getBookingCardSubtitle(booking)}</p>
-                    </div>
-                    <span
-                      className={[
-                        'inline-flex rounded-full px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.18em]',
-                        isDiagnosticOnly
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-cyan-100 text-cyan-700',
-                      ].join(' ')}
-                    >
-                      {isDiagnosticOnly ? 'Diagnostic' : 'Service'}
+          <div className="space-y-6">
+            {sections.map((section) => (
+              <div key={section.key}>
+                <div className="mb-3 px-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-700">
+                      {section.title}
+                    </h3>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-600">
+                      {section.bookings.length}
                     </span>
                   </div>
+                  <p className="mt-1 text-sm text-slate-500">{section.description}</p>
+                </div>
 
-                  <div className="mt-4 grid gap-2 text-sm text-slate-600">
-                    <p>
-                      <span className="font-semibold text-slate-900">Booked:</span>{' '}
-                      {getBookingServicesLabel(booking)}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-slate-900">Slot:</span>{' '}
-                      {formatBookingDate(booking.startAt)}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-slate-900">Booking status:</span>{' '}
-                      {getBookingStatusLabel(booking.status)}
-                    </p>
-                  </div>
+                <div className="space-y-3">
+                  {section.bookings.map((booking) => {
+                    const isSelected = booking.id === selectedBookingId
+                    const isDiagnosticOnly = isDiagnosticOnlyBooking(booking)
 
-                  {booking.notes ? (
-                    <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                      {booking.notes}
-                    </div>
-                  ) : null}
-                </button>
-              )
-            })}
+                    return (
+                      <button
+                        key={booking.id}
+                        type="button"
+                        onClick={() => onBookingSelect(booking)}
+                        className={[
+                          'w-full rounded-[1.5rem] border p-5 text-left transition-all',
+                          isSelected
+                            ? 'border-primary bg-primary/5 shadow-sm'
+                            : 'border-slate-200 bg-white hover:border-primary/25 hover:bg-slate-50',
+                        ].join(' ')}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-base font-bold text-slate-900">{getBookingCardTitle(booking)}</p>
+                            <p className="mt-1 text-sm text-slate-500">{getBookingCardSubtitle(booking)}</p>
+                          </div>
+                          <span
+                            className={[
+                              'inline-flex rounded-full px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.18em]',
+                              isDiagnosticOnly
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-cyan-100 text-cyan-700',
+                            ].join(' ')}
+                          >
+                            {isDiagnosticOnly ? 'Diagnostic' : 'Service'}
+                          </span>
+                        </div>
+
+                        <div className="mt-4 grid gap-2 text-sm text-slate-600">
+                          <p>
+                            <span className="font-semibold text-slate-900">Booked:</span>{' '}
+                            {getBookingServicesLabel(booking)}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-slate-900">Slot:</span>{' '}
+                            {formatBookingDate(booking.startAt)}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-slate-900">Booking status:</span>{' '}
+                            {getBookingStatusLabel(booking.status)}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                          {booking.notes?.trim()
+                            ? booking.notes
+                            : 'No extra complaint was written. Use the booked service and the inspection results to prepare the estimate.'}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

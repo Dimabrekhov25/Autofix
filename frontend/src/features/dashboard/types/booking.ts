@@ -1,4 +1,11 @@
-export type BookingStatus = 'pending' | 'confirmed' | 'in-service' | 'completed' | 'cancelled'
+export type BookingStatus =
+  | 'pending'
+  | 'awaiting-approval'
+  | 'approved'
+  | 'in-progress'
+  | 'changes-requested'
+  | 'completed'
+  | 'cancelled'
 
 export interface BookingVehicle {
   id: string
@@ -29,6 +36,34 @@ export interface BookingPricing {
   currency: string
 }
 
+export interface BookingEstimateWorkItem {
+  id: string
+  description: string
+  laborHours: number
+  hourlyRate: number
+  lineTotal: number
+}
+
+export interface BookingEstimatePartItem {
+  id: string
+  partId: string
+  partName: string
+  quantity: number
+  unitPrice: number
+  availability: number
+  lineTotal: number
+}
+
+export interface BookingEstimate {
+  serviceOrderId: string
+  status: number
+  estimatedLaborCost: number
+  estimatedPartsCost: number
+  estimatedTotalCost: number
+  workItems: BookingEstimateWorkItem[]
+  partItems: BookingEstimatePartItem[]
+}
+
 export interface Booking {
   id: string
   customerId: string
@@ -43,6 +78,7 @@ export interface Booking {
   pricing: BookingPricing
   paymentOption: number
   services: BookingService[]
+  estimate?: BookingEstimate
   notes?: string
   createdAt: string
   updatedAt: string

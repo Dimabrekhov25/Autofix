@@ -3,7 +3,9 @@ using Autofix.Application.Common.Security;
 using Autofix.Application.ServiceOrders.Commands.AddManualServiceOrderPart;
 using Autofix.Application.ServiceOrders.Commands.AddServiceOrderCatalogItems;
 using Autofix.Application.ServiceOrders.Commands.RemoveServiceOrderPartItem;
+using Autofix.Application.ServiceOrders.Commands.RemoveServiceOrderWorkItem;
 using Autofix.Application.ServiceOrders.Commands.UpdateServiceOrderStatus;
+using Autofix.Application.ServiceOrders.Commands.UpdateServiceOrderWorkItem;
 using Autofix.Application.ServiceOrders.Queries.GetServiceOrderByBookingId;
 using Autofix.Application.ServiceOrders.Queries.GetServiceOrderById;
 using MediatR;
@@ -82,6 +84,44 @@ public sealed class ServiceOrdersController(IMediator mediator) : BaseController
         if (result is null)
         {
             return NotFound(ApiResult.Failure($"Part item {partItemId} not found"));
+        }
+
+        return OkResult(result);
+    }
+
+    [HttpDelete("{id:guid}/work-items/{workItemId:guid}")]
+    public async Task<IActionResult> RemoveWorkItem(
+        Guid id,
+        Guid workItemId,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new RemoveServiceOrderWorkItemCommand(id, workItemId), cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(ApiResult.Failure($"Work item {workItemId} not found"));
+        }
+
+        return OkResult(result);
+    }
+
+    [HttpPut("{id:guid}/work-items/{workItemId:guid}")]
+    public async Task<IActionResult> UpdateWorkItem(
+        Guid id,
+        Guid workItemId,
+        [FromBody] UpdateServiceOrderWorkItemCommand command,
+        CancellationToken cancellationToken)
+    {
+        if (id != command.Id || workItemId != command.WorkItemId)
+        {
+            return BadRequestResult("Route ids do not match body ids.");
+        }
+
+        var result = await mediator.Send(command, cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(ApiResult.Failure($"Work item {workItemId} not found"));
         }
 
         return OkResult(result);

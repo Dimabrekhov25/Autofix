@@ -21,8 +21,25 @@ public interface IServiceOrderManagementService
         Guid partItemId,
         CancellationToken cancellationToken);
 
+    Task<ServiceOrder?> RemoveWorkItemAsync(
+        Guid serviceOrderId,
+        Guid workItemId,
+        CancellationToken cancellationToken);
+
+    Task<ServiceOrder?> UpdateWorkItemAsync(
+        Guid serviceOrderId,
+        Guid workItemId,
+        decimal laborHours,
+        decimal hourlyRate,
+        CancellationToken cancellationToken);
+
     Task<ServiceOrder?> UpdateStatusAsync(
         Guid serviceOrderId,
+        ServiceOrderStatus status,
+        CancellationToken cancellationToken);
+
+    Task<ServiceOrder?> UpdateStatusByBookingIdAsync(
+        Guid bookingId,
         ServiceOrderStatus status,
         CancellationToken cancellationToken);
 }

@@ -141,6 +141,34 @@ export interface BookingServiceItemDto {
   estimatedDuration: string
 }
 
+export interface BookingEstimateWorkItemDto {
+  id: string
+  description: string
+  laborHours: number
+  hourlyRate: number
+  lineTotal: number
+}
+
+export interface BookingEstimatePartItemDto {
+  id: string
+  partId: string
+  partName: string
+  quantity: number
+  unitPrice: number
+  availability: 1 | 2
+  lineTotal: number
+}
+
+export interface BookingEstimateDto {
+  serviceOrderId: string
+  status: 1 | 2 | 3 | 4 | 5 | 6 | 7
+  estimatedLaborCost: number
+  estimatedPartsCost: number
+  estimatedTotalCost: number
+  workItems: BookingEstimateWorkItemDto[]
+  partItems: BookingEstimatePartItemDto[]
+}
+
 export interface BookingVehicleDto {
   id: string
   licensePlate: string
@@ -165,6 +193,9 @@ export interface BookingDto {
   pricing: BookingPricingDto
   notes?: string | null
   services: BookingServiceItemDto[]
+  estimate?: BookingEstimateDto | null
+  createdAt: string
+  updatedAt?: string | null
 }
 
 export interface CreateVehiclePayload {
@@ -179,11 +210,18 @@ export interface CreateVehiclePayload {
   isDrivable: boolean
 }
 
+export interface CreateCustomerPayload {
+  userId: string
+  fullName: string
+  phone: string
+  email?: string | null
+  notes?: string | null
+}
+
 export interface BookingQuotePayload {
   vehicleId: string
   startAt: string
   serviceCatalogItemIds: string[]
-  paymentOption: 0 | 1
 }
 
 export interface CreateBookingPayload extends BookingQuotePayload {
@@ -348,6 +386,17 @@ export function getCustomersRequest(accessToken?: string) {
   return request<CustomerDto[]>('/Customers', { method: 'GET' }, accessToken)
 }
 
+export function createCustomerRequest(payload: CreateCustomerPayload, accessToken?: string) {
+  return request<CustomerDto>(
+    '/Customers',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    accessToken,
+  )
+}
+
 export async function getCurrentCustomerRequest(userId: string, accessToken?: string) {
   const customers = await getCustomersRequest(accessToken)
   const currentCustomer = customers.find((customer) => customer.userId === userId)
@@ -359,6 +408,44 @@ export async function getCurrentCustomerRequest(userId: string, accessToken?: st
   }
 
   return currentCustomer
+}
+
+export async function ensureCurrentCustomerRequest(
+  payload: {
+    userId: string
+    fullName: string
+    email?: string | null
+  },
+  accessToken?: string,
+) {
+  try {
+    return await getCurrentCustomerRequest(payload.userId, accessToken)
+  } catch (error) {
+    const isNotFound = error instanceof BookingApiError && error.statusCode === 404
+    if (!isNotFound) {
+      throw error
+    }
+
+    try {
+      return await createCustomerRequest(
+        {
+          userId: payload.userId,
+          fullName: payload.fullName.trim() || payload.email?.trim() || 'Autofix Customer',
+          phone: 'Pending',
+          email: payload.email?.trim() || null,
+          notes: 'Auto-created from booking flow.',
+        },
+        accessToken,
+      )
+    } catch (createError) {
+      const isConflict = createError instanceof BookingApiError && createError.statusCode === 409
+      if (!isConflict) {
+        throw createError
+      }
+
+      return getCurrentCustomerRequest(payload.userId, accessToken)
+    }
+  }
 }
 
 export function getVehiclesRequest(
@@ -420,6 +507,60 @@ export function createBookingRequest(payload: CreateBookingPayload, accessToken?
     '/Bookings',
     {
       method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    accessToken,
+  )
+}
+
+export function approveBookingEstimateRequest(id: string, accessToken?: string) {
+  return request<BookingDto>(
+    `/Bookings/${id}/approve-estimate`,
+    {
+      method: 'POST',
+    },
+    accessToken,
+  )
+}
+
+export function requestBookingChangesRequest(id: string, accessToken?: string) {
+  return request<BookingDto>(
+    `/Bookings/${id}/request-changes`,
+    {
+      method: 'POST',
+    },
+    accessToken,
+  )
+}
+
+export function updateBookingPaymentOptionRequest(
+  payload: {
+    id: string
+    paymentOption: 0 | 1
+  },
+  accessToken?: string,
+) {
+  return request<BookingDto>(
+    `/Bookings/${payload.id}/payment-option`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    },
+    accessToken,
+  )
+}
+
+export function updateBookingServiceOrderStatusRequest(
+  payload: {
+    id: string
+    status: 7 | 3 | 4
+  },
+  accessToken?: string,
+) {
+  return request<BookingDto>(
+    `/Bookings/${payload.id}/service-order-status`,
+    {
+      method: 'PUT',
       body: JSON.stringify(payload),
     },
     accessToken,

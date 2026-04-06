@@ -5,33 +5,22 @@ import {
   createServiceCatalogItemRequest,
   deleteServiceCatalogItemRequest,
   getCatalogErrorMessage,
-  getPartsRequest,
   getServiceCatalogItemsRequest,
-  type CatalogPartDto,
   type ServiceCatalogItemDto,
   updateServiceCatalogItemRequest,
 } from '../../../apis/catalogApi'
-import {
-  getInventoryErrorMessage,
-  getInventoryItemsRequest,
-  type InventoryItemDto,
-} from '../../../apis/inventoryApi'
 import { Button } from '../../../shared/ui/Button'
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 import { ServiceCatalogDeleteDialog } from './ServiceCatalogDeleteDialog'
 import { ServiceCatalogEditorDialog } from './ServiceCatalogEditorDialog'
 import {
-  buildRequiredPartsSummary,
-  buildInventoryPartOptions,
   createFormState,
   createInitialFormState,
   getCategoryChipClassName,
   getCategoryLabel,
   formatCurrency,
   formatDurationLabel,
-  type InventoryPartOption,
   isValidDuration,
-  normalizeRequiredParts,
   type ServiceCatalogFormState,
 } from '../lib/serviceCatalog'
 
@@ -67,8 +56,6 @@ export function ServiceCatalogAdminView({
   accessToken,
 }: ServiceCatalogAdminViewProps) {
   const [items, setItems] = useState<ServiceCatalogItemDto[]>([])
-  const [parts, setParts] = useState<CatalogPartDto[]>([])
-  const [inventoryItems, setInventoryItems] = useState<InventoryItemDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
@@ -91,26 +78,16 @@ export function ServiceCatalogAdminView({
       setErrorMessage(null)
 
       try {
-        const [nextItems, nextParts, nextInventoryItems] = await Promise.all([
-          getServiceCatalogItemsRequest({}, accessToken),
-          getPartsRequest(accessToken),
-          getInventoryItemsRequest(accessToken),
-        ])
+        const nextItems = await getServiceCatalogItemsRequest({}, accessToken)
 
         if (!isMounted) {
           return
         }
 
         setItems(nextItems)
-        setParts(nextParts)
-        setInventoryItems(nextInventoryItems)
       } catch (error) {
         if (isMounted) {
-          setErrorMessage(
-            error instanceof Error && error.name === 'InventoryApiError'
-              ? getInventoryErrorMessage(error, 'Unable to load inventory-backed service parts right now.')
-              : getCatalogErrorMessage(error, 'Unable to load the live service catalog right now.'),
-          )
+          setErrorMessage(getCatalogErrorMessage(error, 'Unable to load the live service catalog right now.'))
         }
       } finally {
         if (isMounted) {
@@ -126,11 +103,6 @@ export function ServiceCatalogAdminView({
     }
   }, [accessToken])
 
-  const partsById = useMemo(() => new Map(parts.map((part) => [part.id, part])), [parts])
-  const inventoryPartOptions = useMemo<InventoryPartOption[]>(
-    () => buildInventoryPartOptions(parts, inventoryItems),
-    [inventoryItems, parts],
-  )
   const normalizedSearch = deferredSearchValue.trim().toLowerCase()
 
   const filteredItems = useMemo(
@@ -156,7 +128,6 @@ export function ServiceCatalogAdminView({
 
   const activeItemsCount = items.filter((item) => item.isActive).length
   const diagnosticsCount = items.filter((item) => item.category === 1).length
-  const requiredPartTemplatesCount = items.reduce((sum, item) => sum + item.requiredParts.length, 0)
 
   function openCreateDialog() {
     setEditingItem(null)
@@ -189,9 +160,6 @@ export function ServiceCatalogAdminView({
     const normalizedName = form.name.trim()
     const normalizedDescription = form.description.trim()
     const basePrice = Number.parseFloat(form.basePrice)
-    const estimatedLaborCost = Number.parseFloat(form.estimatedLaborCost)
-    const normalizedRequiredParts =
-      form.category === 'service' ? normalizeRequiredParts(form.requiredParts) : []
 
     if (!normalizedName) {
       setDialogErrorMessage('Service name is required.')
@@ -208,18 +176,8 @@ export function ServiceCatalogAdminView({
       return
     }
 
-    if (!Number.isFinite(estimatedLaborCost) || estimatedLaborCost < 0) {
-      setDialogErrorMessage('Estimated labor cost must be a valid non-negative number.')
-      return
-    }
-
     if (!isValidDuration(form.estimatedDuration)) {
       setDialogErrorMessage('Estimated duration must use the format HH:MM:SS.')
-      return
-    }
-
-    if (form.category === 'service' && form.requiredParts.length > 0 && normalizedRequiredParts.length === 0) {
-      setDialogErrorMessage('Each required part must have a selected part and quantity greater than zero.')
       return
     }
 
@@ -227,16 +185,17 @@ export function ServiceCatalogAdminView({
     setIsSubmitting(true)
 
     try {
+      const category: 0 | 1 = form.category === 'service' ? 0 : 1
       const payload = {
         name: normalizedName,
         description: normalizedDescription,
-        category: form.category === 'service' ? 0 : 1,
+        category,
         basePrice,
-        estimatedLaborCost,
+        estimatedLaborCost: 0,
         estimatedDuration: form.estimatedDuration.trim(),
         isActive: form.isActive,
-        requiredParts: normalizedRequiredParts,
-      } as const
+        requiredParts: [],
+      }
 
       if (editingItem) {
         const updatedItem = await updateServiceCatalogItemRequest(
@@ -297,11 +256,6 @@ export function ServiceCatalogAdminView({
           label="Diagnostics"
           value={diagnosticsCount.toLocaleString('en-US')}
           accent="border-amber-400"
-        />
-        <ServiceMetricCard
-          label="Required Part Links"
-          value={requiredPartTemplatesCount.toLocaleString('en-US')}
-          accent="border-cyan-400"
         />
       </div>
 
@@ -408,7 +362,7 @@ export function ServiceCatalogAdminView({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] border-collapse text-left">
+          <table className="w-full min-w-[860px] border-collapse text-left">
             <thead>
               <tr className="bg-slate-50/50">
                 <th className="px-8 py-4 text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
@@ -423,9 +377,6 @@ export function ServiceCatalogAdminView({
                 <th className="px-6 py-4 text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
                   Duration
                 </th>
-                <th className="px-6 py-4 text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-                  Required Parts
-                </th>
                 <th className="px-8 py-4 text-right text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
                   Actions
                 </th>
@@ -434,13 +385,13 @@ export function ServiceCatalogAdminView({
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-8 py-16 text-center text-sm text-slate-500">
+                  <td colSpan={5} className="px-8 py-16 text-center text-sm text-slate-500">
                     Loading live service catalog...
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-8 py-16 text-center text-sm text-slate-500">
+                  <td colSpan={5} className="px-8 py-16 text-center text-sm text-slate-500">
                     No catalog items match the current filters.
                   </td>
                 </tr>
@@ -477,18 +428,13 @@ export function ServiceCatalogAdminView({
                       </span>
                     </td>
                     <td className="px-6 py-5 text-sm text-slate-700">
-                      <p className="font-bold text-slate-900">{formatCurrency(item.basePrice)}</p>
+                      <p className="font-bold text-slate-900">From {formatCurrency(item.basePrice)}</p>
                       <p className="mt-1 text-xs text-slate-500">
-                        Labor estimate: {formatCurrency(item.estimatedLaborCost)}
+                        Service-only starting price
                       </p>
                     </td>
                     <td className="px-6 py-5 text-sm font-semibold text-slate-700">
                       {formatDurationLabel(item.estimatedDuration)}
-                    </td>
-                    <td className="px-6 py-5">
-                      <p className="text-sm text-slate-700">
-                        {buildRequiredPartsSummary(item, partsById)}
-                      </p>
                     </td>
                     <td className="px-8 py-5">
                       <div className="flex items-center justify-end gap-3">
@@ -521,7 +467,6 @@ export function ServiceCatalogAdminView({
       {isDialogOpen ? (
         <ServiceCatalogEditorDialog
           editingItem={editingItem}
-          inventoryParts={inventoryPartOptions}
           form={form}
           isSubmitting={isSubmitting}
           errorMessage={dialogErrorMessage}
