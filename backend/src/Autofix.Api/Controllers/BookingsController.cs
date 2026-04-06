@@ -1,7 +1,10 @@
 using Autofix.Api.Models;
+using Autofix.Application.Bookings.Commands.ApproveBookingEstimate;
 using Autofix.Application.Bookings.Commands.CreateBooking;
 using Autofix.Application.Bookings.Commands.DeleteBooking;
+using Autofix.Application.Bookings.Commands.RequestBookingChanges;
 using Autofix.Application.Bookings.Commands.UpdateBooking;
+using Autofix.Application.Bookings.Commands.UpdateBookingPaymentOption;
 using Autofix.Application.Bookings.Queries.GetAvailableBookingSlots;
 using Autofix.Application.Bookings.Queries.GetBookingById;
 using Autofix.Application.Bookings.Queries.GetBookingQuote;
@@ -101,5 +104,55 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         }
 
         return OkResult(new { });
+    }
+
+    [Authorize(Policy = PolicyNames.ActiveUser)]
+    [HttpPost("{id:guid}/approve-estimate")]
+    public async Task<IActionResult> ApproveEstimate(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new ApproveBookingEstimateCommand(id), cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(ApiResult.Failure($"Booking {id} not found"));
+        }
+
+        return OkResult(result);
+    }
+
+    [Authorize(Policy = PolicyNames.ActiveUser)]
+    [HttpPost("{id:guid}/request-changes")]
+    public async Task<IActionResult> RequestChanges(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new RequestBookingChangesCommand(id), cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(ApiResult.Failure($"Booking {id} not found"));
+        }
+
+        return OkResult(result);
+    }
+
+    [Authorize(Policy = PolicyNames.ActiveUser)]
+    [HttpPut("{id:guid}/payment-option")]
+    public async Task<IActionResult> UpdatePaymentOption(
+        Guid id,
+        [FromBody] UpdateBookingPaymentOptionCommand command,
+        CancellationToken cancellationToken)
+    {
+        if (id != command.Id)
+        {
+            return BadRequestResult("Route id does not match body id.");
+        }
+
+        var result = await mediator.Send(command, cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(ApiResult.Failure($"Booking {id} not found"));
+        }
+
+        return OkResult(result);
     }
 }

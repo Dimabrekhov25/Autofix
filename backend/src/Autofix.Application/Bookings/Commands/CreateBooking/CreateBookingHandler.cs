@@ -80,7 +80,7 @@ public sealed class CreateBookingHandler(
             BookingTimeSlotId = timeSlot.Id,
             StartAt = timeSlot.StartAt,
             EndAt = endAt,
-            Status = BookingStatus.Created,
+            Status = BookingStatus.Pending,
             PaymentOption = request.PaymentOption,
             Currency = pricing.Currency,
             Subtotal = pricing.Subtotal,

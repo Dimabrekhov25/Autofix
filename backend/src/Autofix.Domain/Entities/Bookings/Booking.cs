@@ -1,5 +1,6 @@
 using Autofix.Domain.Common;
 using Autofix.Domain.Entities.People;
+using Autofix.Domain.Entities.ServiceOrders;
 using Autofix.Domain.Entities.Vehicles;
 using Autofix.Domain.Enum;
 
@@ -15,7 +16,7 @@ public sealed class Booking : BaseEntity
     public BookingTimeSlot? BookingTimeSlot { get; set; }
     public DateTime StartAt { get; set; }
     public DateTime EndAt { get; set; }
-    public BookingStatus Status { get; set; } = BookingStatus.Created;
+    public BookingStatus Status { get; set; } = BookingStatus.Pending;
     public BookingPaymentOption PaymentOption { get; set; } = BookingPaymentOption.PayAtShop;
     public string Currency { get; set; } = "USD";
     public decimal Subtotal { get; set; }
@@ -24,4 +25,5 @@ public sealed class Booking : BaseEntity
     public decimal TotalEstimate { get; set; }
     public string? Notes { get; set; }
     public List<BookingServiceItem> Services { get; set; } = new();
+    public ServiceOrder? ServiceOrder { get; set; }
 }

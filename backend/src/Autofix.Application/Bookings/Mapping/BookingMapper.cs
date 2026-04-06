@@ -46,5 +46,37 @@ public static class BookingMapper
                     service.BasePrice,
                     service.EstimatedLaborCost,
                     service.EstimatedDuration))
-                .ToList());
+                .ToList(),
+            entity.ServiceOrder is null
+                ? null
+                : new BookingEstimateDto(
+                    entity.ServiceOrder.Id,
+                    entity.ServiceOrder.Status,
+                    entity.ServiceOrder.EstimatedLaborCost,
+                    entity.ServiceOrder.EstimatedPartsCost,
+                    entity.ServiceOrder.EstimatedTotalCost,
+                    entity.ServiceOrder.WorkItems
+                        .Where(item => !item.IsDeleted)
+                        .OrderBy(item => item.Description)
+                        .Select(item => new BookingEstimateWorkItemDto(
+                            item.Id,
+                            item.Description,
+                            item.LaborHours,
+                            item.HourlyRate,
+                            item.LaborHours * item.HourlyRate))
+                        .ToList(),
+                    entity.ServiceOrder.PartItems
+                        .Where(item => !item.IsDeleted)
+                        .OrderBy(item => item.PartName)
+                        .Select(item => new BookingEstimatePartItemDto(
+                            item.Id,
+                            item.PartId,
+                            item.PartName,
+                            item.Quantity,
+                            item.UnitPrice,
+                            item.Availability,
+                            item.Quantity * item.UnitPrice))
+                        .ToList()),
+            entity.CreatedAt,
+            entity.UpdatedAt);
 }

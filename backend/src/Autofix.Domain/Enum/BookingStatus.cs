@@ -2,7 +2,11 @@ namespace Autofix.Domain.Enum;
 
 public enum BookingStatus
 {
-    Created = 1,
-    Confirmed = 2,
-    Cancelled = 3
+    Pending = 1,
+    AwaitingApproval = 2,
+    InProgress = 3,
+    Completed = 4,
+    Cancelled = 5,
+    ChangesRequested = 6,
+    Approved = 7
 }

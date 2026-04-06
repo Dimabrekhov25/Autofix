@@ -20,6 +20,10 @@ public sealed class BookingRepository(ApplicationDbContext dbContext) : IBooking
             .AsNoTracking()
             .Include(x => x.Vehicle)
             .Include(x => x.Services.Where(service => !service.IsDeleted))
+            .Include(x => x.ServiceOrder)
+            .ThenInclude(x => x!.WorkItems.Where(item => !item.IsDeleted))
+            .Include(x => x.ServiceOrder)
+            .ThenInclude(x => x!.PartItems.Where(item => !item.IsDeleted))
             .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
     }
 
@@ -32,6 +36,10 @@ public sealed class BookingRepository(ApplicationDbContext dbContext) : IBooking
             .AsNoTracking()
             .Include(x => x.Vehicle)
             .Include(x => x.Services.Where(service => !service.IsDeleted))
+            .Include(x => x.ServiceOrder)
+            .ThenInclude(x => x!.WorkItems.Where(item => !item.IsDeleted))
+            .Include(x => x.ServiceOrder)
+            .ThenInclude(x => x!.PartItems.Where(item => !item.IsDeleted))
             .Where(x => !x.IsDeleted);
 
         if (customerId.HasValue)
@@ -105,6 +113,32 @@ public sealed class BookingRepository(ApplicationDbContext dbContext) : IBooking
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<Booking?> UpdatePaymentOptionAsync(
+        Guid id,
+        BookingPaymentOption paymentOption,
+        CancellationToken cancellationToken)
+    {
+        var booking = await dbContext.Bookings
+            .Include(x => x.Vehicle)
+            .Include(x => x.Services.Where(service => !service.IsDeleted))
+            .Include(x => x.ServiceOrder!)
+            .ThenInclude(x => x!.WorkItems.Where(item => !item.IsDeleted))
+            .Include(x => x.ServiceOrder!)
+            .ThenInclude(x => x!.PartItems.Where(item => !item.IsDeleted))
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+
+        if (booking is null)
+        {
+            return null;
+        }
+
+        booking.PaymentOption = paymentOption;
+        booking.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return booking;
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)

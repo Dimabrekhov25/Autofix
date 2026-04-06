@@ -80,7 +80,7 @@ public sealed class UpdateBookingHandler(
 
         if (request.Status == Autofix.Domain.Enum.BookingStatus.Cancelled)
         {
-            throw new BadRequestException("Use the delete endpoint to cancel a booking and release reserved parts.");
+            throw new BadRequestException("Use the cancel endpoint to cancel a booking.");
         }
 
         var booking = new Booking

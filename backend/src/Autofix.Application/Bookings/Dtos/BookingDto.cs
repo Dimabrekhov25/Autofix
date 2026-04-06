@@ -14,5 +14,8 @@ public sealed record BookingDto(
     BookingPaymentOption PaymentOption,
     BookingPricingDto Pricing,
     string? Notes,
-    IReadOnlyList<BookingServiceItemDto> Services
+    IReadOnlyList<BookingServiceItemDto> Services,
+    BookingEstimateDto? Estimate,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt
 );

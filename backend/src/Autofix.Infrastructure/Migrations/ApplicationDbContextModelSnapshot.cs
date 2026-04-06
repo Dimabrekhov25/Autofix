@@ -110,7 +110,7 @@ namespace Autofix.Infrastructure.Migrations
                     b.HasIndex("BookingTimeSlotId")
                         .IsUnique()
                         .HasDatabaseName("ix_bookings_booking_time_slot_id")
-                        .HasFilter("\"booking_time_slot_id\" IS NOT NULL AND \"is_deleted\" = false AND \"status\" <> 3");
+                        .HasFilter("\"booking_time_slot_id\" IS NOT NULL AND \"is_deleted\" = false AND \"status\" <> 5");
 
                     b.HasIndex("CustomerId")
                         .HasDatabaseName("ix_bookings_customer_id");
@@ -1596,8 +1596,8 @@ namespace Autofix.Infrastructure.Migrations
             modelBuilder.Entity("Autofix.Domain.Entities.ServiceOrders.ServiceOrder", b =>
                 {
                     b.HasOne("Autofix.Domain.Entities.Booking.Booking", "Booking")
-                        .WithMany()
-                        .HasForeignKey("BookingId")
+                        .WithOne("ServiceOrder")
+                        .HasForeignKey("Autofix.Domain.Entities.ServiceOrders.ServiceOrder", "BookingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_service_orders_bookings_booking_id");
