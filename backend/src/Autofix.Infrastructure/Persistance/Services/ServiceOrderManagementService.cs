@@ -196,14 +196,27 @@ public sealed class ServiceOrderManagementService(ApplicationDbContext dbContext
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        if (targetStatus == ServiceOrderStatus.InProgress && serviceOrder.Status != ServiceOrderStatus.InProgress)
+        var mutations = serviceOrder.PartItems
+            .Where(item => !item.IsDeleted)
+            .Select(item => new InventoryPartMutation(item.PartId, item.PartName, item.UnitPrice, item.Quantity))
+            .ToList();
+
+        var currentConsumesInventory = ConsumesInventory(serviceOrder.Status);
+        var targetConsumesInventory = ConsumesInventory(targetStatus);
+
+        if (!currentConsumesInventory && targetConsumesInventory)
         {
             await inventoryMutationService.ConsumeAvailableAsync(
-                serviceOrder.PartItems
-                    .Where(item => !item.IsDeleted)
-                    .Select(item => new InventoryPartMutation(item.PartId, item.PartName, item.UnitPrice, item.Quantity))
-                    .ToList(),
-                $"Approved estimate consumption for service order {serviceOrder.Id}",
+                mutations,
+                $"Service order {serviceOrder.Id} moved to {targetStatus}",
+                cancellationToken);
+        }
+
+        if (currentConsumesInventory && !targetConsumesInventory)
+        {
+            await inventoryMutationService.RestoreAvailableAsync(
+                mutations,
+                $"Service order {serviceOrder.Id} reverted to {targetStatus}",
                 cancellationToken);
         }
 
@@ -324,19 +337,9 @@ public sealed class ServiceOrderManagementService(ApplicationDbContext dbContext
             return;
         }
 
-        if (currentStatus == ServiceOrderStatus.Completed)
-        {
-            throw new BadRequestException("Completed service orders cannot be reopened.");
-        }
-
         if (currentStatus == ServiceOrderStatus.Cancelled)
         {
             throw new BadRequestException("Cancelled service orders cannot be reopened.");
-        }
-
-        if (currentStatus == ServiceOrderStatus.InProgress && targetStatus != ServiceOrderStatus.Completed)
-        {
-            throw new BadRequestException("Repairs already in progress can only be completed.");
         }
 
         var isValid = (currentStatus, targetStatus) switch
@@ -350,8 +353,12 @@ public sealed class ServiceOrderManagementService(ApplicationDbContext dbContext
             (ServiceOrderStatus.ChangesRequested, ServiceOrderStatus.AwaitingApproval) => true,
             (ServiceOrderStatus.ChangesRequested, ServiceOrderStatus.Cancelled) => true,
             (ServiceOrderStatus.Approved, ServiceOrderStatus.InProgress) => true,
+            (ServiceOrderStatus.Approved, ServiceOrderStatus.Completed) => true,
             (ServiceOrderStatus.Approved, ServiceOrderStatus.Cancelled) => true,
+            (ServiceOrderStatus.InProgress, ServiceOrderStatus.Approved) => true,
             (ServiceOrderStatus.InProgress, ServiceOrderStatus.Completed) => true,
+            (ServiceOrderStatus.Completed, ServiceOrderStatus.InProgress) => true,
+            (ServiceOrderStatus.Completed, ServiceOrderStatus.Approved) => true,
             _ => false
         };
 
@@ -360,6 +367,9 @@ public sealed class ServiceOrderManagementService(ApplicationDbContext dbContext
             throw new BadRequestException($"Invalid service order status transition from {currentStatus} to {targetStatus}.");
         }
     }
+
+    private static bool ConsumesInventory(ServiceOrderStatus status)
+        => status is ServiceOrderStatus.InProgress or ServiceOrderStatus.Completed;
 
     private static void MergePartItems(ServiceOrder serviceOrder, IReadOnlyCollection<ServicePartMutation> mutations)
     {
