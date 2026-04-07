@@ -8,7 +8,7 @@ export const serviceOrderStatusOptions = [
   { value: 3 as const, label: 'In Progress', description: 'Estimate approved and repair is now in progress.' },
   { value: 4 as const, label: 'Completed', description: 'Repair is completed.' },
   { value: 5 as const, label: 'Cancelled', description: 'Request was cancelled before repair started.' },
-  { value: 6 as const, label: 'Changes Requested', description: 'Customer requested estimate changes.' },
+  { value: 6 as const, label: 'Estimate Revision', description: 'Estimate was returned to diagnostics for revision.' },
 ] as const
 
 export function formatCurrency(value: number) {
@@ -75,7 +75,7 @@ export function getBookingStatusLabel(status: number) {
     case 5:
       return 'Cancelled'
     case 6:
-      return 'Changes Requested'
+      return 'Estimate Revision'
     default:
       return 'Unknown'
   }

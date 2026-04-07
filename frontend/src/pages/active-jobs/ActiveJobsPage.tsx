@@ -85,6 +85,10 @@ function getStatusBadgeClass(status: number) {
   }
 }
 
+function isActiveJobStatus(status: number) {
+  return status === 7 || status === 3 || status === 4
+}
+
 export function ActiveJobsPage() {
   const { tokens } = useAuth()
   const accessToken = tokens?.accessToken
@@ -97,21 +101,30 @@ export function ActiveJobsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isStatusUpdating, setIsStatusUpdating] = useState(false)
-  const [pendingStatusValue, setPendingStatusValue] = useState<7 | 3 | 4>(7)
+  const [pendingStatusValue, setPendingStatusValue] = useState<7 | 3 | 4 | 6>(7)
   const [statusActionErrorMessage, setStatusActionErrorMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   function upsertBooking(nextBooking: BookingDto) {
-    setBookings((currentBookings) => {
-      const nextActiveBookings = currentBookings
+    const nextActiveBookings = sortActiveJobs(
+      bookings
         .filter((booking) => booking.id !== nextBooking.id)
         .concat(nextBooking)
-        .filter((booking) => booking.status === 7 || booking.status === 3 || booking.status === 4)
+        .filter((booking) => isActiveJobStatus(booking.status)),
+    )
 
-      return sortActiveJobs(nextActiveBookings)
+    setBookings(nextActiveBookings)
+    setSelectedBookingId((currentSelectedBookingId) => {
+      if (isActiveJobStatus(nextBooking.status)) {
+        return nextBooking.id
+      }
+
+      if (currentSelectedBookingId && nextActiveBookings.some((booking) => booking.id === currentSelectedBookingId)) {
+        return currentSelectedBookingId
+      }
+
+      return nextActiveBookings[0]?.id ?? null
     })
-
-    setSelectedBookingId(nextBooking.id)
   }
 
   async function loadActiveJobs(options?: { background?: boolean }) {
@@ -129,7 +142,7 @@ export function ActiveJobsPage() {
     try {
       const nextBookings = await getBookingsRequest({}, accessToken)
       const activeBookings = sortActiveJobs(
-        nextBookings.filter((booking) => booking.status === 7 || booking.status === 3 || booking.status === 4),
+        nextBookings.filter((booking) => isActiveJobStatus(booking.status)),
       )
 
       setBookings(activeBookings)
@@ -150,7 +163,7 @@ export function ActiveJobsPage() {
     }
   }
 
-  async function handleStatusUpdate(nextStatus: 7 | 3 | 4) {
+  async function handleStatusUpdate(nextStatus: 7 | 3 | 4 | 6) {
     if (!selectedBooking) {
       return
     }
@@ -168,6 +181,10 @@ export function ActiveJobsPage() {
       )
 
       upsertBooking(nextBooking)
+
+      if (nextStatus === 6) {
+        navigate(`${APP_ROUTES.diagnostics}?bookingId=${nextBooking.id}`)
+      }
     } catch (error) {
       setStatusActionErrorMessage(getBookingErrorMessage(error, 'Unable to update the repair status.'))
     } finally {
@@ -242,7 +259,7 @@ export function ActiveJobsPage() {
                 Active vehicles and approved jobs
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                This board keeps approved jobs and live repairs visible after they leave the estimate queue. Use it to track which vehicle is ready to start, already in repair, or completed and waiting for settlement.
+                This board keeps approved jobs and live repairs visible after they leave the estimate queue. Use it to track which vehicle is ready to start, already in repair, completed, or ready to move back into diagnostics for a revised estimate.
               </p>
             </div>
             <Button
@@ -422,10 +439,13 @@ export function ActiveJobsPage() {
                         <Button
                           type="button"
                           tone="secondary"
-                          onClick={() => navigate(`${APP_ROUTES.diagnostics}?bookingId=${selectedBooking.id}`)}
+                          onClick={() => {
+                            void handleStatusUpdate(6)
+                          }}
+                          disabled={isStatusUpdating}
                         >
-                          <MaterialIcon name="open_in_new" className="text-lg" />
-                          <span>Open In Diagnostic</span>
+                          <MaterialIcon name="assignment_return" className="text-lg" />
+                          <span>{isStatusUpdating ? 'Moving...' : 'Return To Diagnostics'}</span>
                         </Button>
                       </div>
                     </div>
@@ -553,7 +573,7 @@ export function ActiveJobsPage() {
                           </p>
                           <p>
                             <span className="font-semibold text-slate-900">Status selector:</span>{' '}
-                            Choose the correct repair stage and apply it. If someone selected the wrong stage by mistake, you can switch it back here.
+                            Choose the correct repair stage and apply it. If the approved scope changes, you can also send the job back to diagnostics to revise the estimate.
                           </p>
                         </div>
 
@@ -564,13 +584,14 @@ export function ActiveJobsPage() {
                             </span>
                             <select
                               value={String(pendingStatusValue)}
-                              onChange={(event) => setPendingStatusValue(Number(event.target.value) as 7 | 3 | 4)}
+                              onChange={(event) => setPendingStatusValue(Number(event.target.value) as 7 | 3 | 4 | 6)}
                               disabled={isStatusUpdating}
                               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/10"
                             >
                               <option value="7">Approved</option>
                               <option value="3">In Progress</option>
                               <option value="4">Completed</option>
+                              <option value="6">Return To Diagnostics</option>
                             </select>
                           </label>
 
@@ -583,7 +604,13 @@ export function ActiveJobsPage() {
                             className="w-full"
                           >
                             <MaterialIcon name="sync" className={isStatusUpdating ? 'animate-spin text-lg' : 'text-lg'} />
-                            <span>{isStatusUpdating ? 'Updating Status...' : 'Apply Status'}</span>
+                            <span>
+                              {isStatusUpdating
+                                ? 'Updating Status...'
+                                : pendingStatusValue === 6
+                                  ? 'Move To Diagnostics'
+                                  : 'Apply Status'}
+                            </span>
                           </Button>
                         </div>
                       </article>

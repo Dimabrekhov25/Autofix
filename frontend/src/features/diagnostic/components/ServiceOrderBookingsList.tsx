@@ -32,7 +32,7 @@ export function ServiceOrderBookingsList({
     {
       key: 'needs-estimate',
       title: 'Needs Estimate',
-      description: 'Fresh arrivals and requests returned for changes.',
+      description: 'Fresh arrivals and jobs returned for estimate revision.',
       bookings: bookings.filter((booking) => booking.status === 1 || booking.status === 6),
     },
     {
@@ -53,7 +53,7 @@ export function ServiceOrderBookingsList({
           Select a booking
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Mechanics receive the vehicle, review the complaint, prepare the estimate, and only then send it to the customer dashboard.
+          Mechanics receive the vehicle, review the complaint, prepare the estimate, and return approved jobs here whenever the scope needs another estimate pass.
         </p>
         <div className="relative mt-5">
           <MaterialIcon
