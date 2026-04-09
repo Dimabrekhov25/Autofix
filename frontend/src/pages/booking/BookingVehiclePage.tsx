@@ -31,6 +31,7 @@ import {
 } from '../../features/booking/lib/booking-flow'
 import { APP_ROUTES } from '../../shared/config/routes'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
+import { SelectField } from '../../shared/ui/SelectField'
 import { TextField } from '../../shared/ui/TextField'
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 
@@ -433,12 +434,12 @@ export function BookingVehiclePage() {
                   <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
                     Year
                   </span>
-                  <select
+                  <SelectField
                     value={bookingState.vehicleYear}
                     onChange={(event) =>
                       updateManualVehicleState({ vehicleYear: event.target.value })
                     }
-                    className="w-full appearance-none rounded-xl border border-transparent bg-surface-container-low px-5 py-4 text-sm text-on-surface outline-none transition focus:border-primary/20 focus:bg-white focus:ring-2 focus:ring-primary/15"
+                    className="px-5 py-4"
                   >
                     <option value="">Select Year</option>
                     {vehicleYearOptions.map((year) => (
@@ -446,7 +447,7 @@ export function BookingVehiclePage() {
                         {year}
                       </option>
                     ))}
-                  </select>
+                  </SelectField>
                 </label>
 
                 <TextField
