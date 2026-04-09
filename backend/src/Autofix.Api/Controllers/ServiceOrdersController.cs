@@ -2,10 +2,12 @@ using Autofix.Api.Models;
 using Autofix.Application.Common.Security;
 using Autofix.Application.ServiceOrders.Commands.AddManualServiceOrderPart;
 using Autofix.Application.ServiceOrders.Commands.AddServiceOrderCatalogItems;
+using Autofix.Application.ServiceOrders.Commands.MarkCustomerApprovalNotificationRead;
 using Autofix.Application.ServiceOrders.Commands.RemoveServiceOrderPartItem;
 using Autofix.Application.ServiceOrders.Commands.RemoveServiceOrderWorkItem;
 using Autofix.Application.ServiceOrders.Commands.UpdateServiceOrderStatus;
 using Autofix.Application.ServiceOrders.Commands.UpdateServiceOrderWorkItem;
+using Autofix.Application.ServiceOrders.Queries.GetCustomerApprovalNotifications;
 using Autofix.Application.ServiceOrders.Queries.GetServiceOrderByBookingId;
 using Autofix.Application.ServiceOrders.Queries.GetServiceOrderById;
 using MediatR;
@@ -17,6 +19,13 @@ namespace Autofix.Api.Controllers;
 [Authorize(Policy = PolicyNames.AdminOnly)]
 public sealed class ServiceOrdersController(IMediator mediator) : BaseController
 {
+    [HttpGet("customer-approval-notifications")]
+    public async Task<IActionResult> GetCustomerApprovalNotifications(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetCustomerApprovalNotificationsQuery(), cancellationToken);
+        return OkResult(result);
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -70,6 +79,21 @@ public sealed class ServiceOrdersController(IMediator mediator) : BaseController
         }
 
         var result = await mediator.Send(command, cancellationToken);
+        return OkResult(result);
+    }
+
+    [HttpPost("{id:guid}/customer-approval-notifications/read")]
+    public async Task<IActionResult> MarkCustomerApprovalNotificationRead(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new MarkCustomerApprovalNotificationReadCommand(id), cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(ApiResult.Failure($"Customer approval notification for service order {id} not found"));
+        }
+
         return OkResult(result);
     }
 

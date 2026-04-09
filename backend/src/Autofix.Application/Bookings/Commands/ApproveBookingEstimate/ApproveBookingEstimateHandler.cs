@@ -24,9 +24,8 @@ public sealed class ApproveBookingEstimateHandler(
             return null;
         }
 
-        await serviceOrderManagementService.UpdateStatusByBookingIdAsync(
+        await serviceOrderManagementService.ApproveByCustomerAsync(
             request.Id,
-            ServiceOrderStatus.Approved,
             cancellationToken);
 
         var updatedBooking = await bookingRepository.GetByIdAsync(request.Id, cancellationToken);
