@@ -11,7 +11,7 @@ public sealed class UpdateBookingServiceOrderStatusCommandValidator : AbstractVa
             .NotEmpty();
 
         RuleFor(x => x.Status)
-            .Must(status => status is ServiceOrderStatus.Approved or ServiceOrderStatus.InProgress or ServiceOrderStatus.Completed)
-            .WithMessage("Only Approved, InProgress, or Completed statuses are supported from active jobs.");
+            .Must(status => status is ServiceOrderStatus.Approved or ServiceOrderStatus.InProgress or ServiceOrderStatus.Completed or ServiceOrderStatus.ChangesRequested)
+            .WithMessage("Only Approved, InProgress, Completed, or ChangesRequested statuses are supported from active jobs.");
     }
 }

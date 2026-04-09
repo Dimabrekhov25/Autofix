@@ -55,7 +55,7 @@ const statusConfig: Record<
     icon: 'cancel',
   },
   'changes-requested': {
-    label: 'Changes Requested',
+    label: 'Estimate Revision',
     bgColor: 'bg-amber-500/10',
     textColor: 'text-amber-700',
     icon: 'sync_problem',
