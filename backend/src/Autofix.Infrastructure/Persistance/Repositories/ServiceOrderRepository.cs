@@ -12,6 +12,10 @@ public sealed class ServiceOrderRepository(ApplicationDbContext dbContext) : ISe
     {
         return dbContext.ServiceOrders
             .AsNoTracking()
+            .Include(x => x.Customer)
+            .Include(x => x.Vehicle)
+            .Include(x => x.Booking!)
+            .ThenInclude(x => x.Services.Where(service => !service.IsDeleted))
             .Include(x => x.WorkItems.Where(item => !item.IsDeleted))
             .Include(x => x.PartItems.Where(item => !item.IsDeleted))
             .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
@@ -21,6 +25,10 @@ public sealed class ServiceOrderRepository(ApplicationDbContext dbContext) : ISe
     {
         var existingServiceOrder = await dbContext.ServiceOrders
             .AsNoTracking()
+            .Include(x => x.Customer)
+            .Include(x => x.Vehicle)
+            .Include(x => x.Booking!)
+            .ThenInclude(x => x.Services.Where(service => !service.IsDeleted))
             .Include(x => x.WorkItems.Where(item => !item.IsDeleted))
             .Include(x => x.PartItems.Where(item => !item.IsDeleted))
             .FirstOrDefaultAsync(x => x.BookingId == bookingId && !x.IsDeleted, cancellationToken);
@@ -70,9 +78,59 @@ public sealed class ServiceOrderRepository(ApplicationDbContext dbContext) : ISe
 
         return await dbContext.ServiceOrders
             .AsNoTracking()
+            .Include(x => x.Customer)
+            .Include(x => x.Vehicle)
+            .Include(x => x.Booking!)
+            .ThenInclude(x => x.Services.Where(service => !service.IsDeleted))
             .Include(x => x.WorkItems.Where(item => !item.IsDeleted))
             .Include(x => x.PartItems.Where(item => !item.IsDeleted))
             .FirstAsync(x => x.Id == serviceOrder.Id && !x.IsDeleted, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ServiceOrder>> GetUnreadCustomerApprovalNotificationsAsync(CancellationToken cancellationToken)
+    {
+        var serviceOrders = await dbContext.ServiceOrders
+            .AsNoTracking()
+            .Include(x => x.Customer)
+            .Include(x => x.Vehicle)
+            .Include(x => x.Booking!)
+            .ThenInclude(x => x.Services.Where(service => !service.IsDeleted))
+            .Where(x =>
+                !x.IsDeleted &&
+                x.CustomerApprovedAt.HasValue &&
+                x.CustomerApprovalNotificationReadAt == null)
+            .OrderByDescending(x => x.CustomerApprovedAt)
+            .ToListAsync(cancellationToken);
+
+        return serviceOrders;
+    }
+
+    public async Task<ServiceOrder?> MarkCustomerApprovalNotificationReadAsync(
+        Guid serviceOrderId,
+        CancellationToken cancellationToken)
+    {
+        var serviceOrder = await dbContext.ServiceOrders
+            .Include(x => x.Customer)
+            .Include(x => x.Vehicle)
+            .Include(x => x.Booking!)
+            .ThenInclude(x => x.Services.Where(service => !service.IsDeleted))
+            .FirstOrDefaultAsync(
+                x => x.Id == serviceOrderId && !x.IsDeleted && x.CustomerApprovedAt.HasValue,
+                cancellationToken);
+
+        if (serviceOrder is null)
+        {
+            return null;
+        }
+
+        if (serviceOrder.CustomerApprovalNotificationReadAt is null)
+        {
+            serviceOrder.CustomerApprovalNotificationReadAt = DateTime.UtcNow;
+            serviceOrder.UpdatedAt = serviceOrder.CustomerApprovalNotificationReadAt;
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return serviceOrder;
     }
 
     private static ServiceWorkItem CreateWorkItem(Guid serviceOrderId, BookingServiceItem service)
