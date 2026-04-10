@@ -88,7 +88,7 @@ export function ServiceCatalogAdminView({
         setItems(nextItems)
       } catch (error) {
         if (isMounted) {
-          setErrorMessage(getCatalogErrorMessage(error, 'Unable to load the live service catalog right now.'))
+          setErrorMessage(getCatalogErrorMessage(error, 'Unable to load services right now.'))
         }
       } finally {
         if (isMounted) {
@@ -244,12 +244,12 @@ export function ServiceCatalogAdminView({
     <>
       <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ServiceMetricCard
-          label="Catalog Items"
+          label="Services and Diagnostics"
           value={items.length.toLocaleString('en-US')}
           accent="border-primary"
         />
         <ServiceMetricCard
-          label="Active Programs"
+          label="Active Items"
           value={activeItemsCount.toLocaleString('en-US')}
           accent="border-emerald-400"
         />
@@ -263,16 +263,16 @@ export function ServiceCatalogAdminView({
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-            Admin Workspace
+            Service Management
           </p>
           <h2 className="mt-2 font-headline text-3xl font-extrabold tracking-tight text-slate-900">
-            Service Catalog Management
+            Services and diagnostics
           </h2>
         </div>
 
         <Button type="button" onClick={openCreateDialog} className="px-6 py-3 text-sm">
           <MaterialIcon name="add_circle" className="text-lg" />
-          <span>Add Catalog Item</span>
+          <span>Add Item</span>
         </Button>
       </div>
 
@@ -377,13 +377,13 @@ export function ServiceCatalogAdminView({
               {isLoading ? (
                 <tr>
                   <td colSpan={5} className="px-8 py-16 text-center text-sm text-slate-500">
-                    Loading live service catalog...
+                    Loading services and diagnostics...
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-8 py-16 text-center text-sm text-slate-500">
-                    No catalog items match the current filters.
+                    No items match the current filters.
                   </td>
                 </tr>
               ) : (

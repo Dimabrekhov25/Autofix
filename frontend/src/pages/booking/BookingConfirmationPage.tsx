@@ -125,7 +125,7 @@ export function BookingConfirmationPage() {
                 Booking Successfully Created!
               </h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-on-surface-variant">
-                Your appointment is confirmed and stored on the backend.
+                Your appointment is confirmed and saved.
               </p>
             </div>
 
@@ -273,7 +273,7 @@ export function BookingConfirmationPage() {
                     Confirmation ready
                   </p>
                   <p className="mt-1 text-sm leading-6 text-on-primary-container/80">
-                    The booking summary is sourced from the created backend booking and can be used for future lookup.
+                    You can use this booking summary later for quick reference.
                   </p>
                 </div>
               </div>

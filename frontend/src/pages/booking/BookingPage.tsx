@@ -254,7 +254,7 @@ export function BookingPage() {
 
             {isLoading ? (
               <div className="rounded-2xl bg-surface-container-lowest p-8 text-sm text-on-surface-variant shadow-panel">
-                Loading live service catalog...
+                Loading services and diagnostics...
               </div>
             ) : options.length === 0 ? (
               <div className="rounded-2xl bg-surface-container-lowest p-8 text-sm text-on-surface-variant shadow-panel">

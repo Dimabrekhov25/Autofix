@@ -118,7 +118,7 @@ export const bookingDiagnosticOptions: BookingOption[] = [
     id: 'engine-diagnostic',
     kind: 'diagnostic',
     title: 'Engine Diagnostic',
-    description: 'Fault code analysis and live data review for engine concerns.',
+    description: 'Fault code analysis and real-time data review for engine concerns.',
     priceLabel: '$120.00',
     icon: 'earth_engine',
     duration: '1h 00m',

@@ -42,7 +42,7 @@ export function ServiceCatalogCustomerView({
         setItems(nextItems)
       } catch (error) {
         if (isMounted) {
-          setErrorMessage(getCatalogErrorMessage(error, 'Unable to load the live service catalog right now.'))
+          setErrorMessage(getCatalogErrorMessage(error, 'Unable to load services right now.'))
         }
       } finally {
         if (isMounted) {
@@ -64,7 +64,7 @@ export function ServiceCatalogCustomerView({
   if (isLoading) {
     return (
       <div className="rounded-[1.75rem] bg-white/85 p-8 text-sm text-slate-500 shadow-panel">
-        Loading live service catalog...
+        Loading services...
       </div>
     )
   }
@@ -158,7 +158,7 @@ export function ServiceCatalogCustomerView({
             <div>
               <h3 className="text-lg font-headline font-bold">After diagnostics</h3>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                The mechanic adds the real work items and parts later from the service order workspace, so diagnostics stay safe and stock never disappears by mistake.
+                After diagnostics, the mechanic adds repair work and parts so stock updates stay accurate.
               </p>
             </div>
           </div>

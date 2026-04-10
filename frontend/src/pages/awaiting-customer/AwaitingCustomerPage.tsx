@@ -76,7 +76,7 @@ export function AwaitingCustomerPage() {
     } catch (error) {
       setBookings([])
       setSelectedBookingId(null)
-      setErrorMessage(getBookingErrorMessage(error, 'Unable to load the waiting approval queue.'))
+      setErrorMessage(getBookingErrorMessage(error, 'Unable to load requests waiting for approval.'))
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -200,13 +200,13 @@ export function AwaitingCustomerPage() {
           <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-                Customer Approval Queue
+                Customer Approvals
               </p>
               <h1 className="mt-2 font-headline text-4xl font-extrabold tracking-tight text-slate-900">
-                Awaiting customer
+                Waiting for customer approval
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                Estimates already sent to the customer live here. If approval arrives by phone, SMS, or another offline channel, the workshop can move the request out of waiting from this screen.
+                Estimates sent to customers are shown here. If approval comes by phone or message, you can update it from this screen.
               </p>
             </div>
             <Button
@@ -219,7 +219,7 @@ export function AwaitingCustomerPage() {
               className="min-w-40"
             >
               <MaterialIcon name="refresh" className={isRefreshing ? 'animate-spin' : ''} />
-              <span>{isRefreshing ? 'Refreshing...' : 'Refresh Queue'}</span>
+              <span>{isRefreshing ? 'Refreshing...' : 'Refresh list'}</span>
             </Button>
           </div>
 
@@ -515,16 +515,16 @@ export function AwaitingCustomerPage() {
                           {isSubmitting ? 'Saving...' : 'Mark Approved Manually'}
                         </Button>
 
-                        <Button
-                          type="button"
-                          tone="secondary"
-                          onClick={() => {
-                            void resolveWaitingBooking(6, 'Booking was removed from waiting and sent back to the mechanic estimate queue.')
-                          }}
+                          <Button
+                            type="button"
+                            tone="secondary"
+                            onClick={() => {
+                              void resolveWaitingBooking(6, 'Booking was removed from waiting and returned to mechanic estimate review.')
+                            }}
                           disabled={isSubmitting || detailsLoading || !serviceOrder}
                           className="w-full"
                         >
-                          {isSubmitting ? 'Saving...' : 'Return To Estimate'}
+                          {isSubmitting ? 'Saving...' : 'Return to estimate'}
                         </Button>
                       </div>
                     </article>

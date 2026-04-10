@@ -484,7 +484,7 @@ export function BookingVehiclePage() {
                   <div>
                     <p className="font-bold text-slate-900">VIN Verification</p>
                     <p className="text-xs text-on-surface-variant">
-                      Vehicle data is now resolved against the backend decode endpoint.
+                      Vehicle details were filled in from VIN lookup.
                     </p>
                   </div>
                 </div>
@@ -498,7 +498,7 @@ export function BookingVehiclePage() {
                 <div className="bg-slate-900 p-6 text-white">
                   <h3 className="font-headline text-lg font-bold">Booking Summary</h3>
                   <p className="mt-1 text-xs uppercase tracking-widest text-slate-400">
-                    Live estimate before quote
+                    Estimated price before final quote
                   </p>
                 </div>
 

@@ -19,14 +19,13 @@ export function ServicesPage() {
           <div className="mb-10 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(24rem,0.85fr)]">
             <article className="rounded-[2rem] bg-slate-950 px-8 py-10 text-white shadow-card sm:px-10">
               <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.24em] text-cyan-200">
-                Live Service Catalog
+                Service Setup
               </span>
               <h1 className="mt-5 max-w-3xl font-headline text-4xl font-extrabold tracking-tight sm:text-5xl">
-                Services, diagnostics, and required parts now run from the real backend flow.
+                Keep services and diagnostics clear for the front desk and mechanics.
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                Standard services can reserve stock automatically, diagnostics stay parts-free,
-                and the catalog now controls which parts are required up front.
+                Define what each service includes, set starting prices, and keep options active only when ready to book.
               </p>
             </article>
 
@@ -36,9 +35,9 @@ export function ServicesPage() {
               </p>
               <div className="mt-5 space-y-4">
                 {[
-                  'Client selects a standard service and required parts reserve automatically.',
-                  'Client selects a diagnostic and no stock is reserved at booking time.',
-                  'Mechanic adds services or manual parts later from the service order workspace.',
+                  'Set up services and diagnostics that customers can book online.',
+                  'Keep inactive items hidden from booking until your team is ready.',
+                  'Mechanics can add extra work and parts later during inspection.',
                 ].map((item) => (
                   <div key={item} className="flex gap-3">
                     <div className="mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">

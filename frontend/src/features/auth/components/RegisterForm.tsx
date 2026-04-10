@@ -183,7 +183,7 @@ export function RegisterForm() {
         </p>
         <p className="mt-2 text-sm leading-6 text-on-surface-variant">
           Use at least 12 characters with uppercase, lowercase, number, and special symbol to
-          satisfy the backend validation rules.
+          meet password requirements.
         </p>
       </section>
 

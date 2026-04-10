@@ -163,14 +163,14 @@ export function InventoryAddPartPage() {
 
           <div className="mb-10 space-y-3">
             <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.24em] text-primary">
-              Internal Ops
+              Workshop Inventory
             </span>
             <div>
               <h1 className="font-headline text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-                New Inventory Entry
+                Add Inventory Item
               </h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-on-surface-variant sm:text-base">
-                Create a real inventory item tied to an existing part from the master parts catalog.
+                Add a part from the catalog and set current stock values for the workshop.
               </p>
             </div>
           </div>
@@ -186,10 +186,10 @@ export function InventoryAddPartPage() {
               <div className="grid grid-cols-12 gap-8">
                 <div className="col-span-12 md:col-span-4">
                   <h2 className="mb-1 font-headline text-sm font-bold uppercase tracking-[0.2em] text-slate-900">
-                    Part Link
+                    Select Part
                   </h2>
                   <p className="text-xs leading-6 text-on-surface-variant">
-                    Select which part from the catalog this inventory record belongs to.
+                    Choose the part you are adding to inventory.
                   </p>
                 </div>
                 <div className="col-span-12 md:col-span-8">
@@ -226,10 +226,10 @@ export function InventoryAddPartPage() {
               <div className="grid grid-cols-12 gap-8">
                 <div className="col-span-12 md:col-span-4">
                   <h2 className="mb-1 font-headline text-sm font-bold uppercase tracking-[0.2em] text-slate-900">
-                    Stock Data
+                    Stock Levels
                   </h2>
                   <p className="text-xs leading-6 text-on-surface-variant">
-                    These fields map directly to the backend inventory DTO.
+                    Enter current stock numbers for this part.
                   </p>
                 </div>
                 <div className="col-span-12 grid gap-6 md:col-span-8 md:grid-cols-3">
@@ -257,20 +257,10 @@ export function InventoryAddPartPage() {
                 </div>
               </div>
 
-              <div className="rounded-[1.4rem] border border-outline-variant/20 bg-surface-container-low px-5 py-4">
-                <p className="text-sm font-headline font-bold text-on-background">
-                  Backend payload preview
-                </p>
-                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                  The payload fields `partId`, `quantityOnHand`, `reservedQuantity`, and `minLevel`
-                  will be sent to `/api/v1/Inventory`.
-                </p>
-              </div>
-
               <div className="flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2 text-[0.6875rem] font-bold uppercase tracking-[0.24em] text-slate-400">
                   <MaterialIcon name="lock" className="text-sm" />
-                  <span>Secure Entry System</span>
+                  <span>Inventory Team</span>
                 </div>
                 <div className="flex flex-wrap items-center justify-end gap-3">
                   <Button to={APP_ROUTES.inventory} tone="secondary" className="px-6 py-3 text-sm">
