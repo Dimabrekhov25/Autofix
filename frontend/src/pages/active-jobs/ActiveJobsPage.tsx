@@ -11,6 +11,7 @@ import { useAuth } from '../../features/auth/useAuth'
 import { APP_ROUTES } from '../../shared/config/routes'
 import { Button } from '../../shared/ui/Button'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
+import { SelectField } from '../../shared/ui/SelectField'
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 import {
   formatBookingDate,
@@ -598,17 +599,18 @@ export function ActiveJobsPage() {
                             <span className="mb-2 block text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
                               Repair Status
                             </span>
-                            <select
+                            <SelectField
                               value={String(pendingStatusValue)}
                               onChange={(event) => setPendingStatusValue(Number(event.target.value) as 7 | 3 | 4 | 6)}
                               disabled={isStatusUpdating}
-                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/10"
+                              className="rounded-2xl border-slate-200 bg-slate-50 py-3 font-semibold text-slate-900 focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/10"
+                              iconClassName="text-slate-400"
                             >
                               <option value="7">Approved</option>
                               <option value="3">In Progress</option>
                               <option value="4">Completed</option>
                               <option value="6">Return To Diagnostics</option>
-                            </select>
+                            </SelectField>
                           </label>
 
                           <Button
