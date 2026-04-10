@@ -261,14 +261,14 @@ export function PartsCatalogPage() {
           <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
             <div className="space-y-3">
               <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.24em] text-primary">
-                Internal Ops
+                Workshop Inventory
               </span>
               <div>
                 <h1 className="font-headline text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
                   Parts Catalog
                 </h1>
                 <p className="mt-3 max-w-3xl text-sm font-medium leading-7 text-on-surface-variant sm:text-base">
-                  Live CRUD workspace for the backend `Parts` entity.
+                  Manage workshop parts, prices, and availability in one place.
                 </p>
               </div>
             </div>
@@ -299,11 +299,11 @@ export function PartsCatalogPage() {
               value={inactivePartsCount.toLocaleString('en-US')}
               accent="border-slate-300"
             />
-            <MetricCard
-              label="Catalog Value"
-              value={formatCurrency(totalValue)}
-              accent="border-slate-300"
-            />
+              <MetricCard
+                label="Total Value"
+                value={formatCurrency(totalValue)}
+                accent="border-slate-300"
+              />
           </div>
 
           {errorMessage ? (
@@ -466,7 +466,7 @@ export function PartsCatalogPage() {
                         <td className="px-6 py-5">
                           <p className="font-bold text-slate-900">{formatCurrency(part.unitPrice)}</p>
                           <p className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-slate-400">
-                            Live backend value
+                            Current price
                           </p>
                         </td>
                         <td className="px-8 py-5">
@@ -502,10 +502,10 @@ export function PartsCatalogPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 px-8 py-4">
               <p className="text-xs font-medium text-slate-500">
-                Showing {filteredParts.length} of {parts.length} backend parts
+                Showing {filteredParts.length} of {parts.length} parts
               </p>
               <span className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-slate-400">
-                CRUD synced with `/api/v1/Parts`
+                Parts list is up to date
               </span>
             </div>
           </div>
@@ -513,16 +513,16 @@ export function PartsCatalogPage() {
           <div className="mt-8 flex flex-wrap items-center justify-between gap-3 opacity-60">
             <div className="flex flex-wrap gap-4">
               <span className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Parts Endpoint Live
+                Workshop parts
               </span>
               <span className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Base URL: /api/v1/Parts
+                Updated automatically
               </span>
             </div>
             <div className="flex items-center gap-2">
               <MaterialIcon name="verified" className="text-sm text-slate-500" />
               <span className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Enterprise Secured Dataset
+                Team access
               </span>
             </div>
           </div>
@@ -538,10 +538,10 @@ export function PartsCatalogPage() {
                       {editingPart ? 'Update Part' : 'Create Part'}
                     </p>
                     <h2 className="mt-2 font-headline text-3xl font-black tracking-tight text-slate-900">
-                      {editingPart ? 'Edit catalog entry' : 'Add a new catalog entry'}
+                      {editingPart ? 'Edit part details' : 'Add a new part'}
                     </h2>
                     <p className="mt-2 text-sm font-medium text-slate-500">
-                      This form maps directly to your backend DTO: `name`, `unitPrice`, `isActive`.
+                      Fill in the part name, unit price, and status.
                     </p>
                   </div>
                   <button
@@ -678,7 +678,7 @@ export function PartsCatalogPage() {
                     <div>
                       <p className="text-sm font-bold text-slate-900">Catalog deletion</p>
                       <p className="mt-1 text-sm leading-6 text-slate-500">
-                        If this part is used elsewhere in the system, the backend may reject the deletion request.
+                        If this part is used in other records, deletion may be blocked.
                       </p>
                     </div>
                   </div>
