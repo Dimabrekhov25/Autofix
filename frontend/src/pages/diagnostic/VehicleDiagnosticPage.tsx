@@ -152,7 +152,7 @@ export function VehicleDiagnosticPage() {
       })
     } catch (error) {
       setBookingsErrorMessage(
-        getBookingErrorMessage(error, 'Unable to load bookings for the diagnostic workspace.'),
+        getBookingErrorMessage(error, 'Unable to load requests for diagnostics.'),
       )
     } finally {
       setBookingsLoading(false)
@@ -432,13 +432,13 @@ export function VehicleDiagnosticPage() {
           <div className="mb-10 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,0.9fr)]">
             <article className="rounded-[2rem] bg-slate-950 px-8 py-10 text-white shadow-card sm:px-10">
               <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.24em] text-cyan-200">
-                Mechanic Estimate Desk
+                Mechanic Work Desk
               </span>
               <h1 className="mt-5 max-w-3xl font-headline text-4xl font-extrabold tracking-tight sm:text-5xl">
-                Inspect the car, build the estimate, and send it to the client before any repair starts.
+                Inspect the vehicle, prepare the estimate, and get approval before repair starts.
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                Online booking only captures the requested service and visit slot. In this workspace the mechanic reviews the complaint, adds the actual repair work, picks parts from inventory, and publishes the estimate to the customer dashboard.
+                Booking captures the requested service and time slot. Here, the mechanic confirms issues, adds repair work, selects parts, and sends the estimate to the customer.
               </p>
             </article>
 
@@ -450,8 +450,8 @@ export function VehicleDiagnosticPage() {
                   </p>
                   <div className="mt-5 space-y-4 text-sm leading-6 text-slate-700">
                     <p>1. Open a pending booking and review the reported issue.</p>
-                    <p>2. Build the repair estimate with labor lines and inventory-backed parts.</p>
-                    <p>3. Send the estimate to the customer dashboard. After approval, start the repair from this workspace.</p>
+                    <p>2. Build the repair estimate with labor and required parts.</p>
+                    <p>3. Send the estimate to the customer. After approval, start repair from this screen.</p>
                   </div>
                 </div>
                 <Button
@@ -464,7 +464,7 @@ export function VehicleDiagnosticPage() {
                   className="min-w-36"
                 >
                   <MaterialIcon name="refresh" className={workspaceRefreshing ? 'animate-spin' : ''} />
-                  <span>{workspaceRefreshing ? 'Refreshing...' : 'Refresh queue'}</span>
+                  <span>{workspaceRefreshing ? 'Refreshing...' : 'Refresh list'}</span>
                 </Button>
               </div>
             </article>
