@@ -1,7 +1,9 @@
 import type { PropsWithChildren } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { APP_ROUTES } from '../../shared/config/routes'
+import { LanguageSwitcher } from '../../shared/i18n/LanguageSwitcher'
 import { BrandMark } from '../../shared/ui/BrandMark'
 
 interface AuthShellProps extends PropsWithChildren {
@@ -11,6 +13,8 @@ interface AuthShellProps extends PropsWithChildren {
 }
 
 export function AuthShell({ eyebrow, title, description, children }: AuthShellProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-surface px-4 py-6 sm:px-6 lg:px-8">
       <div className="absolute inset-0 bg-shell-glow" />
@@ -25,9 +29,12 @@ export function AuthShell({ eyebrow, title, description, children }: AuthShellPr
               >
                 <BrandMark className="font-headline text-2xl font-extrabold tracking-tight text-primary" />
               </Link>
-              <span className="rounded-full border border-white/15 px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-white/70">
-                Precision Atelier
-              </span>
+              <div className="flex items-center gap-3">
+                <LanguageSwitcher />
+                <span className="hidden rounded-full border border-white/15 px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-white/70 sm:inline-flex">
+                  {t('common.precisionAtelier')}
+                </span>
+              </div>
             </div>
 
             <div className="mt-auto max-w-xl pt-20 lg:pt-28">

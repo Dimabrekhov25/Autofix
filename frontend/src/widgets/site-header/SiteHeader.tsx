@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
@@ -9,9 +10,11 @@ import { useAuth } from '../../features/auth/useAuth'
 import { BrandHomeLink } from '../../shared/ui/BrandHomeLink'
 import { Button } from '../../shared/ui/Button'
 import { Container } from '../../shared/ui/Container'
+import { LanguageSwitcher } from '../../shared/i18n/LanguageSwitcher'
 import { ServicesDropdown } from './ServicesDropdown'
 
 export function SiteHeader() {
+  const { t } = useTranslation()
   const location = useLocation()
   const { isAuthenticated, logout, user } = useAuth()
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
@@ -78,14 +81,16 @@ export function SiteHeader() {
                   isActive && 'border-b-2 border-primary/85 pb-1 text-primary',
                 )}
               >
-                {item.label}
+                {t(`site.nav.${item.label.toLowerCase()}`)}
               </Link>
             )
           })}
         </nav>
 
         {isAuthenticated && user ? (
-          <div className="relative" ref={profileMenuRef}>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher className="hidden sm:inline-flex" />
+            <div className="relative" ref={profileMenuRef}>
             <button
               type="button"
               aria-expanded={isProfileMenuOpen}
@@ -115,7 +120,7 @@ export function SiteHeader() {
                   to={APP_ROUTES.dashboard}
                 >
                   <MaterialIcon className="text-[1.15rem] text-primary" name="dashboard" />
-                  <span>Dashboard</span>
+                  <span>{t('common.dashboard')}</span>
                 </Link>
                 <button
                   className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100/80 hover:text-error"
@@ -127,15 +132,19 @@ export function SiteHeader() {
                   type="button"
                 >
                   <MaterialIcon className="text-[1.15rem]" name="logout" />
-                  <span>Log out</span>
+                  <span>{t('common.logOut')}</span>
                 </button>
               </div>
             ) : null}
+            </div>
           </div>
         ) : (
-          <Button to={APP_ROUTES.login} tone="secondary">
-            Log In
-          </Button>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher className="hidden sm:inline-flex" />
+            <Button to={APP_ROUTES.login} tone="secondary">
+              {t('common.logIn')}
+            </Button>
+          </div>
         )}
       </Container>
     </header>

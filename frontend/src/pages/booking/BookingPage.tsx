@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
@@ -55,6 +56,7 @@ function formatCombinedDuration(items: ServiceCatalogItemDto[]) {
 }
 
 export function BookingPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { tokens } = useAuth()
@@ -87,7 +89,7 @@ export function BookingPage() {
       } catch (error) {
         if (isMounted) {
           setErrorMessage(
-            getBookingErrorMessage(error, 'Unable to load the service catalog right now.'),
+            getBookingErrorMessage(error, t('app.bookingPage.loadError')),
           )
         }
       } finally {
@@ -102,7 +104,7 @@ export function BookingPage() {
     return () => {
       isMounted = false
     }
-  }, [accessToken])
+  }, [accessToken, t])
 
   useEffect(() => {
     if (bookingState.kind !== 'service' || bookingState.selectedServiceIds.length > 0 || services.length === 0) {
@@ -178,11 +180,11 @@ export function BookingPage() {
     bookingState.vehicleMake || bookingState.vehicleModel
       ? `${bookingState.vehicleYear ? `${bookingState.vehicleYear} ` : ''}${bookingState.vehicleMake} ${bookingState.vehicleModel}`.trim()
       : undefined
-  const selectedSlotLabel = formatIsoSlotLabel(bookingState.selectedSlotStartAt) || 'Pick a slot'
+  const selectedSlotLabel = formatIsoSlotLabel(bookingState.selectedSlotStartAt) || t('app.bookingPage.pickSlot')
   const serviceSummaryLabel =
     selectedOptions.length <= 1
-      ? selectedOption?.name ?? 'Workshop service'
-      : `${selectedOptions.length} services selected`
+      ? selectedOption?.name ?? t('app.bookingPage.workshopService')
+      : t('app.bookingPage.servicesSelected', { count: selectedOptions.length })
 
   const updateBookingState = (partial: Partial<typeof bookingState>) => {
     setSearchParams(createBookingSearchParams({ ...bookingState, ...partial }), {
@@ -207,12 +209,12 @@ export function BookingPage() {
   }
 
   return (
-    <DashboardShell searchPlaceholder="Search services or diagnostics...">
+    <DashboardShell searchPlaceholder={t('app.bookingPage.searchPlaceholder')}>
       <div className="mx-auto max-w-7xl pb-24 pt-12">
         <BookingProgressHeader
           currentStep="services"
-          title="Book a Service"
-          description="Select the services or diagnostics required for your vehicle."
+          title={t('app.bookingPage.title')}
+          description={t('app.bookingPage.description')}
           completedSteps={completedSteps}
           stepLinks={stepLinks}
         />
@@ -230,7 +232,7 @@ export function BookingPage() {
                     : 'text-on-surface-variant hover:bg-surface-container',
                 ].join(' ')}
               >
-                Services
+                {t('app.bookingPage.services')}
               </button>
               <button
                 type="button"
@@ -242,7 +244,7 @@ export function BookingPage() {
                     : 'text-on-surface-variant hover:bg-surface-container',
                 ].join(' ')}
               >
-                Diagnostics
+                {t('app.bookingPage.diagnostics')}
               </button>
             </div>
 
@@ -254,11 +256,11 @@ export function BookingPage() {
 
             {isLoading ? (
               <div className="rounded-2xl bg-surface-container-lowest p-8 text-sm text-on-surface-variant shadow-panel">
-                Loading services and diagnostics...
+                {t('app.bookingPage.loading')}
               </div>
             ) : options.length === 0 ? (
               <div className="rounded-2xl bg-surface-container-lowest p-8 text-sm text-on-surface-variant shadow-panel">
-                No active catalog items found for this category.
+                {t('app.bookingPage.empty')}
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -318,8 +320,8 @@ export function BookingPage() {
 
                         <div className="mt-4 inline-flex rounded-full bg-surface-container px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
                           {option.category === 0
-                            ? 'Parts chosen after inspection'
-                            : 'Diagnostic request only'}
+                            ? t('app.bookingPage.partsChosenAfterInspection')
+                            : t('app.bookingPage.diagnosticRequestOnly')}
                         </div>
 
                        <div className="mt-4 flex items-center justify-between gap-3">
@@ -332,7 +334,7 @@ export function BookingPage() {
                               name={activeKind === 'service' ? 'check_box' : 'check_circle'}
                               className="text-sm"
                             />
-                            {activeKind === 'service' ? 'Added' : 'Selected'}
+                            {activeKind === 'service' ? t('app.bookingPage.added') : t('app.bookingPage.selected')}
                           </span>
                         ) : null}
                       </div>
@@ -348,7 +350,7 @@ export function BookingPage() {
                   htmlFor="diagnostic-notes"
                   className="mb-3 block text-sm font-bold text-on-surface"
                 >
-                  Describe your car&apos;s symptoms
+                  {t('app.bookingPage.symptomsLabel')}
                 </label>
                 <textarea
                   id="diagnostic-notes"
@@ -357,7 +359,7 @@ export function BookingPage() {
                   onChange={(event) =>
                     updateBookingState({ diagnosticNotes: event.target.value })
                   }
-                  placeholder="E.g. Squeaking sound when braking, check engine light is on..."
+                  placeholder={t('app.bookingPage.symptomsPlaceholder')}
                   className="w-full rounded-xl border-none bg-surface-container-low p-4 text-sm text-on-surface transition focus:ring-2 focus:ring-primary/30"
                 />
               </div>
@@ -368,9 +370,9 @@ export function BookingPage() {
             <div className="sticky top-28 space-y-6">
               <div className="overflow-hidden rounded-2xl bg-surface-container-lowest shadow-panel">
                 <div className="bg-primary p-6 text-on-primary">
-                  <h2 className="text-xl font-extrabold tracking-tight">Booking Summary</h2>
+                  <h2 className="text-xl font-extrabold tracking-tight">{t('app.bookingPage.summary')}</h2>
                   <p className="mt-1 text-xs font-medium opacity-80">
-                    Starting labor view before inspection
+                    {t('app.bookingPage.startingLaborView')}
                   </p>
                 </div>
                 <div className="p-6">
@@ -380,10 +382,10 @@ export function BookingPage() {
                         <div>
                           <p className="text-sm font-bold text-on-surface">{option.name}</p>
                           <p className="text-xs text-on-surface-variant">
-                            {activeKind === 'service' ? 'Workshop service' : 'Diagnostic session'}
+                            {activeKind === 'service' ? t('app.bookingPage.workshopService') : t('app.bookingPage.diagnosticSession')}
                           </p>
                           <p className="mt-1 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-                            {option.category === 0 ? 'Parts added after inspection' : 'Diagnostic labor from'}
+                            {option.category === 0 ? t('app.bookingPage.partsAddedAfterInspection') : t('app.bookingPage.diagnosticLaborFrom')}
                           </p>
                         </div>
                         <span className="text-sm font-bold text-on-surface">
@@ -395,15 +397,15 @@ export function BookingPage() {
                     <div className="h-px bg-surface-container" />
 
                     <div className="flex justify-between text-sm text-on-surface-variant">
-                      <span>Estimated Duration</span>
+                      <span>{t('app.bookingPage.estimatedDuration')}</span>
                       <span className="font-semibold text-on-surface">{totalDurationLabel}</span>
                     </div>
 
                     <div className="flex justify-between text-sm text-on-surface-variant">
-                      <span>Category</span>
+                      <span>{t('app.bookingPage.category')}</span>
                       <span className="font-semibold capitalize text-on-surface">
                         {activeKind === 'service' && selectedOptions.length > 1
-                          ? `${selectedOptions.length} services`
+                          ? t('app.bookingPage.servicesSelected', { count: selectedOptions.length })
                           : activeKind}
                       </span>
                     </div>
@@ -418,7 +420,7 @@ export function BookingPage() {
                   <div className="mb-8 rounded-xl bg-surface-container-low p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-bold text-on-surface-variant">
-                        Starting labor from
+                        {t('app.bookingPage.startingLaborFrom')}
                       </span>
                       <span className="text-2xl font-black text-primary">
                         {formatStartingPrice(totalPrice)}
@@ -437,7 +439,7 @@ export function BookingPage() {
                         : 'cursor-not-allowed bg-surface-container text-on-surface-variant',
                     ].join(' ')}
                   >
-                    Continue
+                    {t('app.bookingPage.continue')}
                     <MaterialIcon name="arrow_forward" />
                   </button>
                 </div>
@@ -449,11 +451,11 @@ export function BookingPage() {
                     <MaterialIcon name="support_agent" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-on-surface">Need help?</p>
+                    <p className="text-sm font-bold text-on-surface">{t('app.bookingPage.needHelp')}</p>
                     <p className="text-xs text-on-surface-variant">
                       {activeKind === 'service' && selectedOptions.length > 1
                         ? serviceSummaryLabel
-                        : 'Speak with a Master Tech'}
+                        : t('app.bookingPage.speakWithMasterTech')}
                     </p>
                   </div>
                   <button
@@ -479,7 +481,7 @@ export function BookingPage() {
           selectedServiceLabel={
             selectedOptions.length <= 1
               ? selectedOption?.name
-              : `${selectedOption?.name ?? 'Service'} +${selectedOptions.length - 1} more`
+              : t('app.bookingPage.moreServices', { name: selectedOption?.name ?? t('app.bookingPage.service'), count: selectedOptions.length - 1 })
           }
           selectedVehicleLabel={selectedVehicleLabel}
           activeCardId="service"

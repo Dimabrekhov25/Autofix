@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import type { Booking } from '../types/booking'
 import { BookingCard } from './BookingCard'
 
@@ -8,6 +10,8 @@ interface BookingListProps {
 }
 
 export function BookingList({ bookings, selectedBookingId, onSelectBooking }: BookingListProps) {
+  const { t } = useTranslation()
+
   if (bookings.length === 0) {
     return (
       <div className="shell-panel p-12 text-center">
@@ -16,9 +20,9 @@ export function BookingList({ bookings, selectedBookingId, onSelectBooking }: Bo
             event_busy
           </span>
         </div>
-        <h3 className="font-headline font-bold text-lg text-on-surface mb-2">No Bookings Yet</h3>
+        <h3 className="font-headline font-bold text-lg text-on-surface mb-2">{t('app.bookingDetails.noBookingsYet')}</h3>
         <p className="text-sm text-on-surface-variant">
-          Your service bookings will appear here once scheduled.
+          {t('app.bookingDetails.noBookingsDescription')}
         </p>
       </div>
     )
