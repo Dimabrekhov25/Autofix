@@ -11,6 +11,7 @@ import {
 } from '../../../apis/catalogApi'
 import { Button } from '../../../shared/ui/Button'
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
+import { SelectField } from '../../../shared/ui/SelectField'
 import { ServiceCatalogDeleteDialog } from './ServiceCatalogDeleteDialog'
 import { ServiceCatalogEditorDialog } from './ServiceCatalogEditorDialog'
 import {
@@ -307,42 +308,32 @@ export function ServiceCatalogAdminView({
               <span className="block pl-1 text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
                 Category
               </span>
-              <div className="relative">
-                <select
-                  value={categoryFilter}
-                  onChange={(event) => setCategoryFilter(event.target.value as ServiceCategoryFilter)}
-                  className="w-full appearance-none rounded-xl border-none bg-white px-4 py-3 pr-11 text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
-                >
-                  <option value="all">All Categories</option>
-                  <option value="service">Services</option>
-                  <option value="diagnostic">Diagnostics</option>
-                </select>
-                <MaterialIcon
-                  name="expand_more"
-                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-              </div>
+              <SelectField
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value as ServiceCategoryFilter)}
+                className="border-none bg-white py-3 text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
+                iconClassName="text-slate-400"
+              >
+                <option value="all">All Categories</option>
+                <option value="service">Services</option>
+                <option value="diagnostic">Diagnostics</option>
+              </SelectField>
             </label>
 
             <label className="space-y-2">
               <span className="block pl-1 text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
                 Status
               </span>
-              <div className="relative">
-                <select
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value as ServiceStatusFilter)}
-                  className="w-full appearance-none rounded-xl border-none bg-white px-4 py-3 pr-11 text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-                <MaterialIcon
-                  name="expand_more"
-                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-              </div>
+              <SelectField
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as ServiceStatusFilter)}
+                className="border-none bg-white py-3 text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
+                iconClassName="text-slate-400"
+              >
+                <option value="all">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </SelectField>
             </label>
 
             <div className="flex items-end">

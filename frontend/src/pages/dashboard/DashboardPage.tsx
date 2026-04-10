@@ -16,6 +16,8 @@ import { Button } from '../../shared/ui/Button'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 
+const approvalNotificationsRefreshEvent = 'autofix:refresh-approval-notifications'
+
 export function DashboardPage() {
   const { tokens } = useAuth()
   const accessToken = tokens?.accessToken
@@ -331,7 +333,11 @@ export function DashboardPage() {
               actionErrorMessage={actionErrorMessage}
               onBack={() => setSelectedBookingId(null)}
               onApproveEstimate={(bookingId) => {
-                void runBookingAction(() => approveBookingEstimateRequest(bookingId, accessToken))
+                void runBookingAction(async () => {
+                  const nextBooking = await approveBookingEstimateRequest(bookingId, accessToken)
+                  window.dispatchEvent(new Event(approvalNotificationsRefreshEvent))
+                  return nextBooking
+                })
               }}
               onRequestChanges={(bookingId) => {
                 void runBookingAction(() => requestBookingChangesRequest(bookingId, accessToken))

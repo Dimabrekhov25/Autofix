@@ -32,7 +32,7 @@ export function ServiceOrderBookingsList({
     {
       key: 'needs-estimate',
       title: 'Needs Estimate',
-      description: 'Fresh arrivals and requests returned for changes.',
+      description: 'Fresh arrivals and jobs returned for estimate revision.',
       bookings: bookings.filter((booking) => booking.status === 1 || booking.status === 6),
     },
     {

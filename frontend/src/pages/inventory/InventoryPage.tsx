@@ -13,6 +13,7 @@ import { useAuth } from '../../features/auth/useAuth'
 import { APP_ROUTES } from '../../shared/config/routes'
 import { Button } from '../../shared/ui/Button'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
+import { SelectField } from '../../shared/ui/SelectField'
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 
 type InventoryStatusFilter = 'all' | 'healthy' | 'low' | 'out'
@@ -336,23 +337,18 @@ export function InventoryPage() {
                   <span className="block pl-1 text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
                     Stock Status
                   </span>
-                  <div className="relative">
-                    <select
-                      value={statusValue}
-                      onChange={(event) => setStatusValue(event.target.value as InventoryStatusFilter)}
-                      className="w-full appearance-none rounded-xl border-none bg-white px-4 py-3 pr-11 text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
-                    >
-                      {(['all', 'healthy', 'low', 'out'] as const).map((option) => (
-                        <option key={option} value={option}>
-                          {option === 'all' ? 'All Statuses' : option.charAt(0).toUpperCase() + option.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                    <MaterialIcon
-                      name="expand_more"
-                      className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                  </div>
+                  <SelectField
+                    value={statusValue}
+                    onChange={(event) => setStatusValue(event.target.value as InventoryStatusFilter)}
+                    className="border-none bg-white py-3 text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
+                    iconClassName="text-slate-400"
+                  >
+                    {(['all', 'healthy', 'low', 'out'] as const).map((option) => (
+                      <option key={option} value={option}>
+                        {option === 'all' ? 'All Statuses' : option.charAt(0).toUpperCase() + option.slice(1)}
+                      </option>
+                    ))}
+                  </SelectField>
                 </label>
 
                 <div className="flex items-end">
@@ -533,26 +529,21 @@ export function InventoryPage() {
                   <span className="block pl-1 text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
                     Part
                   </span>
-                  <div className="relative">
-                    <select
-                      value={form.partId}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, partId: event.target.value }))
-                      }
-                      className="w-full appearance-none rounded-xl border-none bg-surface-container-low px-4 py-3 pr-11 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-primary/20"
-                    >
-                      <option value="">Select a part</option>
-                      {parts.map((part) => (
-                        <option key={part.id} value={part.id}>
-                          {part.name}
-                        </option>
-                      ))}
-                    </select>
-                    <MaterialIcon
-                      name="expand_more"
-                      className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                  </div>
+                  <SelectField
+                    value={form.partId}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, partId: event.target.value }))
+                    }
+                    className="border-none bg-surface-container-low py-3 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-primary/20"
+                    iconClassName="text-slate-400"
+                  >
+                    <option value="">Select a part</option>
+                    {parts.map((part) => (
+                      <option key={part.id} value={part.id}>
+                        {part.name}
+                      </option>
+                    ))}
+                  </SelectField>
                 </label>
 
                 <div className="grid gap-6 md:grid-cols-3">

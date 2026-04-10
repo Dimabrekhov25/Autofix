@@ -1,6 +1,7 @@
 import type { ChangeEvent } from 'react'
 
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
+import { SelectField } from '../../../shared/ui/SelectField'
 import type { InventoryCategory, InventoryPartStatus } from '../types/inventory'
 
 export type InventoryStatusFilter = 'all' | InventoryPartStatus
@@ -51,13 +52,13 @@ export function InventoryFilters({
       <label className="sr-only" htmlFor="inventory-category-filter">
         Filter by category
       </label>
-      <select
+      <SelectField
         id="inventory-category-filter"
         value={categoryValue}
         onChange={(event) =>
           handleSelectValue<InventoryCategory | 'all'>(event, onCategoryChange)
         }
-        className="rounded-xl border border-transparent bg-surface-container-low px-4 py-3.5 text-sm font-medium text-on-surface outline-none transition focus:border-primary/20 focus:bg-white focus:ring-2 focus:ring-primary/15"
+        className="font-medium"
       >
         <option value="all">All Categories</option>
         {categories.map((category) => (
@@ -65,24 +66,24 @@ export function InventoryFilters({
             {category}
           </option>
         ))}
-      </select>
+      </SelectField>
 
       <label className="sr-only" htmlFor="inventory-status-filter">
         Filter by stock status
       </label>
-      <select
+      <SelectField
         id="inventory-status-filter"
         value={statusValue}
         onChange={(event) =>
           handleSelectValue<InventoryStatusFilter>(event, onStatusChange)
         }
-        className="rounded-xl border border-transparent bg-surface-container-low px-4 py-3.5 text-sm font-medium text-on-surface outline-none transition focus:border-primary/20 focus:bg-white focus:ring-2 focus:ring-primary/15"
+        className="font-medium"
       >
         <option value="all">Stock Status</option>
         <option value="in-stock">In Stock</option>
         <option value="low-stock">Low Stock</option>
         <option value="out-of-stock">Out of Stock</option>
-      </select>
+      </SelectField>
     </section>
   )
 }

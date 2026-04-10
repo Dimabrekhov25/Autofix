@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import type { ServiceCatalogItemDto } from '../../../apis/catalogApi'
 import { Button } from '../../../shared/ui/Button'
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
+import { SelectField } from '../../../shared/ui/SelectField'
 import type { ServiceCatalogFormState } from '../lib/serviceCatalog'
 
 interface ServiceCatalogEditorDialogProps {
@@ -77,7 +78,7 @@ export function ServiceCatalogEditorDialog({
 
             <label className="space-y-2">
               <span className="text-sm font-bold text-slate-800">Category</span>
-              <select
+              <SelectField
                 value={form.category}
                 onChange={(event) =>
                   onChange((current) => ({
@@ -85,11 +86,12 @@ export function ServiceCatalogEditorDialog({
                     category: event.target.value as ServiceCatalogFormState['category'],
                   }))
                 }
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-primary/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10"
+                className="rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/10"
+                iconClassName="text-slate-400"
               >
                 <option value="service">Service</option>
                 <option value="diagnostic">Diagnostic</option>
-              </select>
+              </SelectField>
             </label>
 
             <label className="space-y-2">

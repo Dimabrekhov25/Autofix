@@ -47,6 +47,22 @@ export interface ServiceOrderDto {
   partItems: ServiceOrderPartItemDto[]
 }
 
+export interface ServiceOrderApprovalNotificationDto {
+  serviceOrderId: string
+  bookingId: string
+  customerId: string
+  vehicleId: string
+  customerName: string
+  vehicleDisplayName: string
+  licensePlate: string
+  bookingStartAt: string
+  status: 1 | 2 | 3 | 4 | 5 | 6 | 7
+  estimatedTotalCost: number
+  requestedServices: string[]
+  customerApprovedAt: string
+  readAt?: string | null
+}
+
 const SERVICE_ORDERS_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/+$/, '')
 
 export class ServiceOrdersApiError extends Error {
@@ -159,6 +175,25 @@ export function getServiceOrderByBookingRequest(bookingId: string, accessToken?:
   return request<ServiceOrderDto>(
     `/ServiceOrders/by-booking/${bookingId}`,
     { method: 'GET', cache: 'no-store' },
+    accessToken,
+  )
+}
+
+export function getCustomerApprovalNotificationsRequest(accessToken?: string) {
+  return request<ServiceOrderApprovalNotificationDto[]>(
+    '/ServiceOrders/customer-approval-notifications',
+    { method: 'GET', cache: 'no-store' },
+    accessToken,
+  )
+}
+
+export function markCustomerApprovalNotificationReadRequest(
+  serviceOrderId: string,
+  accessToken?: string,
+) {
+  return request<ServiceOrderApprovalNotificationDto>(
+    `/ServiceOrders/${serviceOrderId}/customer-approval-notifications/read`,
+    { method: 'POST' },
     accessToken,
   )
 }

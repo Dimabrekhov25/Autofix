@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../../features/auth/useAuth'
 import { Button } from '../../shared/ui/Button'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
+import { SelectField } from '../../shared/ui/SelectField'
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 
 type PartStatusFilter = 'all' | 'active' | 'inactive'
@@ -338,52 +339,42 @@ export function PartsCatalogPage() {
                   <span className="block pl-1 text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
                     Status
                   </span>
-                  <div className="relative">
-                    <select
-                      value={statusValue}
-                      onChange={(event) => setStatusValue(event.target.value as PartStatusFilter)}
-                      className="w-full appearance-none rounded-xl border-none bg-white px-4 py-3 pr-11 text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
-                    >
-                      {(['all', 'active', 'inactive'] as const).map((option) => (
-                        <option key={option} value={option}>
-                          {option === 'all'
-                            ? 'All Statuses'
-                            : option.charAt(0).toUpperCase() + option.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                    <MaterialIcon
-                      name="expand_more"
-                      className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                  </div>
+                  <SelectField
+                    value={statusValue}
+                    onChange={(event) => setStatusValue(event.target.value as PartStatusFilter)}
+                    className="border-none bg-white py-3 text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
+                    iconClassName="text-slate-400"
+                  >
+                    {(['all', 'active', 'inactive'] as const).map((option) => (
+                      <option key={option} value={option}>
+                        {option === 'all'
+                          ? 'All Statuses'
+                          : option.charAt(0).toUpperCase() + option.slice(1)}
+                      </option>
+                    ))}
+                  </SelectField>
                 </label>
 
                 <label className="space-y-2">
                   <span className="block pl-1 text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
                     Price Range
                   </span>
-                  <div className="relative">
-                    <select
-                      value={priceRangeValue}
-                      onChange={(event) =>
-                        setPriceRangeValue(
-                          event.target.value as (typeof priceRangeOptions)[number]['value'],
-                        )
-                      }
-                      className="w-full appearance-none rounded-xl border-none bg-white px-4 py-3 pr-11 text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
-                    >
-                      {priceRangeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <MaterialIcon
-                      name="expand_more"
-                      className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                  </div>
+                  <SelectField
+                    value={priceRangeValue}
+                    onChange={(event) =>
+                      setPriceRangeValue(
+                        event.target.value as (typeof priceRangeOptions)[number]['value'],
+                      )
+                    }
+                    className="border-none bg-white py-3 text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
+                    iconClassName="text-slate-400"
+                  >
+                    {priceRangeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </SelectField>
                 </label>
 
                 <div className="flex items-end">

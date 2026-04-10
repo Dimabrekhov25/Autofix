@@ -7,6 +7,7 @@ import type { ServiceOrderDto } from '../../../apis/serviceOrdersApi'
 import { formatBookingReference } from '../../booking/lib/booking-api-helpers'
 import { Button } from '../../../shared/ui/Button'
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
+import { SelectField } from '../../../shared/ui/SelectField'
 import {
   formatBookingDate,
   formatCurrency,
@@ -74,7 +75,7 @@ function getWorkflowMessage(status: number) {
     case 5:
       return 'This request was cancelled. No further mechanic action is available.'
     case 6:
-      return 'Customer requested changes. Update the estimate and send the revised version back to the dashboard.'
+      return 'This job was returned to diagnostics for estimate revision. Update the scope, pricing, or parts and send the revised estimate back to the dashboard.'
     default:
       return 'Manage this service order from this screen.'
   }
@@ -285,7 +286,7 @@ export function ServiceOrderDetailsPanel({
             Client Approval
           </h3>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Send the estimate to the dashboard. After the client approves it, the mechanic still starts the repair manually.
+            Send the estimate to the dashboard. If the approved job changes later, return it here, revise the estimate, and resend it for confirmation.
           </p>
         </article>
       </div>
@@ -695,11 +696,12 @@ export function ServiceOrderDetailsPanel({
               Add only the parts that will actually be used for this vehicle. These lines also go to the customer estimate.
             </p>
             <div className="mt-5 grid gap-4">
-              <select
+              <SelectField
                 value={manualPartId}
                 onChange={(event) => onManualPartIdChange(event.target.value)}
                 disabled={isLocked}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-primary/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-70"
+                className="rounded-2xl border-slate-200 bg-slate-50 py-3 text-slate-900 focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/10"
+                iconClassName="text-slate-400"
               >
                 <option value="">Select inventory part</option>
                 {inventoryParts.map((part) => (
@@ -707,7 +709,7 @@ export function ServiceOrderDetailsPanel({
                     {part.name} | {formatCurrency(part.unitPrice)} | available {part.availableQuantity}
                   </option>
                 ))}
-              </select>
+              </SelectField>
               <input
                 type="number"
                 min="1"

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
   getBookingErrorMessage,
@@ -11,6 +11,7 @@ import { useAuth } from '../../features/auth/useAuth'
 import { APP_ROUTES } from '../../shared/config/routes'
 import { Button } from '../../shared/ui/Button'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
+import { SelectField } from '../../shared/ui/SelectField'
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 import {
   formatBookingDate,
@@ -85,10 +86,15 @@ function getStatusBadgeClass(status: number) {
   }
 }
 
+function isActiveJobStatus(status: number) {
+  return status === 7 || status === 3 || status === 4
+}
+
 export function ActiveJobsPage() {
   const { tokens } = useAuth()
   const accessToken = tokens?.accessToken
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const [bookings, setBookings] = useState<BookingDto[]>([])
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null)
@@ -97,21 +103,31 @@ export function ActiveJobsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isStatusUpdating, setIsStatusUpdating] = useState(false)
-  const [pendingStatusValue, setPendingStatusValue] = useState<7 | 3 | 4>(7)
+  const [pendingStatusValue, setPendingStatusValue] = useState<7 | 3 | 4 | 6>(7)
   const [statusActionErrorMessage, setStatusActionErrorMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const requestedBookingId = searchParams.get('bookingId')
 
   function upsertBooking(nextBooking: BookingDto) {
-    setBookings((currentBookings) => {
-      const nextActiveBookings = currentBookings
+    const nextActiveBookings = sortActiveJobs(
+      bookings
         .filter((booking) => booking.id !== nextBooking.id)
         .concat(nextBooking)
-        .filter((booking) => booking.status === 7 || booking.status === 3 || booking.status === 4)
+        .filter((booking) => isActiveJobStatus(booking.status)),
+    )
 
-      return sortActiveJobs(nextActiveBookings)
+    setBookings(nextActiveBookings)
+    setSelectedBookingId((currentSelectedBookingId) => {
+      if (isActiveJobStatus(nextBooking.status)) {
+        return nextBooking.id
+      }
+
+      if (currentSelectedBookingId && nextActiveBookings.some((booking) => booking.id === currentSelectedBookingId)) {
+        return currentSelectedBookingId
+      }
+
+      return nextActiveBookings[0]?.id ?? null
     })
-
-    setSelectedBookingId(nextBooking.id)
   }
 
   async function loadActiveJobs(options?: { background?: boolean }) {
@@ -129,11 +145,15 @@ export function ActiveJobsPage() {
     try {
       const nextBookings = await getBookingsRequest({}, accessToken)
       const activeBookings = sortActiveJobs(
-        nextBookings.filter((booking) => booking.status === 7 || booking.status === 3 || booking.status === 4),
+        nextBookings.filter((booking) => isActiveJobStatus(booking.status)),
       )
 
       setBookings(activeBookings)
       setSelectedBookingId((current) => {
+        if (requestedBookingId && activeBookings.some((booking) => booking.id === requestedBookingId)) {
+          return requestedBookingId
+        }
+
         if (current && activeBookings.some((booking) => booking.id === current)) {
           return current
         }
@@ -150,7 +170,7 @@ export function ActiveJobsPage() {
     }
   }
 
-  async function handleStatusUpdate(nextStatus: 7 | 3 | 4) {
+  async function handleStatusUpdate(nextStatus: 7 | 3 | 4 | 6) {
     if (!selectedBooking) {
       return
     }
@@ -168,6 +188,10 @@ export function ActiveJobsPage() {
       )
 
       upsertBooking(nextBooking)
+
+      if (nextStatus === 6) {
+        navigate(`${APP_ROUTES.diagnostics}?bookingId=${nextBooking.id}`)
+      }
     } catch (error) {
       setStatusActionErrorMessage(getBookingErrorMessage(error, 'Unable to update the repair status.'))
     } finally {
@@ -178,6 +202,16 @@ export function ActiveJobsPage() {
   useEffect(() => {
     void loadActiveJobs()
   }, [accessToken])
+
+  useEffect(() => {
+    if (!requestedBookingId) {
+      return
+    }
+
+    if (bookings.some((booking) => booking.id === requestedBookingId)) {
+      setSelectedBookingId(requestedBookingId)
+    }
+  }, [bookings, requestedBookingId])
 
   const filteredBookings = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase()
@@ -422,10 +456,13 @@ export function ActiveJobsPage() {
                         <Button
                           type="button"
                           tone="secondary"
-                          onClick={() => navigate(`${APP_ROUTES.diagnostics}?bookingId=${selectedBooking.id}`)}
+                          onClick={() => {
+                            void handleStatusUpdate(6)
+                          }}
+                          disabled={isStatusUpdating}
                         >
-                          <MaterialIcon name="open_in_new" className="text-lg" />
-                          <span>Open In Diagnostic</span>
+                          <MaterialIcon name="assignment_return" className="text-lg" />
+                          <span>{isStatusUpdating ? 'Moving...' : 'Return To Diagnostics'}</span>
                         </Button>
                       </div>
                     </div>
@@ -553,7 +590,7 @@ export function ActiveJobsPage() {
                           </p>
                           <p>
                             <span className="font-semibold text-slate-900">Status selector:</span>{' '}
-                            Choose the correct repair stage and apply it. If someone selected the wrong stage by mistake, you can switch it back here.
+                            Choose the correct repair stage and apply it. If the approved scope changes, you can also send the job back to diagnostics to revise the estimate.
                           </p>
                         </div>
 
@@ -562,16 +599,18 @@ export function ActiveJobsPage() {
                             <span className="mb-2 block text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
                               Repair Status
                             </span>
-                            <select
+                            <SelectField
                               value={String(pendingStatusValue)}
-                              onChange={(event) => setPendingStatusValue(Number(event.target.value) as 7 | 3 | 4)}
+                              onChange={(event) => setPendingStatusValue(Number(event.target.value) as 7 | 3 | 4 | 6)}
                               disabled={isStatusUpdating}
-                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/10"
+                              className="rounded-2xl border-slate-200 bg-slate-50 py-3 font-semibold text-slate-900 focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/10"
+                              iconClassName="text-slate-400"
                             >
                               <option value="7">Approved</option>
                               <option value="3">In Progress</option>
                               <option value="4">Completed</option>
-                            </select>
+                              <option value="6">Return To Diagnostics</option>
+                            </SelectField>
                           </label>
 
                           <Button
@@ -583,7 +622,13 @@ export function ActiveJobsPage() {
                             className="w-full"
                           >
                             <MaterialIcon name="sync" className={isStatusUpdating ? 'animate-spin text-lg' : 'text-lg'} />
-                            <span>{isStatusUpdating ? 'Updating Status...' : 'Apply Status'}</span>
+                            <span>
+                              {isStatusUpdating
+                                ? 'Updating Status...'
+                                : pendingStatusValue === 6
+                                  ? 'Move To Diagnostics'
+                                  : 'Apply Status'}
+                            </span>
                           </Button>
                         </div>
                       </article>
