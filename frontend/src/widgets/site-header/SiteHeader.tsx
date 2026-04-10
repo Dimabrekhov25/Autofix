@@ -127,7 +127,7 @@ export function SiteHeader() {
                   type="button"
                 >
                   <MaterialIcon className="text-[1.15rem]" name="logout" />
-                  <span>Sign Out</span>
+                  <span>Log out</span>
                 </button>
               </div>
             ) : null}
