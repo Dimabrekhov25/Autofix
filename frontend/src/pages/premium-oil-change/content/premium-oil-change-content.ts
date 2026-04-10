@@ -34,7 +34,7 @@ export const premiumOilChangeContent: PremiumOilChangeContent = {
       icon: 'verified',
     },
   ],
-  serviceRecordNote: 'Digital service record entry included for all customers.',
+  serviceRecordNote: 'Digital service record included for all customers.',
   estimatedPriceLabel: 'Estimated Price',
   estimatedPriceValue: 'From $89.00',
   durationLabel: 'Duration',

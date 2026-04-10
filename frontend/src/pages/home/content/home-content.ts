@@ -74,7 +74,7 @@ export const homePageContent = {
       {
         title: 'Service Tracking',
         description:
-          'Live updates from the shop floor show which stage your repair is in and who owns it.',
+          'Real-time updates from the workshop show the current repair stage and responsible specialist.',
         icon: 'tracking',
       },
       {

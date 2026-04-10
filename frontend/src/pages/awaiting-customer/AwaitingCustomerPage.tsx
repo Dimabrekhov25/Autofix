@@ -200,7 +200,7 @@ export function AwaitingCustomerPage() {
           <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-                Customer Approval Queue
+                Customer Approvals
               </p>
               <h1 className="mt-2 font-headline text-4xl font-extrabold tracking-tight text-slate-900">
                 Waiting for customer approval

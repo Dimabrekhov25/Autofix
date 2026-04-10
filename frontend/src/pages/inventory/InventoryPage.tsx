@@ -242,7 +242,7 @@ export function InventoryPage() {
   }
 
   async function handleDelete(item: InventoryItemDto) {
-    const shouldDelete = window.confirm(`Delete inventory entry ${item.id}?`)
+    const shouldDelete = window.confirm(`Delete inventory item ${item.id}?`)
 
     if (!shouldDelete) {
       return

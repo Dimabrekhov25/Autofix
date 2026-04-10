@@ -47,7 +47,7 @@ export function ServiceOrderBookingsList({
     <section className="rounded-[1.75rem] border border-white/70 bg-white/90 shadow-panel">
       <div className="border-b border-slate-100 p-6">
         <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-          Estimate Queue
+          Estimate Requests
         </p>
         <h2 className="mt-2 font-headline text-2xl font-extrabold tracking-tight text-slate-900">
           Select a customer request
