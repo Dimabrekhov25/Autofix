@@ -68,7 +68,7 @@ export function DashboardShell({
             className="flex w-full items-center gap-3 px-4 py-2 text-slate-600 transition-colors hover:text-error"
           >
             <MaterialIcon name="logout" className="text-lg" />
-            <span className="text-xs font-medium">Logout</span>
+            <span className="text-xs font-medium">Log out</span>
           </button>
         </div>
       </aside>
