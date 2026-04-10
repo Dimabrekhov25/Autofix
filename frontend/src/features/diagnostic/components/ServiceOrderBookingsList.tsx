@@ -50,10 +50,10 @@ export function ServiceOrderBookingsList({
           Estimate Queue
         </p>
         <h2 className="mt-2 font-headline text-2xl font-extrabold tracking-tight text-slate-900">
-          Select a booking
+          Select a customer request
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Mechanics receive the vehicle, review the complaint, prepare the estimate, and only then send it to the customer dashboard.
+          Review the request, inspect the vehicle, prepare the estimate, and send it to the customer.
         </p>
         <div className="relative mt-5">
           <MaterialIcon
@@ -73,7 +73,7 @@ export function ServiceOrderBookingsList({
       <div className="h-[calc(100vh-11rem)] overflow-y-auto overflow-x-hidden p-4 pr-3">
         {isLoading ? (
           <div className="rounded-2xl bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">
-            Loading live bookings...
+            Loading requests...
           </div>
         ) : errorMessage ? (
           <div className="rounded-2xl border border-error/15 bg-error/5 px-5 py-4 text-sm text-error">
