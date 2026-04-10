@@ -239,10 +239,10 @@ export function ActiveJobsPage() {
                 Workshop Board
               </p>
               <h1 className="mt-2 font-headline text-4xl font-extrabold tracking-tight text-slate-900">
-                Active vehicles and approved jobs
+                Vehicles currently in work
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                This board keeps approved jobs and live repairs visible after they leave the estimate queue. Use it to track which vehicle is ready to start, already in repair, or completed and waiting for settlement.
+                Track approved jobs, repairs in progress, and completed work ready for handoff.
               </p>
             </div>
             <Button
@@ -255,7 +255,7 @@ export function ActiveJobsPage() {
               className="min-w-40"
             >
               <MaterialIcon name="refresh" className={isRefreshing ? 'animate-spin' : ''} />
-              <span>{isRefreshing ? 'Refreshing...' : 'Refresh Board'}</span>
+              <span>{isRefreshing ? 'Refreshing...' : 'Refresh list'}</span>
             </Button>
           </div>
 
