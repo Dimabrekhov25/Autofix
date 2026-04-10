@@ -30,10 +30,10 @@ export function ServiceCatalogEditorDialog({
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white/95 px-8 py-6 backdrop-blur">
           <div>
             <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-              {editingItem ? 'Edit Catalog Item' : 'New Catalog Item'}
+              {editingItem ? 'Edit Item' : 'New Item'}
             </p>
             <h2 className="mt-2 font-headline text-3xl font-extrabold tracking-tight text-slate-900">
-              {editingItem ? editingItem.name : 'Create a service or diagnostic'}
+              {editingItem ? editingItem.name : 'Create service or diagnostic'}
             </h2>
           </div>
           <button
@@ -117,7 +117,7 @@ export function ServiceCatalogEditorDialog({
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-primary/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10"
               />
               <p className="text-xs text-slate-500">
-                This is the only public service price. The client sees it as a starting price, and exact parts are added later by the mechanic after inspection.
+                Customers see this as a starting price. Exact parts are added by the mechanic after inspection.
               </p>
             </label>
 
@@ -130,20 +130,20 @@ export function ServiceCatalogEditorDialog({
               />
               <div>
                 <p className="text-sm font-bold text-slate-800">Active catalog item</p>
-                <p className="text-xs text-slate-500">Inactive items stay in history but disappear from booking.</p>
+                <p className="text-xs text-slate-500">Inactive items stay in history but are hidden from booking.</p>
               </div>
             </label>
           </div>
 
           <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50/70 p-6">
             <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-              Service Pricing Rule
+              Pricing Note
             </p>
             <h3 className="mt-2 text-xl font-headline font-bold text-slate-900">
-              No parts are attached to the catalog item
+              Parts are added during inspection
             </h3>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              The catalog item only stores the job itself and its starting labor price. Parts are chosen later by the mechanic inside diagnostics, after the vehicle inspection.
+              This item stores the work and starting labor price. The mechanic adds exact parts later after checking the vehicle.
             </p>
           </div>
 
@@ -152,7 +152,7 @@ export function ServiceCatalogEditorDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : editingItem ? 'Save Changes' : 'Create Catalog Item'}
+              {isSubmitting ? 'Saving...' : editingItem ? 'Save Changes' : 'Create Item'}
             </Button>
           </div>
         </form>
