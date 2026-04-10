@@ -272,15 +272,15 @@ export function InventoryPage() {
         <div className="relative">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
             <div className="space-y-3">
-              <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.24em] text-primary">
-                Internal Ops
-              </span>
+            <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.24em] text-primary">
+              Workshop Inventory
+            </span>
               <div>
                 <h1 className="font-headline text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
                   Inventory
                 </h1>
                 <p className="mt-3 max-w-3xl text-sm font-medium leading-7 text-on-surface-variant sm:text-base">
-                  Live inventory workspace connected to the backend `Inventory` and `Parts` endpoints.
+                  Track stock, reserved parts, and low levels for day-to-day workshop work.
                 </p>
               </div>
             </div>
@@ -486,10 +486,10 @@ export function InventoryPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 px-8 py-4">
               <p className="text-xs font-medium text-slate-500">
-                Showing {filteredRows.length} of {rows.length} backend inventory items
+                Showing {filteredRows.length} of {rows.length} inventory items
               </p>
               <span className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-slate-400">
-                CRUD synced with `/api/v1/Inventory`
+                Inventory is up to date
               </span>
             </div>
           </div>
@@ -508,7 +508,7 @@ export function InventoryPage() {
                       Edit inventory item
                     </h2>
                     <p className="mt-2 text-sm font-medium text-slate-500">
-                      This form maps directly to your backend DTO: `partId`, `quantityOnHand`, `reservedQuantity`, `minLevel`.
+                      Update part and stock values for this inventory line.
                     </p>
                   </div>
                   <button
