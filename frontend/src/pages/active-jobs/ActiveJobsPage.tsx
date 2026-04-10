@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
   getBookingErrorMessage,
@@ -93,6 +93,7 @@ export function ActiveJobsPage() {
   const { tokens } = useAuth()
   const accessToken = tokens?.accessToken
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const [bookings, setBookings] = useState<BookingDto[]>([])
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null)
@@ -104,6 +105,7 @@ export function ActiveJobsPage() {
   const [pendingStatusValue, setPendingStatusValue] = useState<7 | 3 | 4 | 6>(7)
   const [statusActionErrorMessage, setStatusActionErrorMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const requestedBookingId = searchParams.get('bookingId')
 
   function upsertBooking(nextBooking: BookingDto) {
     const nextActiveBookings = sortActiveJobs(
@@ -147,6 +149,10 @@ export function ActiveJobsPage() {
 
       setBookings(activeBookings)
       setSelectedBookingId((current) => {
+        if (requestedBookingId && activeBookings.some((booking) => booking.id === requestedBookingId)) {
+          return requestedBookingId
+        }
+
         if (current && activeBookings.some((booking) => booking.id === current)) {
           return current
         }
@@ -195,6 +201,16 @@ export function ActiveJobsPage() {
   useEffect(() => {
     void loadActiveJobs()
   }, [accessToken])
+
+  useEffect(() => {
+    if (!requestedBookingId) {
+      return
+    }
+
+    if (bookings.some((booking) => booking.id === requestedBookingId)) {
+      setSelectedBookingId(requestedBookingId)
+    }
+  }, [bookings, requestedBookingId])
 
   const filteredBookings = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase()
