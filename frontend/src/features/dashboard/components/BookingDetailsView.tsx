@@ -25,7 +25,7 @@ function getStatusLabel(status: Booking['status']) {
     case 'in-progress':
       return 'In progress'
     case 'changes-requested':
-      return 'Changes requested'
+      return 'Estimate revision'
     case 'completed':
       return 'Completed'
     case 'cancelled':
@@ -44,7 +44,7 @@ function getStatusNarrative(status: Booking['status']) {
     case 'in-progress':
       return 'The mechanic started the repair. Approved parts can now be used and the vehicle is actively being worked on.'
     case 'changes-requested':
-      return 'You asked for estimate changes. The workshop will revise the scope and send an updated estimate back to this dashboard.'
+      return 'The estimate was sent back to the workshop for revision. The updated scope will appear here after the mechanic republishes it.'
     case 'completed':
       return 'The repair has been completed. Review the final approved estimate and choose how you want to pay.'
     case 'cancelled':

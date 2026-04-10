@@ -75,7 +75,7 @@ function getWorkflowMessage(status: number) {
     case 5:
       return 'This request was cancelled. No further mechanic action is available.'
     case 6:
-      return 'Customer requested changes. Update the estimate and send the revised version back to the dashboard.'
+      return 'This job was returned to diagnostics for estimate revision. Update the scope, pricing, or parts and send the revised estimate back to the dashboard.'
     default:
       return 'Manage the service order from this workspace.'
   }
@@ -286,7 +286,7 @@ export function ServiceOrderDetailsPanel({
             Client Approval
           </h3>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Send the estimate to the dashboard. After the client approves it, the mechanic still starts the repair manually.
+            Send the estimate to the dashboard. If the approved job changes later, return it here, revise the estimate, and resend it for confirmation.
           </p>
         </article>
       </div>

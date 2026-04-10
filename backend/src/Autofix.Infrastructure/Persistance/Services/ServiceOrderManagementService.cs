@@ -187,10 +187,33 @@ public sealed class ServiceOrderManagementService(ApplicationDbContext dbContext
         return await UpdateStatusInternalAsync(serviceOrder, status, cancellationToken);
     }
 
+    public async Task<ServiceOrder?> ApproveByCustomerAsync(
+        Guid bookingId,
+        CancellationToken cancellationToken)
+    {
+        var serviceOrder = await dbContext.ServiceOrders
+            .Include(x => x.WorkItems)
+            .Include(x => x.PartItems)
+            .Include(x => x.Booking)
+            .FirstOrDefaultAsync(x => x.BookingId == bookingId && !x.IsDeleted, cancellationToken);
+
+        if (serviceOrder is null)
+        {
+            return null;
+        }
+
+        return await UpdateStatusInternalAsync(
+            serviceOrder,
+            ServiceOrderStatus.Approved,
+            cancellationToken,
+            markCustomerApproval: true);
+    }
+
     private async Task<ServiceOrder?> UpdateStatusInternalAsync(
         ServiceOrder serviceOrder,
         ServiceOrderStatus targetStatus,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool markCustomerApproval = false)
     {
         ValidateStatusTransition(serviceOrder.Status, targetStatus);
 
@@ -222,6 +245,12 @@ public sealed class ServiceOrderManagementService(ApplicationDbContext dbContext
 
         serviceOrder.Status = targetStatus;
         serviceOrder.UpdatedAt = DateTime.UtcNow;
+
+        if (markCustomerApproval)
+        {
+            serviceOrder.CustomerApprovedAt = serviceOrder.UpdatedAt;
+            serviceOrder.CustomerApprovalNotificationReadAt = null;
+        }
 
         var booking = serviceOrder.Booking
             ?? await dbContext.Bookings.FirstOrDefaultAsync(x => x.Id == serviceOrder.BookingId && !x.IsDeleted, cancellationToken)
@@ -352,11 +381,14 @@ public sealed class ServiceOrderManagementService(ApplicationDbContext dbContext
             (ServiceOrderStatus.ChangesRequested, ServiceOrderStatus.Pending) => true,
             (ServiceOrderStatus.ChangesRequested, ServiceOrderStatus.AwaitingApproval) => true,
             (ServiceOrderStatus.ChangesRequested, ServiceOrderStatus.Cancelled) => true,
+            (ServiceOrderStatus.Approved, ServiceOrderStatus.ChangesRequested) => true,
             (ServiceOrderStatus.Approved, ServiceOrderStatus.InProgress) => true,
             (ServiceOrderStatus.Approved, ServiceOrderStatus.Completed) => true,
             (ServiceOrderStatus.Approved, ServiceOrderStatus.Cancelled) => true,
+            (ServiceOrderStatus.InProgress, ServiceOrderStatus.ChangesRequested) => true,
             (ServiceOrderStatus.InProgress, ServiceOrderStatus.Approved) => true,
             (ServiceOrderStatus.InProgress, ServiceOrderStatus.Completed) => true,
+            (ServiceOrderStatus.Completed, ServiceOrderStatus.ChangesRequested) => true,
             (ServiceOrderStatus.Completed, ServiceOrderStatus.InProgress) => true,
             (ServiceOrderStatus.Completed, ServiceOrderStatus.Approved) => true,
             _ => false

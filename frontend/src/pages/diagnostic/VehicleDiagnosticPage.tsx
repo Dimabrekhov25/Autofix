@@ -438,7 +438,7 @@ export function VehicleDiagnosticPage() {
                 Inspect the car, build the estimate, and send it to the client before any repair starts.
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                Online booking only captures the requested service and visit slot. In this workspace the mechanic reviews the complaint, adds the actual repair work, picks parts from inventory, and publishes the estimate to the customer dashboard.
+                Online booking only captures the requested service and visit slot. In this workspace the mechanic reviews the complaint, adds the actual repair work, picks parts from inventory, publishes the estimate to the customer dashboard, and revises approved jobs when scope changes later.
               </p>
             </article>
 
@@ -451,7 +451,7 @@ export function VehicleDiagnosticPage() {
                   <div className="mt-5 space-y-4 text-sm leading-6 text-slate-700">
                     <p>1. Open a pending booking and review the reported issue.</p>
                     <p>2. Build the repair estimate with labor lines and inventory-backed parts.</p>
-                    <p>3. Send the estimate to the customer dashboard. After approval, start the repair from this workspace.</p>
+                    <p>3. Send the estimate to the customer dashboard. If the approved scope changes later, move the job back here from Active Jobs, revise it, and resend it.</p>
                   </div>
                 </div>
                 <Button

@@ -42,4 +42,8 @@ public interface IServiceOrderManagementService
         Guid bookingId,
         ServiceOrderStatus status,
         CancellationToken cancellationToken);
+
+    Task<ServiceOrder?> ApproveByCustomerAsync(
+        Guid bookingId,
+        CancellationToken cancellationToken);
 }

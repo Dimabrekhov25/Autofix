@@ -1,6 +1,12 @@
-import type { PropsWithChildren } from 'react'
-import { NavLink } from 'react-router-dom'
+import { type PropsWithChildren, useEffect, useState } from 'react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 
+import {
+  getCustomerApprovalNotificationsRequest,
+  getServiceOrdersErrorMessage,
+  markCustomerApprovalNotificationReadRequest,
+  type ServiceOrderApprovalNotificationDto,
+} from '../../apis/serviceOrdersApi'
 import { useAuth } from '../../features/auth/useAuth'
 import { isAdminUser } from '../../features/auth/auth-types'
 import { APP_ROUTES } from '../../shared/config/routes'
@@ -22,13 +28,127 @@ const dashboardNavItems = [
   { label: 'Services', to: APP_ROUTES.services, icon: 'settings', adminOnly: false },
 ] as const
 
+const approvalNotificationsRefreshEvent = 'autofix:refresh-approval-notifications'
+
+const notificationDateTimeFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
+const notificationCurrencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+})
+
 export function DashboardShell({
   children,
   searchPlaceholder = 'Search repairs or vehicles...',
 }: DashboardShellProps) {
-  const { logout, user } = useAuth()
+  const { logout, tokens, user } = useAuth()
   const isAdmin = isAdminUser(user)
   const visibleNavItems = dashboardNavItems.filter((item) => !item.adminOnly || isAdmin)
+  const accessToken = tokens?.accessToken
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false)
+  const [notificationErrorMessage, setNotificationErrorMessage] = useState<string | null>(null)
+  const [approvalNotifications, setApprovalNotifications] = useState<ServiceOrderApprovalNotificationDto[]>([])
+
+  useEffect(() => {
+    if (!isAdmin || !accessToken) {
+      setApprovalNotifications([])
+      setNotificationErrorMessage(null)
+      setIsNotificationsLoading(false)
+      return
+    }
+
+    let isMounted = true
+
+    async function loadNotifications(showLoading: boolean) {
+      if (showLoading) {
+        setIsNotificationsLoading(true)
+      }
+
+      try {
+        const nextNotifications = await getCustomerApprovalNotificationsRequest(accessToken)
+
+        if (!isMounted) {
+          return
+        }
+
+        setApprovalNotifications(nextNotifications)
+        setNotificationErrorMessage(null)
+      } catch (error) {
+        if (!isMounted) {
+          return
+        }
+
+        setNotificationErrorMessage(
+          getServiceOrdersErrorMessage(error, 'Unable to load approval notifications.'),
+        )
+      } finally {
+        if (isMounted && showLoading) {
+          setIsNotificationsLoading(false)
+        }
+      }
+    }
+
+    void loadNotifications(true)
+
+    const intervalId = window.setInterval(() => {
+      void loadNotifications(false)
+    }, 10000)
+
+    const handleRefreshRequest = () => {
+      void loadNotifications(false)
+    }
+
+    const handleWindowFocus = () => {
+      void loadNotifications(false)
+    }
+
+    window.addEventListener(approvalNotificationsRefreshEvent, handleRefreshRequest)
+    window.addEventListener('focus', handleWindowFocus)
+
+    return () => {
+      isMounted = false
+      window.clearInterval(intervalId)
+      window.removeEventListener(approvalNotificationsRefreshEvent, handleRefreshRequest)
+      window.removeEventListener('focus', handleWindowFocus)
+    }
+  }, [accessToken, isAdmin])
+
+  useEffect(() => {
+    setIsNotificationsOpen(false)
+  }, [location.pathname, location.search])
+
+  async function handleNotificationClick(notification: ServiceOrderApprovalNotificationDto) {
+    if (!accessToken) {
+      return
+    }
+
+    setNotificationErrorMessage(null)
+
+    try {
+      await markCustomerApprovalNotificationReadRequest(notification.serviceOrderId, accessToken)
+      setApprovalNotifications((currentNotifications) =>
+        currentNotifications.filter(
+          (currentNotification) => currentNotification.serviceOrderId !== notification.serviceOrderId,
+        ),
+      )
+    } catch (error) {
+      setNotificationErrorMessage(
+        getServiceOrdersErrorMessage(error, 'Unable to mark this approval notification as read.'),
+      )
+    }
+
+    navigate(`${APP_ROUTES.activeJobs}?bookingId=${notification.bookingId}`)
+    setIsNotificationsOpen(false)
+  }
 
   return (
     <div className="min-h-screen bg-surface text-on-background">
@@ -94,13 +214,107 @@ export function DashboardShell({
 
         <div className="flex items-center gap-6">
           <div className="hidden items-center gap-2 sm:flex">
-            <button
-              type="button"
-              className="relative rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100/50"
-            >
-              <MaterialIcon name="notifications" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-secondary" />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                aria-haspopup={isAdmin ? 'dialog' : undefined}
+                aria-expanded={isAdmin ? isNotificationsOpen : undefined}
+                onClick={() => {
+                  if (!isAdmin) {
+                    return
+                  }
+
+                  if (!isNotificationsOpen) {
+                    window.dispatchEvent(new Event(approvalNotificationsRefreshEvent))
+                  }
+
+                  setIsNotificationsOpen((currentValue) => !currentValue)
+                }}
+                className="relative rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100/50"
+              >
+                <MaterialIcon name="notifications" />
+                {approvalNotifications.length > 0 ? (
+                  <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1 text-[0.625rem] font-black text-white">
+                    {approvalNotifications.length > 9 ? '9+' : approvalNotifications.length}
+                  </span>
+                ) : null}
+              </button>
+
+              {isAdmin && isNotificationsOpen ? (
+                <div className="absolute right-0 top-14 z-[60] w-[24rem] overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-2xl">
+                  <div className="border-b border-slate-100 px-5 py-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
+                          Workshop Alerts
+                        </p>
+                        <h3 className="mt-1 text-lg font-headline font-extrabold text-slate-900">
+                          Customer approvals
+                        </h3>
+                      </div>
+                      <span className="rounded-full bg-cyan-100 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.18em] text-cyan-700">
+                        {approvalNotifications.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="max-h-[28rem] overflow-y-auto p-3">
+                    {isNotificationsLoading ? (
+                      <div className="rounded-2xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                        Loading notifications...
+                      </div>
+                    ) : notificationErrorMessage ? (
+                      <div className="rounded-2xl border border-error/15 bg-error/5 px-4 py-3 text-sm text-error">
+                        {notificationErrorMessage}
+                      </div>
+                    ) : approvalNotifications.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                        No new customer approvals right now.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {approvalNotifications.map((notification) => (
+                          <button
+                            key={notification.serviceOrderId}
+                            type="button"
+                            onClick={() => {
+                              void handleNotificationClick(notification)
+                            }}
+                            className="w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-left transition-all hover:border-cyan-200 hover:bg-cyan-50/40"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <p className="text-sm font-bold text-slate-900">
+                                  {notification.customerName} approved the work
+                                </p>
+                                <p className="mt-1 text-sm text-slate-600">
+                                  {notification.vehicleDisplayName} · {notification.licensePlate}
+                                </p>
+                              </div>
+                              <MaterialIcon name="notifications_active" className="text-xl text-cyan-600" />
+                            </div>
+
+                            <div className="mt-3 space-y-1 text-xs font-medium text-slate-500">
+                              <p>
+                                Approved at {notificationDateTimeFormatter.format(new Date(notification.customerApprovedAt))}
+                              </p>
+                              <p>
+                                Estimate total {notificationCurrencyFormatter.format(notification.estimatedTotalCost)}
+                              </p>
+                              <p className="line-clamp-2">
+                                {notification.requestedServices.length > 0
+                                  ? notification.requestedServices.join(', ')
+                                  : 'Repair scope ready to start.'}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
             <button
               type="button"
               className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100/50"
