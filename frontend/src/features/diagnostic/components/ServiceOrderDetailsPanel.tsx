@@ -76,7 +76,7 @@ function getWorkflowMessage(status: number) {
     case 6:
       return 'Customer requested changes. Update the estimate and send the revised version back to the dashboard.'
     default:
-      return 'Manage the service order from this workspace.'
+      return 'Manage this service order from this screen.'
   }
 }
 
@@ -161,10 +161,10 @@ export function ServiceOrderDetailsPanel({
       <section className="flex min-h-[32rem] items-center justify-center rounded-[1.75rem] border border-dashed border-slate-300 bg-white/80 p-10 text-center shadow-panel">
         <div>
           <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-            Estimate Workspace
+            Estimate Screen
           </p>
           <h2 className="mt-3 font-headline text-3xl font-extrabold tracking-tight text-slate-900">
-            Choose a booking from the queue
+            Choose a booking from the list
           </h2>
           <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
             Review the intake note, build the estimate, and send it to the client dashboard only when the scope is clear.
