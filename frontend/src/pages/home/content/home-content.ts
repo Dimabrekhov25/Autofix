@@ -80,7 +80,7 @@ export const homePageContent = {
       {
         title: 'Digital Service History',
         description:
-          'A structured maintenance timeline that can later be replaced by a connected backend feed.',
+          'A clear maintenance timeline your team and customers can review anytime.',
         icon: 'history',
       },
     ],
