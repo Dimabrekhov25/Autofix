@@ -20,7 +20,6 @@ import {
   buildVehicleLabel,
   formatBookingDuration,
   formatStartingPrice,
-  getBookingStartingPrice,
   getSelectedCatalogItemIds,
   resolveBookingOptionIcon,
 } from '../../features/booking/lib/booking-api-helpers'
@@ -181,6 +180,7 @@ export function BookingSummaryPage() {
 
         const nextQuote = await getBookingQuoteRequest(
           {
+            customerId: resolvedCustomer.id,
             vehicleId: bookingState.selectedVehicleId,
             startAt: matchedSlot.startAt,
             serviceCatalogItemIds: selectedCatalogItemIds,
@@ -439,15 +439,44 @@ export function BookingSummaryPage() {
                   </div>
                   <div className="rounded-xl bg-slate-50 px-4 py-4">
                     <p className="mb-1 text-xs font-bold uppercase leading-none tracking-widest text-slate-400">
-                      Starting labor from
+                      Booking estimate
                     </p>
                     <p className="text-3xl font-black tracking-tighter text-slate-900">
-                      {formatStartingPrice(
-                        quote ? getBookingStartingPrice(quote.pricing) : 0,
-                        quote?.pricing.currency,
-                      )}
+                      {quote
+                        ? formatStartingPrice(quote.pricing.totalEstimate, quote.pricing.currency)
+                        : formatStartingPrice(0)}
                     </p>
                   </div>
+                  {quote?.pricing.hasLoyaltyDiscount ? (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
+                      <p className="font-bold uppercase tracking-[0.16em]">
+                        Loyalty reward applied
+                      </p>
+                      <p className="mt-2">
+                        You unlocked a {Math.round(quote.pricing.loyaltyDiscountRate * 100)}% discount from a previous qualifying order.
+                      </p>
+                      <div className="mt-3 space-y-1 text-sm">
+                        <p>
+                          Before discount:{' '}
+                          <span className="font-bold">
+                            {formatStartingPrice(
+                              quote.pricing.totalBeforeDiscount,
+                              quote.pricing.currency,
+                            )}
+                          </span>
+                        </p>
+                        <p>
+                          Discount:{' '}
+                          <span className="font-bold">
+                            {formatStartingPrice(
+                              quote.pricing.discountAmount,
+                              quote.pricing.currency,
+                            ).replace('From ', '-')}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
                   <p className="text-sm leading-6 text-slate-500">
                     This is not the final repair total. Parts and any vehicle-specific adjustments are added later by the mechanic after inspection.
                   </p>
@@ -495,7 +524,7 @@ export function BookingSummaryPage() {
           selectedVehicleLabel={selectedVehicleLabel}
           selectedEstimateLabel={
             quote
-              ? formatStartingPrice(getBookingStartingPrice(quote.pricing), quote.pricing.currency)
+              ? formatStartingPrice(quote.pricing.totalEstimate, quote.pricing.currency)
               : undefined
           }
           activeCardId="estimate"

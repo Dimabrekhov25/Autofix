@@ -85,7 +85,8 @@ export function BookingDetailsView({
   const canApprove = booking.status === 'awaiting-approval'
   const canPay = booking.status === 'approved' || booking.status === 'in-progress' || booking.status === 'completed'
   const startingLaborPrice = getBookingStartingPrice(booking.pricing)
-  const estimateTotal = estimate?.estimatedTotalCost ?? startingLaborPrice
+  const estimateTotal = estimate?.estimatedTotalCost ?? booking.pricing.totalBeforeDiscount
+  const payableTotal = estimate?.payableTotal ?? booking.pricing.totalEstimate
   const estimatePartQuantity = estimate?.partItems.reduce((total, item) => total + item.quantity, 0) ?? 0
 
   return (
@@ -342,16 +343,29 @@ export function BookingDetailsView({
                     {formatBookingCurrency(estimate?.estimatedPartsCost ?? 0, booking.pricing.currency)}
                   </span>
               </div>
+              {(estimate?.hasLoyaltyDiscount || booking.pricing.hasLoyaltyDiscount) ? (
+                <div className="flex items-center justify-between text-emerald-700">
+                  <span className="font-medium">
+                    Loyalty discount ({Math.round((estimate?.loyaltyDiscountRate ?? booking.pricing.loyaltyDiscountRate) * 100)}%)
+                  </span>
+                  <span className="font-bold">
+                    -{formatBookingCurrency(estimate?.discountAmount ?? booking.pricing.discountAmount, booking.pricing.currency)}
+                  </span>
+                </div>
+              ) : null}
               <div className="flex items-center justify-between border-t border-outline-variant/10 pt-3">
                 <span className="font-headline text-base font-bold text-on-surface">
-                  {estimate ? 'Estimate total' : 'Starting labor from'}
+                  {estimate ? 'Payable total' : 'Booking estimate'}
                 </span>
                 <span className="font-headline text-xl font-extrabold text-on-surface">
-                  {estimate
-                    ? formatBookingCurrency(estimateTotal, booking.pricing.currency)
-                    : formatStartingPrice(estimateTotal, booking.pricing.currency)}
+                  {estimate ? formatBookingCurrency(payableTotal, booking.pricing.currency) : formatStartingPrice(payableTotal, booking.pricing.currency)}
                 </span>
               </div>
+              {(estimate?.hasLoyaltyDiscount || booking.pricing.hasLoyaltyDiscount) ? (
+                <p className="text-xs leading-5 text-emerald-700">
+                  Original total: {formatBookingCurrency(estimateTotal, booking.pricing.currency)}
+                </p>
+              ) : null}
             </div>
           </div>
 
