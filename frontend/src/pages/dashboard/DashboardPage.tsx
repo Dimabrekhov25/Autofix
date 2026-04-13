@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import {
   approveBookingEstimateRequest,
@@ -19,6 +20,7 @@ import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 const approvalNotificationsRefreshEvent = 'autofix:refresh-approval-notifications'
 
 export function DashboardPage() {
+  const { t, i18n } = useTranslation()
   const { tokens } = useAuth()
   const accessToken = tokens?.accessToken
   const [bookings, setBookings] = useState(() => [] as ReturnType<typeof mapBookingHistory>)
@@ -35,7 +37,7 @@ export function DashboardPage() {
     if (!accessToken) {
       setBookings([])
       setSelectedBookingId(null)
-      setErrorMessage('Your session is missing an access token.')
+      setErrorMessage(t('app.dashboard.missingToken'))
       setIsLoading(false)
       setIsRefreshing(false)
       return
@@ -71,7 +73,7 @@ export function DashboardPage() {
     } catch (error) {
       setBookings([])
       setSelectedBookingId(null)
-      setErrorMessage(getBookingErrorMessage(error, 'Unable to load your booking history.'))
+      setErrorMessage(getBookingErrorMessage(error, t('app.dashboard.loadError')))
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -80,7 +82,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     void loadBookings()
-  }, [accessToken])
+  }, [accessToken, t])
 
   const selectedBooking = bookings.find((booking) => booking.id === selectedBookingId) || null
   const summary = getBookingSummary(bookings)
@@ -113,7 +115,7 @@ export function DashboardPage() {
       const nextBooking = await action()
       upsertBooking(nextBooking)
     } catch (error) {
-      setActionErrorMessage(getBookingErrorMessage(error, 'Unable to update this booking right now.'))
+      setActionErrorMessage(getBookingErrorMessage(error, t('app.dashboard.actionError')))
     } finally {
       setIsActionLoading(false)
     }
@@ -125,10 +127,10 @@ export function DashboardPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="mb-2 text-4xl font-headline font-extrabold tracking-tight text-on-background">
-              Service Dashboard
+              {t('app.dashboard.title')}
             </h1>
             <p className="text-on-surface-variant">
-              Track your requests, review mechanic estimates, and approve work when it is ready.
+              {t('app.dashboard.description')}
             </p>
           </div>
           <Button
@@ -141,7 +143,7 @@ export function DashboardPage() {
             className="min-w-40"
           >
             <MaterialIcon name="refresh" className={isRefreshing ? 'animate-spin' : ''} />
-            <span>{isRefreshing ? 'Refreshing...' : 'Refresh Dashboard'}</span>
+            <span>{isRefreshing ? t('app.common.refreshing') : t('app.common.refreshDashboard')}</span>
           </Button>
         </div>
       </div>
@@ -157,7 +159,7 @@ export function DashboardPage() {
           <div className="mb-2 flex items-center gap-3">
             <MaterialIcon name="event" className="text-2xl text-primary" />
             <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-              Total
+              {t('app.dashboard.total')}
             </span>
           </div>
           <p className="text-3xl font-headline font-black text-on-surface">{summary.totalBookings}</p>
@@ -167,7 +169,7 @@ export function DashboardPage() {
           <div className="mb-2 flex items-center gap-3">
             <MaterialIcon name="notifications_active" className="text-2xl text-primary" />
             <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-              Need Review
+              {t('app.dashboard.needReview')}
             </span>
           </div>
           <p className="text-3xl font-headline font-black text-primary">{bookingsAwaitingApproval.length}</p>
@@ -177,7 +179,7 @@ export function DashboardPage() {
           <div className="mb-2 flex items-center gap-3">
             <MaterialIcon name="event_available" className="text-2xl text-blue-600" />
             <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-              Intake
+              {t('app.dashboard.intake')}
             </span>
           </div>
           <p className="text-3xl font-headline font-black text-blue-600">{bookingsInIntake.length}</p>
@@ -187,7 +189,7 @@ export function DashboardPage() {
           <div className="mb-2 flex items-center gap-3">
             <MaterialIcon name="precision_manufacturing" className="text-2xl text-green-600" />
             <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-              Approved
+              {t('app.status.approved')}
             </span>
           </div>
           <p className="text-3xl font-headline font-black text-cyan-600">{bookingsApproved.length}</p>
@@ -197,7 +199,7 @@ export function DashboardPage() {
           <div className="mb-2 flex items-center gap-3">
             <MaterialIcon name="precision_manufacturing" className="text-2xl text-green-600" />
             <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-              In Repair
+              {t('app.status.inRepair')}
             </span>
           </div>
           <p className="text-3xl font-headline font-black text-green-600">{bookingsInProgress.length}</p>
@@ -207,7 +209,7 @@ export function DashboardPage() {
           <div className="mb-2 flex items-center gap-3">
             <MaterialIcon name="check_circle" className="text-2xl text-emerald-700" />
             <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-              Completed
+              {t('app.status.completed')}
             </span>
           </div>
           <p className="text-3xl font-headline font-black text-emerald-700">{bookingsCompleted.length}</p>
@@ -217,19 +219,19 @@ export function DashboardPage() {
       <section className="mb-8">
         <div className="mb-4 flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-headline font-bold text-on-surface">Estimate Inbox</h2>
+            <h2 className="text-xl font-headline font-bold text-on-surface">{t('app.dashboard.estimateInbox')}</h2>
             <p className="text-sm text-on-surface-variant">
-              When a mechanic sends a repair estimate, it appears here for review.
+              {t('app.dashboard.estimateInboxDescription')}
             </p>
           </div>
           <span className="rounded-full bg-primary/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">
-            {bookingsAwaitingApproval.length} waiting
+            {t('app.dashboard.waitingCount', { count: bookingsAwaitingApproval.length })}
           </span>
         </div>
 
         {bookingsAwaitingApproval.length === 0 ? (
           <div className="shell-panel p-6 text-sm text-on-surface-variant">
-            No estimate is waiting for your decision right now. New mechanic estimates will surface here before repair starts.
+            {t('app.dashboard.noEstimateWaiting')}
           </div>
         ) : (
           <div className="grid gap-4 xl:grid-cols-2">
@@ -248,7 +250,7 @@ export function DashboardPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-primary">
-                      Estimate ready
+                      {t('app.dashboard.estimateReady')}
                     </p>
                     <p className="mt-2 text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
                       #{formatBookingReference(booking.id)}
@@ -268,18 +270,18 @@ export function DashboardPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl bg-surface-container px-4 py-3">
                     <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-                      Appointment
+                      {t('app.dashboard.appointment')}
                     </p>
                     <p className="mt-1 text-sm font-bold text-on-surface">
-                      {booking.scheduledDate} at {booking.scheduledTime}
+                      {booking.scheduledDate} {t('app.common.at')} {booking.scheduledTime}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-surface-container px-4 py-3">
                     <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-                      Estimate total
+                      {t('app.dashboard.estimateTotal')}
                     </p>
                     <p className="mt-1 text-sm font-bold text-on-surface">
-                      {new Intl.NumberFormat('en-US', {
+                      {new Intl.NumberFormat(i18n.language, {
                         style: 'currency',
                         currency: booking.pricing.currency,
                         minimumFractionDigits: 2,
@@ -290,8 +292,8 @@ export function DashboardPage() {
 
                 <p className="rounded-2xl bg-blue-50 px-4 py-3 text-sm text-blue-900">
                   {booking.notes?.trim()
-                    ? `Reported issue: ${booking.notes}`
-                    : 'The workshop inspected your vehicle and prepared a repair estimate.'}
+                    ? t('app.dashboard.reportedIssue', { note: booking.notes })
+                    : t('app.dashboard.inspectedEstimateReady')}
                 </p>
               </button>
             ))}
@@ -302,14 +304,14 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-5 xl:col-span-4">
           <div className="mb-4">
-            <h2 className="text-xl font-headline font-bold text-on-surface">Booking History</h2>
+            <h2 className="text-xl font-headline font-bold text-on-surface">{t('app.dashboard.bookingHistory')}</h2>
             <p className="text-sm text-on-surface-variant">
-              Pending intake, repairs in progress, and completed visits stay here.
+              {t('app.dashboard.bookingHistoryDescription')}
             </p>
           </div>
           {isLoading ? (
             <div className="shell-panel p-8 text-center text-sm text-on-surface-variant">
-              Loading your booking history...
+              {t('app.dashboard.loadingHistory')}
             </div>
           ) : (
             <BookingList
@@ -321,10 +323,10 @@ export function DashboardPage() {
         </div>
 
         <div className="lg:col-span-7 xl:col-span-8">
-          <h2 className="mb-4 text-xl font-headline font-bold text-on-surface">Booking Details</h2>
+          <h2 className="mb-4 text-xl font-headline font-bold text-on-surface">{t('app.dashboard.bookingDetails')}</h2>
           {isLoading ? (
             <div className="shell-panel p-8 text-center text-sm text-on-surface-variant">
-              Preparing booking details...
+              {t('app.dashboard.preparingDetails')}
             </div>
           ) : (
             <BookingDetailsView

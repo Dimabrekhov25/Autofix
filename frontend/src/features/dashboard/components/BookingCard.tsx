@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import type { Booking, BookingStatus } from '../types/booking'
 import { formatBookingCurrency, formatBookingReference, formatStartingPrice, getBookingStartingPrice } from '../../booking/lib/booking-api-helpers'
 import { cn } from '../../../shared/lib/cn'
@@ -63,6 +65,7 @@ const statusConfig: Record<
 }
 
 export function BookingCard({ booking, isSelected = false, onClick }: BookingCardProps) {
+  const { t } = useTranslation()
   const config = statusConfig[booking.status]
   const servicesCount = booking.services.length
   const secondaryLine = [booking.vehicle.plateNumber, booking.vehicle.trim].filter(Boolean).join(' | ')
@@ -91,13 +94,13 @@ export function BookingCard({ booking, isSelected = false, onClick }: BookingCar
             #{formatBookingReference(booking.id)}
           </p>
           <p className="text-sm text-on-surface-variant">
-            {secondaryLine || 'Vehicle information'}
+            {secondaryLine || t('app.bookingDetails.vehicleInformation')}
           </p>
         </div>
         <div className={cn('flex items-center gap-1.5 rounded-full px-2 py-1', config.bgColor)}>
           <MaterialIcon name={config.icon} className={cn('text-sm', config.textColor)} />
           <span className={cn('text-[10px] font-bold uppercase tracking-wider', config.textColor)}>
-            {config.label}
+            {t(`app.status.${booking.status === 'awaiting-approval' ? 'awaitingApproval' : booking.status === 'in-progress' ? 'inProgress' : booking.status === 'changes-requested' ? 'estimateRevision' : booking.status}`)}
           </span>
         </div>
       </div>
@@ -105,12 +108,12 @@ export function BookingCard({ booking, isSelected = false, onClick }: BookingCar
       <div className="mb-4 space-y-2">
         <div className="flex items-center gap-2 text-xs text-on-surface-variant">
           <MaterialIcon name="calendar_today" className="text-sm" />
-          <span>{booking.scheduledDate} at {booking.scheduledTime}</span>
+          <span>{booking.scheduledDate} {t('app.common.at')} {booking.scheduledTime}</span>
         </div>
         {booking.estimatedCompletion ? (
           <div className="flex items-center gap-2 text-xs text-on-surface-variant">
             <MaterialIcon name="schedule" className="text-sm" />
-            <span>Ends: {booking.estimatedCompletion}</span>
+            <span>{t('app.bookingDetails.ends', { date: booking.estimatedCompletion })}</span>
           </div>
         ) : null}
       </div>
@@ -119,7 +122,7 @@ export function BookingCard({ booking, isSelected = false, onClick }: BookingCar
         <div className="flex items-center gap-1.5">
           <MaterialIcon name="build" className="text-secondary text-sm" />
           <span className="text-xs font-bold text-on-surface">
-            {servicesCount} {servicesCount === 1 ? 'Service' : 'Services'}
+            {servicesCount} {t('app.bookingDetails.service', { count: servicesCount })}
           </span>
         </div>
         <div className="flex items-center gap-1.5">

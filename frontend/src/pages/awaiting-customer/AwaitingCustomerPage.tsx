@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import {
@@ -33,6 +34,7 @@ function sortAwaitingBookings(bookings: BookingDto[]) {
 }
 
 export function AwaitingCustomerPage() {
+  const { t, i18n } = useTranslation()
   const { tokens } = useAuth()
   const accessToken = tokens?.accessToken
   const navigate = useNavigate()
@@ -76,7 +78,7 @@ export function AwaitingCustomerPage() {
     } catch (error) {
       setBookings([])
       setSelectedBookingId(null)
-      setErrorMessage(getBookingErrorMessage(error, 'Unable to load requests waiting for approval.'))
+      setErrorMessage(getBookingErrorMessage(error, t('app.awaitingCustomer.loadError')))
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -111,7 +113,7 @@ export function AwaitingCustomerPage() {
         if (isMounted) {
           setServiceOrder(null)
           setDetailsErrorMessage(
-            getServiceOrdersErrorMessage(error, 'Unable to load the estimate for this booking.'),
+            getServiceOrdersErrorMessage(error, t('app.awaitingCustomer.detailsLoadError')),
           )
         }
       } finally {
@@ -126,7 +128,7 @@ export function AwaitingCustomerPage() {
     return () => {
       isMounted = false
     }
-  }, [accessToken, selectedBookingId])
+  }, [accessToken, selectedBookingId, t])
 
   const filteredBookings = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase()
@@ -180,7 +182,7 @@ export function AwaitingCustomerPage() {
       setServiceOrder(null)
     } catch (error) {
       setActionErrorMessage(
-        getServiceOrdersErrorMessage(error, 'Unable to update this waiting approval right now.'),
+        getServiceOrdersErrorMessage(error, t('app.awaitingCustomer.updateError')),
       )
     } finally {
       setIsSubmitting(false)
@@ -191,7 +193,7 @@ export function AwaitingCustomerPage() {
   const totalPartQuantity = serviceOrder?.partItems.reduce((total, item) => total + item.quantity, 0) ?? 0
 
   return (
-    <DashboardShell searchPlaceholder="Search waiting approvals, plates, or requests...">
+    <DashboardShell searchPlaceholder={t('app.awaitingCustomer.searchPlaceholder')}>
       <section className="relative overflow-hidden pb-12 pt-2">
         <div className="pointer-events-none absolute -left-24 top-10 h-80 w-80 rounded-full bg-amber-500/10 blur-[120px]" />
         <div className="pointer-events-none absolute right-0 top-24 h-96 w-96 rounded-full bg-cyan-500/10 blur-[140px]" />
@@ -200,13 +202,13 @@ export function AwaitingCustomerPage() {
           <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-                Customer Approvals
+                {t('app.awaitingCustomer.eyebrow')}
               </p>
               <h1 className="mt-2 font-headline text-4xl font-extrabold tracking-tight text-slate-900">
-                Waiting for customer approval
+                {t('app.awaitingCustomer.title')}
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                Estimates sent to customers are shown here. If approval comes by phone or message, you can update it from this screen.
+                {t('app.awaitingCustomer.description')}
               </p>
             </div>
             <Button
@@ -219,7 +221,7 @@ export function AwaitingCustomerPage() {
               className="min-w-40"
             >
               <MaterialIcon name="refresh" className={isRefreshing ? 'animate-spin' : ''} />
-              <span>{isRefreshing ? 'Refreshing...' : 'Refresh list'}</span>
+              <span>{isRefreshing ? t('app.common.refreshing') : t('app.common.refreshList')}</span>
             </Button>
           </div>
 
@@ -229,10 +231,10 @@ export function AwaitingCustomerPage() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-                      Waiting
+                      {t('app.awaitingCustomer.waiting')}
                     </p>
                     <h2 className="mt-2 font-headline text-2xl font-extrabold tracking-tight text-slate-900">
-                      Estimates awaiting reply
+                      {t('app.awaitingCustomer.listTitle')}
                     </h2>
                   </div>
                   <span className="rounded-full bg-amber-100 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.18em] text-amber-700">
@@ -249,7 +251,7 @@ export function AwaitingCustomerPage() {
                     type="text"
                     value={searchValue}
                     onChange={(event) => setSearchValue(event.target.value)}
-                    placeholder="Search by request, VIN, plate, or service..."
+                    placeholder={t('app.awaitingCustomer.listSearchPlaceholder')}
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10"
                   />
                 </div>
@@ -258,7 +260,7 @@ export function AwaitingCustomerPage() {
               <div className="h-[calc(100vh-13rem)] overflow-y-auto overflow-x-hidden p-4 pr-3">
                 {isLoading ? (
                   <div className="rounded-2xl bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">
-                    Loading waiting approvals...
+                    {t('app.awaitingCustomer.loading')}
                   </div>
                 ) : errorMessage ? (
                   <div className="rounded-2xl border border-error/15 bg-error/5 px-5 py-4 text-sm text-error">
@@ -266,7 +268,7 @@ export function AwaitingCustomerPage() {
                   </div>
                 ) : filteredBookings.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">
-                    No bookings are waiting for customer approval.
+                    {t('app.awaitingCustomer.empty')}
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -285,25 +287,25 @@ export function AwaitingCustomerPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="text-base font-bold text-slate-900">{getBookingCardTitle(booking)}</p>
-                            <p className="mt-1 text-sm text-slate-500">{getBookingCardSubtitle(booking)}</p>
+                            <p className="mt-1 text-sm text-slate-500">{getBookingCardSubtitle(booking, t)}</p>
                           </div>
                           <span className="rounded-full bg-amber-100 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.18em] text-amber-700">
-                            Waiting
+                            {t('app.status.waiting')}
                           </span>
                         </div>
 
                         <div className="mt-4 grid gap-2 text-sm text-slate-600">
                           <p>
-                            <span className="font-semibold text-slate-900">Booked:</span>{' '}
-                            {getBookingServicesLabel(booking)}
+                            <span className="font-semibold text-slate-900">{t('app.common.booked')}</span>{' '}
+                            {getBookingServicesLabel(booking, t)}
                           </p>
                           <p>
-                            <span className="font-semibold text-slate-900">Slot:</span>{' '}
-                            {formatBookingDate(booking.startAt)}
+                            <span className="font-semibold text-slate-900">{t('app.common.slot')}</span>{' '}
+                            {formatBookingDate(booking.startAt, i18n.language)}
                           </p>
                           <p>
-                            <span className="font-semibold text-slate-900">Payment:</span>{' '}
-                            {getBookingPaymentMethodLabel(booking.paymentOption)}
+                            <span className="font-semibold text-slate-900">{t('app.common.payment')}</span>{' '}
+                            {getBookingPaymentMethodLabel(booking.paymentOption, t)}
                           </p>
                         </div>
                       </button>
@@ -318,10 +320,10 @@ export function AwaitingCustomerPage() {
                 <div className="flex min-h-[32rem] items-center justify-center rounded-[1.75rem] border border-dashed border-slate-300 bg-white/80 p-10 text-center shadow-panel">
                   <div>
                     <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-                      Waiting Approval
+                      {t('app.awaitingCustomer.detailsEyebrow')}
                     </p>
                     <h2 className="mt-3 font-headline text-3xl font-extrabold tracking-tight text-slate-900">
-                      Choose a waiting estimate
+                      {t('app.awaitingCustomer.chooseEstimate')}
                     </h2>
                   </div>
                 </div>
@@ -331,14 +333,14 @@ export function AwaitingCustomerPage() {
                     <div className="flex flex-wrap items-start justify-between gap-6">
                       <div>
                         <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-amber-200">
-                          Awaiting Customer
+                          {t('app.awaitingCustomer.awaitingCustomer')}
                         </p>
                         <h2 className="mt-3 font-headline text-3xl font-extrabold tracking-tight">
                           {getBookingCardTitle(selectedBooking)}
                         </h2>
-                        <p className="mt-2 text-sm text-slate-300">{getBookingCardSubtitle(selectedBooking)}</p>
+                        <p className="mt-2 text-sm text-slate-300">{getBookingCardSubtitle(selectedBooking, t)}</p>
                         <p className="mt-2 text-sm text-slate-300">
-                          {getBookingServicesLabel(selectedBooking)} | {formatBookingDate(selectedBooking.startAt)}
+                          {getBookingServicesLabel(selectedBooking, t)} | {formatBookingDate(selectedBooking.startAt, i18n.language)}
                         </p>
                       </div>
 
@@ -348,7 +350,7 @@ export function AwaitingCustomerPage() {
                         onClick={() => navigate(`${APP_ROUTES.diagnostics}?bookingId=${selectedBooking.id}`)}
                       >
                         <MaterialIcon name="open_in_new" className="text-lg" />
-                        <span>Open In Diagnostic</span>
+                        <span>{t('app.awaitingCustomer.openInDiagnostic')}</span>
                       </Button>
                     </div>
                   </article>
@@ -374,15 +376,15 @@ export function AwaitingCustomerPage() {
                   <div className="grid gap-4 md:grid-cols-3">
                     <article className="rounded-[1.5rem] border border-white/70 bg-white/90 p-5 shadow-panel">
                       <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
-                        Estimate Total
+                        {t('app.awaitingCustomer.estimateTotal')}
                       </p>
                       <p className="mt-3 text-3xl font-headline font-extrabold text-slate-900">
-                        {formatCurrency(totalEstimate)}
+                        {formatCurrency(totalEstimate, i18n.language)}
                       </p>
                     </article>
                     <article className="rounded-[1.5rem] border border-white/70 bg-white/90 p-5 shadow-panel">
                       <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
-                        Parts In Estimate
+                        {t('app.awaitingCustomer.partsInEstimate')}
                       </p>
                       <p className="mt-3 text-3xl font-headline font-extrabold text-slate-900">
                         {totalPartQuantity}
@@ -390,10 +392,10 @@ export function AwaitingCustomerPage() {
                     </article>
                     <article className="rounded-[1.5rem] border border-white/70 bg-white/90 p-5 shadow-panel">
                       <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
-                        Payment Method
+                        {t('app.awaitingCustomer.paymentMethod')}
                       </p>
                       <p className="mt-3 text-lg font-bold text-slate-900">
-                        {getBookingPaymentMethodLabel(selectedBooking.paymentOption)}
+                        {getBookingPaymentMethodLabel(selectedBooking.paymentOption, t)}
                       </p>
                     </article>
                   </div>
@@ -403,37 +405,37 @@ export function AwaitingCustomerPage() {
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-                            Sent Estimate
+                            {t('app.awaitingCustomer.sentEstimate')}
                           </p>
                           <h3 className="mt-2 text-2xl font-headline font-extrabold tracking-tight text-slate-900">
-                            Waiting for customer confirmation
+                            {t('app.awaitingCustomer.waitingConfirmation')}
                           </h3>
                         </div>
                         <span className="rounded-full bg-amber-100 px-4 py-2 text-sm font-black text-amber-700">
-                          Awaiting approval
+                          {t('app.awaitingCustomer.awaitingApproval')}
                         </span>
                       </div>
 
                       {detailsLoading ? (
                         <div className="mt-6 rounded-2xl bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">
-                          Loading estimate details...
+                          {t('app.awaitingCustomer.loadingDetails')}
                         </div>
                       ) : (
                         <div className="mt-6 space-y-6">
                           <div>
                             <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                              Customer complaint
+                              {t('app.awaitingCustomer.customerComplaint')}
                             </p>
                             <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
                               {selectedBooking.notes?.trim()
                                 ? selectedBooking.notes
-                                : 'No extra complaint was attached by the customer.'}
+                                : t('app.awaitingCustomer.noComplaint')}
                             </div>
                           </div>
 
                           <div>
                             <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                              Work lines
+                              {t('app.awaitingCustomer.workLines')}
                             </p>
                             {serviceOrder?.workItems.length ? (
                               <div className="space-y-3">
@@ -447,7 +449,7 @@ export function AwaitingCustomerPage() {
                                         </p>
                                       </div>
                                       <span className="font-bold text-slate-900">
-                                        {formatCurrency(item.lineTotal)}
+                                        {formatCurrency(item.lineTotal, i18n.language)}
                                       </span>
                                     </div>
                                   </div>
@@ -455,14 +457,14 @@ export function AwaitingCustomerPage() {
                               </div>
                             ) : (
                               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">
-                                No work lines were found for this estimate.
+                                {t('app.awaitingCustomer.noWorkLines')}
                               </div>
                             )}
                           </div>
 
                           <div>
                             <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                              Parts
+                              {t('app.awaitingCustomer.parts')}
                             </p>
                             {serviceOrder?.partItems.length ? (
                               <div className="space-y-3">
@@ -472,11 +474,11 @@ export function AwaitingCustomerPage() {
                                       <div>
                                         <p className="font-bold text-slate-900">{item.partName}</p>
                                         <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-500">
-                                          Qty {item.quantity}
+                                        {t('app.common.qty', { count: item.quantity })}
                                         </p>
                                       </div>
                                       <span className="font-bold text-slate-900">
-                                        {formatCurrency(item.lineTotal)}
+                                        {formatCurrency(item.lineTotal, i18n.language)}
                                       </span>
                                     </div>
                                   </div>
@@ -484,7 +486,7 @@ export function AwaitingCustomerPage() {
                               </div>
                             ) : (
                               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">
-                                No parts were added to this estimate.
+                                {t('app.awaitingCustomer.noParts')}
                               </div>
                             )}
                           </div>
@@ -494,37 +496,37 @@ export function AwaitingCustomerPage() {
 
                     <article className="rounded-[1.75rem] border border-white/70 bg-white/90 p-6 shadow-panel">
                       <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
-                        Manual Resolution
+                        {t('app.awaitingCustomer.manualResolution')}
                       </p>
                       <h3 className="mt-2 text-2xl font-headline font-extrabold tracking-tight text-slate-900">
-                        Remove from waiting
+                        {t('app.awaitingCustomer.removeFromWaiting')}
                       </h3>
                       <p className="mt-2 text-sm leading-6 text-slate-600">
-                        Use this when the customer confirmed outside the dashboard or when the estimate needs to go back to the mechanic for revision.
+                        {t('app.awaitingCustomer.manualDescription')}
                       </p>
 
                       <div className="mt-5 space-y-3">
                         <Button
                           type="button"
                           onClick={() => {
-                            void resolveWaitingBooking(7, 'Booking was manually approved and moved to Active Jobs.')
+                            void resolveWaitingBooking(7, t('app.awaitingCustomer.approvedSuccess'))
                           }}
                           disabled={isSubmitting || detailsLoading || !serviceOrder}
                           className="w-full"
                         >
-                          {isSubmitting ? 'Saving...' : 'Mark Approved Manually'}
+                          {isSubmitting ? t('app.common.saving') : t('app.awaitingCustomer.markApprovedManually')}
                         </Button>
 
                           <Button
                             type="button"
                             tone="secondary"
                             onClick={() => {
-                              void resolveWaitingBooking(6, 'Booking was removed from waiting and returned to mechanic estimate review.')
+                              void resolveWaitingBooking(6, t('app.awaitingCustomer.returnedSuccess'))
                             }}
                           disabled={isSubmitting || detailsLoading || !serviceOrder}
                           className="w-full"
                         >
-                          {isSubmitting ? 'Saving...' : 'Return to estimate'}
+                          {isSubmitting ? t('app.common.saving') : t('app.awaitingCustomer.returnToEstimate')}
                         </Button>
                       </div>
                     </article>

@@ -1,4 +1,5 @@
 import { type PropsWithChildren, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 
 import {
@@ -10,6 +11,7 @@ import {
 import { useAuth } from '../../features/auth/useAuth'
 import { isAdminUser } from '../../features/auth/auth-types'
 import { APP_ROUTES } from '../../shared/config/routes'
+import { LanguageSwitcher } from '../../shared/i18n/LanguageSwitcher'
 import { BrandHomeLink } from '../../shared/ui/BrandHomeLink'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 
@@ -18,35 +20,23 @@ interface DashboardShellProps extends PropsWithChildren {
 }
 
 const dashboardNavItems = [
-  { label: 'Dashboard', to: APP_ROUTES.dashboard, icon: 'dashboard', adminOnly: false },
-  { label: 'Diagnostic', to: APP_ROUTES.diagnostics, icon: 'build', adminOnly: true },
-  { label: 'Awaiting Customer', to: APP_ROUTES.awaitingCustomer, icon: 'schedule', adminOnly: true },
-  { label: 'Active Jobs', to: APP_ROUTES.activeJobs, icon: 'directions_car', adminOnly: true },
-  { label: 'Inventory', to: APP_ROUTES.inventory, icon: 'inventory_2', adminOnly: true },
-  { label: 'Parts Catalog', to: APP_ROUTES.partsCatalog, icon: 'settings_suggest', adminOnly: true },
-  { label: 'Booking', to: APP_ROUTES.booking, icon: 'event', adminOnly: false },
-  { label: 'Services', to: APP_ROUTES.services, icon: 'settings', adminOnly: false },
+  { labelKey: 'shell.nav.dashboard', to: APP_ROUTES.dashboard, icon: 'dashboard', adminOnly: false },
+  { labelKey: 'shell.nav.diagnostic', to: APP_ROUTES.diagnostics, icon: 'build', adminOnly: true },
+  { labelKey: 'shell.nav.awaitingCustomer', to: APP_ROUTES.awaitingCustomer, icon: 'schedule', adminOnly: true },
+  { labelKey: 'shell.nav.activeJobs', to: APP_ROUTES.activeJobs, icon: 'directions_car', adminOnly: true },
+  { labelKey: 'shell.nav.inventory', to: APP_ROUTES.inventory, icon: 'inventory_2', adminOnly: true },
+  { labelKey: 'shell.nav.partsCatalog', to: APP_ROUTES.partsCatalog, icon: 'settings_suggest', adminOnly: true },
+  { labelKey: 'shell.nav.booking', to: APP_ROUTES.booking, icon: 'event', adminOnly: false },
+  { labelKey: 'shell.nav.services', to: APP_ROUTES.services, icon: 'settings', adminOnly: false },
 ] as const
 
 const approvalNotificationsRefreshEvent = 'autofix:refresh-approval-notifications'
 
-const notificationDateTimeFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-})
-
-const notificationCurrencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 2,
-})
-
 export function DashboardShell({
   children,
-  searchPlaceholder = 'Search repairs or vehicles...',
+  searchPlaceholder,
 }: DashboardShellProps) {
+  const { i18n, t } = useTranslation()
   const { logout, tokens, user } = useAuth()
   const isAdmin = isAdminUser(user)
   const visibleNavItems = dashboardNavItems.filter((item) => !item.adminOnly || isAdmin)
@@ -57,6 +47,17 @@ export function DashboardShell({
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false)
   const [notificationErrorMessage, setNotificationErrorMessage] = useState<string | null>(null)
   const [approvalNotifications, setApprovalNotifications] = useState<ServiceOrderApprovalNotificationDto[]>([])
+  const notificationDateTimeFormatter = new Intl.DateTimeFormat(i18n.language, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  const notificationCurrencyFormatter = new Intl.NumberFormat(i18n.language, {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+  })
 
   useEffect(() => {
     if (!isAdmin || !accessToken) {
@@ -88,7 +89,7 @@ export function DashboardShell({
         }
 
         setNotificationErrorMessage(
-          getServiceOrdersErrorMessage(error, 'Unable to load approval notifications.'),
+          getServiceOrdersErrorMessage(error, t('shell.notifications.loadError')),
         )
       } finally {
         if (isMounted && showLoading) {
@@ -120,7 +121,7 @@ export function DashboardShell({
       window.removeEventListener(approvalNotificationsRefreshEvent, handleRefreshRequest)
       window.removeEventListener('focus', handleWindowFocus)
     }
-  }, [accessToken, isAdmin])
+  }, [accessToken, isAdmin, t])
 
   useEffect(() => {
     setIsNotificationsOpen(false)
@@ -142,7 +143,7 @@ export function DashboardShell({
       )
     } catch (error) {
       setNotificationErrorMessage(
-        getServiceOrdersErrorMessage(error, 'Unable to mark this approval notification as read.'),
+        getServiceOrdersErrorMessage(error, t('shell.notifications.markReadError')),
       )
     }
 
@@ -162,7 +163,7 @@ export function DashboardShell({
         <nav className="flex flex-col gap-1">
           {visibleNavItems.map((item) => (
             <NavLink
-              key={item.label}
+              key={item.labelKey}
               to={item.to}
               className={({ isActive }) =>
                 [
@@ -174,7 +175,7 @@ export function DashboardShell({
               }
             >
               <MaterialIcon name={item.icon} className="text-[20px]" />
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </NavLink>
           ))}
         </nav>
@@ -188,7 +189,7 @@ export function DashboardShell({
             className="flex w-full items-center gap-3 px-4 py-2 text-slate-600 transition-colors hover:text-error"
           >
             <MaterialIcon name="logout" className="text-lg" />
-            <span className="text-xs font-medium">Log out</span>
+            <span className="text-xs font-medium">{t('common.logOut')}</span>
           </button>
         </div>
       </aside>
@@ -206,7 +207,7 @@ export function DashboardShell({
             />
             <input
               type="text"
-              placeholder={searchPlaceholder}
+              placeholder={searchPlaceholder ?? t('common.searchRepairs')}
               className="w-56 rounded-full border-none bg-surface-container-low py-2 pl-10 pr-4 text-sm transition-all focus:ring-2 focus:ring-primary/20 lg:w-64"
             />
           </label>
@@ -246,10 +247,10 @@ export function DashboardShell({
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
-                          Workshop Alerts
+                          {t('shell.notifications.workshopAlerts')}
                         </p>
                         <h3 className="mt-1 text-lg font-headline font-extrabold text-slate-900">
-                          Customer approvals
+                          {t('shell.notifications.customerApprovals')}
                         </h3>
                       </div>
                       <span className="rounded-full bg-cyan-100 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.18em] text-cyan-700">
@@ -261,7 +262,7 @@ export function DashboardShell({
                   <div className="max-h-[28rem] overflow-y-auto p-3">
                     {isNotificationsLoading ? (
                       <div className="rounded-2xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                        Loading notifications...
+                        {t('shell.notifications.loading')}
                       </div>
                     ) : notificationErrorMessage ? (
                       <div className="rounded-2xl border border-error/15 bg-error/5 px-4 py-3 text-sm text-error">
@@ -269,7 +270,7 @@ export function DashboardShell({
                       </div>
                     ) : approvalNotifications.length === 0 ? (
                       <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                        No new customer approvals right now.
+                        {t('shell.notifications.empty')}
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -285,7 +286,9 @@ export function DashboardShell({
                             <div className="flex items-start justify-between gap-4">
                               <div>
                                 <p className="text-sm font-bold text-slate-900">
-                                  {notification.customerName} approved the work
+                                  {t('shell.notifications.approvedWork', {
+                                    customerName: notification.customerName,
+                                  })}
                                 </p>
                                 <p className="mt-1 text-sm text-slate-600">
                                   {notification.vehicleDisplayName} · {notification.licensePlate}
@@ -296,15 +299,19 @@ export function DashboardShell({
 
                             <div className="mt-3 space-y-1 text-xs font-medium text-slate-500">
                               <p>
-                                Approved at {notificationDateTimeFormatter.format(new Date(notification.customerApprovedAt))}
+                                {t('shell.notifications.approvedAt', {
+                                  date: notificationDateTimeFormatter.format(new Date(notification.customerApprovedAt)),
+                                })}
                               </p>
                               <p>
-                                Estimate total {notificationCurrencyFormatter.format(notification.estimatedTotalCost)}
+                                {t('shell.notifications.estimateTotal', {
+                                  amount: notificationCurrencyFormatter.format(notification.estimatedTotalCost),
+                                })}
                               </p>
                               <p className="line-clamp-2">
                                 {notification.requestedServices.length > 0
                                   ? notification.requestedServices.join(', ')
-                                  : 'Repair scope ready to start.'}
+                                  : t('shell.notifications.fallbackScope')}
                               </p>
                             </div>
                           </button>
@@ -321,6 +328,7 @@ export function DashboardShell({
             >
               <MaterialIcon name="settings" />
             </button>
+            <LanguageSwitcher />
           </div>
 
           <div className="hidden h-8 w-px bg-outline-variant/20 sm:block" />
@@ -331,7 +339,7 @@ export function DashboardShell({
                 {user?.fullName ?? 'Alex Sterling'}
               </p>
               <p className="text-[0.6875rem] font-medium text-on-surface-variant">
-                Premium Member
+                {t('shell.userRole')}
               </p>
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary-container bg-white font-headline text-xs font-bold uppercase text-primary shadow-sm">

@@ -1,5 +1,8 @@
+import type { TFunction } from 'i18next'
 import type { BookingDto } from '../../../apis/bookingApi'
 import { formatBookingReference } from '../../booking/lib/booking-api-helpers'
+
+type Translate = TFunction<'translation', undefined>
 
 export const serviceOrderStatusOptions = [
   { value: 1 as const, label: 'Pending', description: 'Request created and estimate can still be edited.' },
@@ -11,16 +14,16 @@ export const serviceOrderStatusOptions = [
   { value: 6 as const, label: 'Estimate Revision', description: 'Estimate was returned to diagnostics for revision.' },
 ] as const
 
-export function formatCurrency(value: number) {
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrency(value: number, locale = 'en-US') {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
   }).format(value)
 }
 
-export function formatBookingDate(value: string) {
-  return new Intl.DateTimeFormat('en-US', {
+export function formatBookingDate(value: string, locale = 'en-US') {
+  return new Intl.DateTimeFormat(locale, {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -36,72 +39,74 @@ export function getBookingCardTitle(booking: BookingDto) {
   return `Booking ${booking.id.slice(0, 8)}`
 }
 
-export function getBookingCardSubtitle(booking: BookingDto) {
+export function getBookingCardSubtitle(booking: BookingDto, t?: Translate) {
   if (booking.vehicle) {
-    return `${formatBookingReference(booking.id)} | ${booking.vehicle.licensePlate} | ${booking.vehicle.vin ?? 'VIN unavailable'}`
+    return `${formatBookingReference(booking.id)} | ${booking.vehicle.licensePlate} | ${booking.vehicle.vin ?? t?.('app.serviceOrder.vinUnavailable') ?? 'VIN unavailable'}`
   }
 
   return formatBookingReference(booking.id)
 }
 
-export function getBookingServicesLabel(booking: BookingDto) {
+export function getBookingServicesLabel(booking: BookingDto, t?: Translate) {
   if (booking.services.length === 0) {
-    return 'No booked services'
+    return t?.('app.serviceOrder.noBookedServices') ?? 'No booked services'
   }
 
   if (booking.services.length === 1) {
     return booking.services[0].name
   }
 
-  return `${booking.services[0].name} +${booking.services.length - 1} more`
+  return `${booking.services[0].name} ${t?.('app.serviceOrder.moreServices', { count: booking.services.length - 1 }) ?? `+${booking.services.length - 1} more`}`
 }
 
 export function isDiagnosticOnlyBooking(booking: BookingDto) {
   return booking.services.length > 0 && booking.services.every((service) => service.category === 1)
 }
 
-export function getBookingStatusLabel(status: number) {
+export function getBookingStatusLabel(status: number, t?: Translate) {
   switch (status) {
     case 1:
-      return 'Pending'
+      return t?.('app.status.pending') ?? 'Pending'
     case 2:
-      return 'Awaiting Approval'
+      return t?.('app.status.awaitingApproval') ?? 'Awaiting Approval'
     case 7:
-      return 'Approved'
+      return t?.('app.status.approved') ?? 'Approved'
     case 3:
-      return 'In Progress'
+      return t?.('app.status.inProgress') ?? 'In Progress'
     case 4:
-      return 'Completed'
+      return t?.('app.status.completed') ?? 'Completed'
     case 5:
-      return 'Cancelled'
+      return t?.('app.status.cancelled') ?? 'Cancelled'
     case 6:
-      return 'Estimate Revision'
+      return t?.('app.status.estimateRevision') ?? 'Estimate Revision'
     default:
-      return 'Unknown'
+      return t?.('app.status.unknown') ?? 'Unknown'
   }
 }
 
-export function getServiceOrderStatusLabel(status: number) {
-  return serviceOrderStatusOptions.find((option) => option.value === status)?.label ?? 'Unknown'
+export function getServiceOrderStatusLabel(status: number, t?: Translate) {
+  return getBookingStatusLabel(status, t)
 }
 
-export function getBookingPaymentMethodLabel(paymentOption: number) {
-  return paymentOption === 1 ? 'Online checkout' : 'Pay at shop'
+export function getBookingPaymentMethodLabel(paymentOption: number, t?: Translate) {
+  return paymentOption === 1
+    ? t?.('app.serviceOrder.onlineCheckout') ?? 'Online checkout'
+    : t?.('app.serviceOrder.payAtShop') ?? 'Pay at shop'
 }
 
-export function getBookingSettlementLabel(booking: BookingDto) {
+export function getBookingSettlementLabel(booking: BookingDto, t?: Translate) {
   switch (booking.status) {
     case 4:
       return booking.paymentOption === 1
-        ? 'Online checkout selected'
-        : 'Collect payment at pickup'
+        ? t?.('app.serviceOrder.onlineCheckoutSelected') ?? 'Online checkout selected'
+        : t?.('app.serviceOrder.collectPaymentAtPickup') ?? 'Collect payment at pickup'
     case 7:
-      return 'Approved, waiting for repair start'
+      return t?.('app.serviceOrder.approvedWaitingRepair') ?? 'Approved, waiting for repair start'
     case 3:
-      return 'Repair in progress, settlement pending'
+      return t?.('app.serviceOrder.repairInProgressSettlementPending') ?? 'Repair in progress, settlement pending'
     case 2:
-      return 'Estimate not approved yet'
+      return t?.('app.serviceOrder.estimateNotApprovedYet') ?? 'Estimate not approved yet'
     default:
-      return 'Settlement not ready yet'
+      return t?.('app.serviceOrder.settlementNotReady') ?? 'Settlement not ready yet'
   }
 }

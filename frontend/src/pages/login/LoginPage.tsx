@@ -1,12 +1,16 @@
+import { useTranslation } from 'react-i18next'
+
 import { LoginForm } from '../../features/auth/components/LoginForm'
 import { AuthShell } from '../../widgets/auth-shell/AuthShell'
 
 export function LoginPage() {
+  const { t } = useTranslation()
+
   return (
     <AuthShell
-      eyebrow="Member Access"
-      title="Return to your AUTOFIX dashboard."
-      description="Sign in to manage bookings, review estimates, and continue through the atelier workflow."
+      eyebrow={t('auth.loginPage.eyebrow')}
+      title={t('auth.loginPage.title')}
+      description={t('auth.loginPage.description')}
     >
       <LoginForm />
     </AuthShell>

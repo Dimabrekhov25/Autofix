@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { getAuthErrorMessage } from '../../../apis/authApi'
@@ -11,6 +12,7 @@ import { GoogleSignInCard } from './GoogleSignInCard'
 import { createInitialRegisterForm, toRegisterPayload, type RegisterFormModel } from '../types/register'
 
 export function RegisterForm() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { loginWithGoogle, register } = useAuth()
   const [form, setForm] = useState<RegisterFormModel>(() => createInitialRegisterForm())
@@ -27,31 +29,31 @@ export function RegisterForm() {
 
   function validateForm() {
     if (!form.fullName.trim() || !form.email.trim()) {
-      return 'Fill in your full name and email address.'
+      return t('auth.register.validationNameEmail')
     }
 
     if (form.password !== form.confirmPassword) {
-      return 'Passwords do not match.'
+      return t('auth.register.validationPasswordMismatch')
     }
 
     if (form.password.length < 12) {
-      return 'Password must be at least 12 characters long.'
+      return t('auth.register.validationPasswordLength')
     }
 
     if (!/[A-Z]/.test(form.password)) {
-      return 'Password must include at least one uppercase letter.'
+      return t('auth.register.validationPasswordUppercase')
     }
 
     if (!/[a-z]/.test(form.password)) {
-      return 'Password must include at least one lowercase letter.'
+      return t('auth.register.validationPasswordLowercase')
     }
 
     if (!/[0-9]/.test(form.password)) {
-      return 'Password must include at least one number.'
+      return t('auth.register.validationPasswordNumber')
     }
 
     if (!/[^a-zA-Z0-9]/.test(form.password)) {
-      return 'Password must include at least one special character.'
+      return t('auth.register.validationPasswordSpecial')
     }
 
     return null
@@ -73,7 +75,7 @@ export function RegisterForm() {
       await register(toRegisterPayload(form))
       navigate(APP_ROUTES.dashboard)
     } catch (error) {
-      setErrorMessage(getAuthErrorMessage(error, 'Unable to create the account right now.'))
+      setErrorMessage(getAuthErrorMessage(error, t('auth.register.failed')))
     } finally {
       setIsSubmitting(false)
     }
@@ -87,7 +89,7 @@ export function RegisterForm() {
       await loginWithGoogle(idToken)
       navigate(APP_ROUTES.dashboard)
     } catch (error) {
-      setErrorMessage(getAuthErrorMessage(error, 'Google registration failed.'))
+      setErrorMessage(getAuthErrorMessage(error, t('auth.register.googleFailed')))
     } finally {
       setIsSubmitting(false)
     }
@@ -97,10 +99,10 @@ export function RegisterForm() {
     <form className="space-y-6" onSubmit={handleSubmit}>
       <div className="mb-10">
         <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-primary">
-          Register
+          {t('auth.register.eyebrow')}
         </p>
         <h2 className="mt-3 text-3xl font-headline font-bold text-on-background">
-          Build your AUTOFIX account
+          {t('auth.register.title')}
         </h2>
       </div>
 
@@ -113,7 +115,7 @@ export function RegisterForm() {
       <div className="relative flex items-center justify-center py-1">
         <div className="absolute inset-x-0 h-px bg-outline-variant/20" />
         <span className="relative bg-surface-container-lowest px-3 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-          Or create with email
+          {t('auth.register.separator')}
         </span>
       </div>
 
@@ -127,17 +129,17 @@ export function RegisterForm() {
         <TextField
           autoComplete="name"
           disabled={isSubmitting}
-          label="Full Name"
-          placeholder="John Doe"
+          label={t('auth.register.fullNameLabel')}
+          placeholder={t('auth.register.fullNamePlaceholder')}
           value={form.fullName}
           onChange={(event) => updateField('fullName', event.target.value)}
         />
         <TextField
           autoComplete="email"
           disabled={isSubmitting}
-          label="Email Address"
+          label={t('auth.register.emailLabel')}
           type="email"
-          placeholder="john@example.com"
+          placeholder={t('auth.register.emailPlaceholder')}
           value={form.email}
           onChange={(event) => updateField('email', event.target.value)}
         />
@@ -147,14 +149,14 @@ export function RegisterForm() {
         <TextField
           autoComplete="new-password"
           disabled={isSubmitting}
-          label="Password"
+          label={t('auth.register.passwordLabel')}
           type={showPassword ? 'text' : 'password'}
-          placeholder="At least 12 characters"
+          placeholder={t('auth.register.passwordPlaceholder')}
           value={form.password}
           onChange={(event) => updateField('password', event.target.value)}
           trailingAction={
             <button
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-label={showPassword ? t('auth.login.hidePassword') : t('auth.login.showPassword')}
               type="button"
               onClick={() => setShowPassword((value) => !value)}
               className="inline-flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant transition hover:bg-white/70 hover:text-on-surface"
@@ -169,7 +171,7 @@ export function RegisterForm() {
         <TextField
           autoComplete="new-password"
           disabled={isSubmitting}
-          label="Confirm Password"
+          label={t('auth.register.confirmPasswordLabel')}
           type={showPassword ? 'text' : 'password'}
           placeholder="********"
           value={form.confirmPassword}
@@ -179,22 +181,21 @@ export function RegisterForm() {
 
       <section className="rounded-[1.4rem] border border-outline-variant/20 bg-surface-container-low px-5 py-4">
         <p className="text-sm font-headline font-bold text-on-background">
-          Password requirements
+          {t('auth.register.requirementsTitle')}
         </p>
         <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-          Use at least 12 characters with uppercase, lowercase, number, and special symbol to
-          meet password requirements.
+          {t('auth.register.requirementsDescription')}
         </p>
       </section>
 
       <Button type="submit" className="w-full">
-        {isSubmitting ? 'Creating Account...' : 'Register'}
+        {isSubmitting ? t('auth.register.submitting') : t('auth.register.submit')}
       </Button>
 
       <p className="text-center text-sm text-on-surface-variant">
-        Already have an account?{' '}
+        {t('auth.register.alreadyHaveAccount')}{' '}
         <Link className="font-bold text-primary hover:underline" to={APP_ROUTES.login}>
-          Log in
+          {t('auth.register.logIn')}
         </Link>
       </p>
     </form>
