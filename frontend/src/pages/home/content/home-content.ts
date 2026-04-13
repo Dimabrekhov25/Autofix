@@ -74,13 +74,13 @@ export const homePageContent = {
       {
         title: 'Service Tracking',
         description:
-          'Live updates from the shop floor show which stage your repair is in and who owns it.',
+          'Real-time updates from the workshop show the current repair stage and responsible specialist.',
         icon: 'tracking',
       },
       {
         title: 'Digital Service History',
         description:
-          'A structured maintenance timeline that can later be replaced by a connected backend feed.',
+          'A clear maintenance timeline your team and customers can review anytime.',
         icon: 'history',
       },
     ],

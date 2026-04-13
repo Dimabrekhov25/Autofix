@@ -11,5 +11,6 @@ public sealed record CreateServiceCatalogItemCommand(
     decimal BasePrice,
     decimal EstimatedLaborCost,
     TimeSpan EstimatedDuration,
-    bool IsActive = true
+    bool IsActive = true,
+    IReadOnlyList<ServiceCatalogRequiredPartInputDto>? RequiredParts = null
 ) : IRequest<ServiceCatalogItemDto>;

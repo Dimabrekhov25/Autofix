@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
@@ -9,13 +10,17 @@ import { useAuth } from '../../features/auth/useAuth'
 import { BrandHomeLink } from '../../shared/ui/BrandHomeLink'
 import { Button } from '../../shared/ui/Button'
 import { Container } from '../../shared/ui/Container'
+import { LanguageSwitcher } from '../../shared/i18n/LanguageSwitcher'
 import { ServicesDropdown } from './ServicesDropdown'
 
 export function SiteHeader() {
+  const { t } = useTranslation()
   const location = useLocation()
   const { isAuthenticated, logout, user } = useAuth()
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement | null>(null)
+  const desktopNavItemClass =
+    'font-heading text-sm font-bold tracking-tight text-slate-600 transition-colors duration-300 hover:text-slate-900'
 
   useEffect(() => {
     if (!isProfileMenuOpen) {
@@ -45,10 +50,10 @@ export function SiteHeader() {
 
   return (
     <header className="glass-nav fixed inset-x-0 top-0 z-50">
-      <Container className="flex items-center justify-between gap-6 py-4">
+      <Container className="relative flex items-center justify-between gap-6 py-4">
         <BrandHomeLink brandClassName="relative font-heading text-2xl font-black tracking-[-0.08em] text-slate-900" />
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
           {siteNavigation.map((item) => {
             const matchesPath = item.matchPaths?.includes(location.pathname) ?? false
             const matchesHash = item.matchHashes
@@ -62,6 +67,7 @@ export function SiteHeader() {
                   key={item.label}
                   isActive={isActive}
                   to={item.to}
+                  triggerClassName={desktopNavItemClass}
                 />
               )
             }
@@ -71,18 +77,20 @@ export function SiteHeader() {
                 key={item.label}
                 to={item.to}
                 className={cn(
-                  'font-heading text-sm font-bold tracking-tight text-slate-600 transition-colors duration-300 hover:text-slate-900',
-                  isActive && 'border-b-2 border-cyan-500 pb-1 text-cyan-600',
+                  desktopNavItemClass,
+                  isActive && 'border-b-2 border-primary/85 pb-1 text-primary',
                 )}
               >
-                {item.label}
+                {t(`site.nav.${item.label.toLowerCase()}`)}
               </Link>
             )
           })}
         </nav>
 
         {isAuthenticated && user ? (
-          <div className="relative" ref={profileMenuRef}>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher className="hidden sm:inline-flex" />
+            <div className="relative" ref={profileMenuRef}>
             <button
               type="button"
               aria-expanded={isProfileMenuOpen}
@@ -112,7 +120,7 @@ export function SiteHeader() {
                   to={APP_ROUTES.dashboard}
                 >
                   <MaterialIcon className="text-[1.15rem] text-primary" name="dashboard" />
-                  <span>Dashboard</span>
+                  <span>{t('common.dashboard')}</span>
                 </Link>
                 <button
                   className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100/80 hover:text-error"
@@ -124,15 +132,19 @@ export function SiteHeader() {
                   type="button"
                 >
                   <MaterialIcon className="text-[1.15rem]" name="logout" />
-                  <span>Sign Out</span>
+                  <span>{t('common.logOut')}</span>
                 </button>
               </div>
             ) : null}
+            </div>
           </div>
         ) : (
-          <Button to={APP_ROUTES.login} tone="secondary">
-            Log In
-          </Button>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher className="hidden sm:inline-flex" />
+            <Button to={APP_ROUTES.login} tone="secondary">
+              {t('common.logIn')}
+            </Button>
+          </div>
         )}
       </Container>
     </header>

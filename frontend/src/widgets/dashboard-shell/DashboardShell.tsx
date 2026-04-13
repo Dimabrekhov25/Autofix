@@ -1,9 +1,17 @@
-import type { PropsWithChildren } from 'react'
-import { NavLink } from 'react-router-dom'
+import { type PropsWithChildren, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 
+import {
+  getCustomerApprovalNotificationsRequest,
+  getServiceOrdersErrorMessage,
+  markCustomerApprovalNotificationReadRequest,
+  type ServiceOrderApprovalNotificationDto,
+} from '../../apis/serviceOrdersApi'
 import { useAuth } from '../../features/auth/useAuth'
 import { isAdminUser } from '../../features/auth/auth-types'
 import { APP_ROUTES } from '../../shared/config/routes'
+import { LanguageSwitcher } from '../../shared/i18n/LanguageSwitcher'
 import { BrandHomeLink } from '../../shared/ui/BrandHomeLink'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 
@@ -12,21 +20,136 @@ interface DashboardShellProps extends PropsWithChildren {
 }
 
 const dashboardNavItems = [
-  { label: 'Dashboard', to: APP_ROUTES.dashboard, icon: 'dashboard', adminOnly: false },
-  { label: 'Diagnostic', to: APP_ROUTES.diagnostics, icon: 'build', adminOnly: true },
-  { label: 'Inventory', to: APP_ROUTES.inventory, icon: 'inventory_2', adminOnly: true },
-  { label: 'Parts Catalog', to: APP_ROUTES.partsCatalog, icon: 'settings_suggest', adminOnly: true },
-  { label: 'Booking', to: APP_ROUTES.booking, icon: 'event', adminOnly: false },
-  { label: 'Services', to: APP_ROUTES.services, icon: 'settings', adminOnly: false },
+  { labelKey: 'shell.nav.dashboard', to: APP_ROUTES.dashboard, icon: 'dashboard', adminOnly: false },
+  { labelKey: 'shell.nav.diagnostic', to: APP_ROUTES.diagnostics, icon: 'build', adminOnly: true },
+  { labelKey: 'shell.nav.awaitingCustomer', to: APP_ROUTES.awaitingCustomer, icon: 'schedule', adminOnly: true },
+  { labelKey: 'shell.nav.activeJobs', to: APP_ROUTES.activeJobs, icon: 'directions_car', adminOnly: true },
+  { labelKey: 'shell.nav.inventory', to: APP_ROUTES.inventory, icon: 'inventory_2', adminOnly: true },
+  { labelKey: 'shell.nav.partsCatalog', to: APP_ROUTES.partsCatalog, icon: 'settings_suggest', adminOnly: true },
+  { labelKey: 'shell.nav.booking', to: APP_ROUTES.booking, icon: 'event', adminOnly: false },
+  { labelKey: 'shell.nav.services', to: APP_ROUTES.services, icon: 'settings', adminOnly: false },
 ] as const
+
+const approvalNotificationsRefreshEvent = 'autofix:refresh-approval-notifications'
 
 export function DashboardShell({
   children,
-  searchPlaceholder = 'Search repairs or vehicles...',
+  searchPlaceholder,
 }: DashboardShellProps) {
-  const { logout, user } = useAuth()
+  const { i18n, t } = useTranslation()
+  const { logout, tokens, user } = useAuth()
   const isAdmin = isAdminUser(user)
   const visibleNavItems = dashboardNavItems.filter((item) => !item.adminOnly || isAdmin)
+  const accessToken = tokens?.accessToken
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false)
+  const [notificationErrorMessage, setNotificationErrorMessage] = useState<string | null>(null)
+  const [approvalNotifications, setApprovalNotifications] = useState<ServiceOrderApprovalNotificationDto[]>([])
+  const notificationDateTimeFormatter = new Intl.DateTimeFormat(i18n.language, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  const notificationCurrencyFormatter = new Intl.NumberFormat(i18n.language, {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+  })
+
+  useEffect(() => {
+    if (!isAdmin || !accessToken) {
+      setApprovalNotifications([])
+      setNotificationErrorMessage(null)
+      setIsNotificationsLoading(false)
+      return
+    }
+
+    let isMounted = true
+
+    async function loadNotifications(showLoading: boolean) {
+      if (showLoading) {
+        setIsNotificationsLoading(true)
+      }
+
+      try {
+        const nextNotifications = await getCustomerApprovalNotificationsRequest(accessToken)
+
+        if (!isMounted) {
+          return
+        }
+
+        setApprovalNotifications(nextNotifications)
+        setNotificationErrorMessage(null)
+      } catch (error) {
+        if (!isMounted) {
+          return
+        }
+
+        setNotificationErrorMessage(
+          getServiceOrdersErrorMessage(error, t('shell.notifications.loadError')),
+        )
+      } finally {
+        if (isMounted && showLoading) {
+          setIsNotificationsLoading(false)
+        }
+      }
+    }
+
+    void loadNotifications(true)
+
+    const intervalId = window.setInterval(() => {
+      void loadNotifications(false)
+    }, 10000)
+
+    const handleRefreshRequest = () => {
+      void loadNotifications(false)
+    }
+
+    const handleWindowFocus = () => {
+      void loadNotifications(false)
+    }
+
+    window.addEventListener(approvalNotificationsRefreshEvent, handleRefreshRequest)
+    window.addEventListener('focus', handleWindowFocus)
+
+    return () => {
+      isMounted = false
+      window.clearInterval(intervalId)
+      window.removeEventListener(approvalNotificationsRefreshEvent, handleRefreshRequest)
+      window.removeEventListener('focus', handleWindowFocus)
+    }
+  }, [accessToken, isAdmin, t])
+
+  useEffect(() => {
+    setIsNotificationsOpen(false)
+  }, [location.pathname, location.search])
+
+  async function handleNotificationClick(notification: ServiceOrderApprovalNotificationDto) {
+    if (!accessToken) {
+      return
+    }
+
+    setNotificationErrorMessage(null)
+
+    try {
+      await markCustomerApprovalNotificationReadRequest(notification.serviceOrderId, accessToken)
+      setApprovalNotifications((currentNotifications) =>
+        currentNotifications.filter(
+          (currentNotification) => currentNotification.serviceOrderId !== notification.serviceOrderId,
+        ),
+      )
+    } catch (error) {
+      setNotificationErrorMessage(
+        getServiceOrdersErrorMessage(error, t('shell.notifications.markReadError')),
+      )
+    }
+
+    navigate(`${APP_ROUTES.activeJobs}?bookingId=${notification.bookingId}`)
+    setIsNotificationsOpen(false)
+  }
 
   return (
     <div className="min-h-screen bg-surface text-on-background">
@@ -40,7 +163,7 @@ export function DashboardShell({
         <nav className="flex flex-col gap-1">
           {visibleNavItems.map((item) => (
             <NavLink
-              key={item.label}
+              key={item.labelKey}
               to={item.to}
               className={({ isActive }) =>
                 [
@@ -52,7 +175,7 @@ export function DashboardShell({
               }
             >
               <MaterialIcon name={item.icon} className="text-[20px]" />
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </NavLink>
           ))}
         </nav>
@@ -66,7 +189,7 @@ export function DashboardShell({
             className="flex w-full items-center gap-3 px-4 py-2 text-slate-600 transition-colors hover:text-error"
           >
             <MaterialIcon name="logout" className="text-lg" />
-            <span className="text-xs font-medium">Logout</span>
+            <span className="text-xs font-medium">{t('common.logOut')}</span>
           </button>
         </div>
       </aside>
@@ -84,7 +207,7 @@ export function DashboardShell({
             />
             <input
               type="text"
-              placeholder={searchPlaceholder}
+              placeholder={searchPlaceholder ?? t('common.searchRepairs')}
               className="w-56 rounded-full border-none bg-surface-container-low py-2 pl-10 pr-4 text-sm transition-all focus:ring-2 focus:ring-primary/20 lg:w-64"
             />
           </label>
@@ -92,19 +215,120 @@ export function DashboardShell({
 
         <div className="flex items-center gap-6">
           <div className="hidden items-center gap-2 sm:flex">
-            <button
-              type="button"
-              className="relative rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100/50"
-            >
-              <MaterialIcon name="notifications" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-secondary" />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                aria-haspopup={isAdmin ? 'dialog' : undefined}
+                aria-expanded={isAdmin ? isNotificationsOpen : undefined}
+                onClick={() => {
+                  if (!isAdmin) {
+                    return
+                  }
+
+                  if (!isNotificationsOpen) {
+                    window.dispatchEvent(new Event(approvalNotificationsRefreshEvent))
+                  }
+
+                  setIsNotificationsOpen((currentValue) => !currentValue)
+                }}
+                className="relative rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100/50"
+              >
+                <MaterialIcon name="notifications" />
+                {approvalNotifications.length > 0 ? (
+                  <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1 text-[0.625rem] font-black text-white">
+                    {approvalNotifications.length > 9 ? '9+' : approvalNotifications.length}
+                  </span>
+                ) : null}
+              </button>
+
+              {isAdmin && isNotificationsOpen ? (
+                <div className="absolute right-0 top-14 z-[60] w-[24rem] overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-2xl">
+                  <div className="border-b border-slate-100 px-5 py-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-slate-400">
+                          {t('shell.notifications.workshopAlerts')}
+                        </p>
+                        <h3 className="mt-1 text-lg font-headline font-extrabold text-slate-900">
+                          {t('shell.notifications.customerApprovals')}
+                        </h3>
+                      </div>
+                      <span className="rounded-full bg-cyan-100 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.18em] text-cyan-700">
+                        {approvalNotifications.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="max-h-[28rem] overflow-y-auto p-3">
+                    {isNotificationsLoading ? (
+                      <div className="rounded-2xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                        {t('shell.notifications.loading')}
+                      </div>
+                    ) : notificationErrorMessage ? (
+                      <div className="rounded-2xl border border-error/15 bg-error/5 px-4 py-3 text-sm text-error">
+                        {notificationErrorMessage}
+                      </div>
+                    ) : approvalNotifications.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                        {t('shell.notifications.empty')}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {approvalNotifications.map((notification) => (
+                          <button
+                            key={notification.serviceOrderId}
+                            type="button"
+                            onClick={() => {
+                              void handleNotificationClick(notification)
+                            }}
+                            className="w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-left transition-all hover:border-cyan-200 hover:bg-cyan-50/40"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <p className="text-sm font-bold text-slate-900">
+                                  {t('shell.notifications.approvedWork', {
+                                    customerName: notification.customerName,
+                                  })}
+                                </p>
+                                <p className="mt-1 text-sm text-slate-600">
+                                  {notification.vehicleDisplayName} · {notification.licensePlate}
+                                </p>
+                              </div>
+                              <MaterialIcon name="notifications_active" className="text-xl text-cyan-600" />
+                            </div>
+
+                            <div className="mt-3 space-y-1 text-xs font-medium text-slate-500">
+                              <p>
+                                {t('shell.notifications.approvedAt', {
+                                  date: notificationDateTimeFormatter.format(new Date(notification.customerApprovedAt)),
+                                })}
+                              </p>
+                              <p>
+                                {t('shell.notifications.estimateTotal', {
+                                  amount: notificationCurrencyFormatter.format(notification.estimatedTotalCost),
+                                })}
+                              </p>
+                              <p className="line-clamp-2">
+                                {notification.requestedServices.length > 0
+                                  ? notification.requestedServices.join(', ')
+                                  : t('shell.notifications.fallbackScope')}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
             <button
               type="button"
               className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100/50"
             >
               <MaterialIcon name="settings" />
             </button>
+            <LanguageSwitcher />
           </div>
 
           <div className="hidden h-8 w-px bg-outline-variant/20 sm:block" />
@@ -115,7 +339,7 @@ export function DashboardShell({
                 {user?.fullName ?? 'Alex Sterling'}
               </p>
               <p className="text-[0.6875rem] font-medium text-on-surface-variant">
-                Premium Member
+                {t('shell.userRole')}
               </p>
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary-container bg-white font-headline text-xs font-bold uppercase text-primary shadow-sm">

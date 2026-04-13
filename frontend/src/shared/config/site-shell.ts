@@ -29,7 +29,6 @@ export const siteNavigation: NavItem[] = [
     matchPaths: [APP_ROUTES.home],
     matchHashes: ['#workflow'],
   },
-  { label: 'Register', to: APP_ROUTES.register, matchPaths: [APP_ROUTES.register] },
 ]
 
 export const siteFooterColumns: FooterColumnContent[] = [

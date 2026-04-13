@@ -1,4 +1,5 @@
 using Autofix.Domain.Entities.Booking;
+using Autofix.Domain.Enum;
 
 namespace Autofix.Application.Common.Interfaces;
 
@@ -11,6 +12,10 @@ public interface IBookingRepository
         Guid? vehicleId,
         CancellationToken cancellationToken);
     Task UpdateAsync(Booking booking, CancellationToken cancellationToken);
+    Task<Booking?> UpdatePaymentOptionAsync(
+        Guid id,
+        BookingPaymentOption paymentOption,
+        CancellationToken cancellationToken);
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
     Task<bool> HasOverlappingBookingAsync(
         Guid vehicleId,

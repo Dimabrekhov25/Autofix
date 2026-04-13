@@ -2,6 +2,7 @@ using Autofix.Application.Bookings.Dtos;
 using Autofix.Application.Bookings.Mapping;
 using Autofix.Application.Bookings.Services;
 using Autofix.Application.Common.Interfaces;
+using Autofix.Application.Common.Interfaces.Bookings;
 using Autofix.Application.Common.Interfaces.BookingFlow;
 using Autofix.Domain.Entities.Booking;
 using Autofix.Domain.Enum;
@@ -12,6 +13,7 @@ namespace Autofix.Application.Bookings.Commands.CreateBooking;
 
 public sealed class CreateBookingHandler(
     IBookingRepository bookingRepository,
+    IBookingLifecycleService bookingLifecycleService,
     IBookingTimeSlotRepository bookingTimeSlotRepository,
     ICustomerRepository customerRepository,
     IVehicleRepository vehicleRepository,
@@ -78,7 +80,7 @@ public sealed class CreateBookingHandler(
             BookingTimeSlotId = timeSlot.Id,
             StartAt = timeSlot.StartAt,
             EndAt = endAt,
-            Status = BookingStatus.Created,
+            Status = BookingStatus.Pending,
             PaymentOption = request.PaymentOption,
             Currency = pricing.Currency,
             Subtotal = pricing.Subtotal,
@@ -89,7 +91,7 @@ public sealed class CreateBookingHandler(
             Services = BookingFlowCalculator.CreateSnapshots(services)
         };
 
-        var saved = await bookingRepository.AddAsync(booking, cancellationToken);
+        var saved = await bookingLifecycleService.CreateAsync(booking, services, cancellationToken);
         return saved.ToDto();
     }
 

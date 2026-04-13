@@ -12,5 +12,6 @@ public sealed record UpdateServiceCatalogItemCommand(
     decimal BasePrice,
     decimal EstimatedLaborCost,
     TimeSpan EstimatedDuration,
-    bool IsActive
+    bool IsActive,
+    IReadOnlyList<ServiceCatalogRequiredPartInputDto>? RequiredParts = null
 ) : IRequest<ServiceCatalogItemDto?>;

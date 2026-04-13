@@ -20,6 +20,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<BookingTimeSlot> BookingTimeSlots => Set<BookingTimeSlot>();
     public DbSet<BookingServiceItem> BookingServiceItems => Set<BookingServiceItem>();
     public DbSet<ServiceCatalogItem> ServiceCatalogItems => Set<ServiceCatalogItem>();
+    public DbSet<ServiceCatalogPartRequirement> ServiceCatalogPartRequirements => Set<ServiceCatalogPartRequirement>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceLineItem> InvoiceLineItems => Set<InvoiceLineItem>();
     public DbSet<Payment> Payments => Set<Payment>();

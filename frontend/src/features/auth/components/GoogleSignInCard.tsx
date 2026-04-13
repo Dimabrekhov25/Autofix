@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { GoogleCredentialResponse } from '../google-identity'
 
@@ -76,6 +77,7 @@ export function GoogleSignInCard({
   disabled = false,
   onCredential,
 }: GoogleSignInCardProps) {
+  const { i18n, t } = useTranslation()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const buttonMountRef = useRef<HTMLDivElement | null>(null)
   const [buttonWidth, setButtonWidth] = useState(0)
@@ -86,22 +88,22 @@ export function GoogleSignInCard({
     () =>
       mode === 'login'
         ? {
-            title: 'Continue with Google',
-            description: 'Use your Google account for a faster sign-in experience.',
+            title: t('auth.google.loginTitle'),
+            description: t('auth.google.loginDescription'),
             text: 'continue_with' as const,
             context: 'signin' as const,
-            fallbackLabel: 'Continue with Google',
-            fallbackDescription: 'Google sign-in will appear here once the project configuration is complete.',
+            fallbackLabel: t('auth.google.loginFallback'),
+            fallbackDescription: t('auth.google.loginFallbackDescription'),
           }
         : {
-            title: 'Create your account with Google',
-            description: 'Skip manual sign-up and enter the platform in a single step.',
+            title: t('auth.google.registerTitle'),
+            description: t('auth.google.registerDescription'),
             text: 'signup_with' as const,
             context: 'signup' as const,
-            fallbackLabel: 'Sign up with Google',
-            fallbackDescription: 'Google sign-up will appear here once the project configuration is complete.',
+            fallbackLabel: t('auth.google.registerFallback'),
+            fallbackDescription: t('auth.google.registerFallbackDescription'),
           },
-    [mode],
+    [mode, t],
   )
 
   const handleCredential = useEffectEvent(async (response: GoogleCredentialResponse) => {
@@ -177,14 +179,14 @@ export function GoogleSignInCard({
       text: contextCopy.text,
       shape: 'pill',
       logo_alignment: 'left',
-      locale: 'en',
+      locale: i18n.resolvedLanguage,
       width: Math.max(buttonWidth - 32, 240),
     })
 
     return () => {
       window.google?.accounts.id.cancel()
     }
-  }, [buttonWidth, clientId, contextCopy.context, contextCopy.text, isScriptReady])
+  }, [buttonWidth, clientId, contextCopy.context, contextCopy.text, i18n.resolvedLanguage, isScriptReady])
 
   return (
     <section ref={containerRef} className="space-y-4">

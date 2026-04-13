@@ -1,12 +1,19 @@
 using Autofix.Api.Models;
+using Autofix.Application.Bookings.Commands.ApproveBookingEstimate;
 using Autofix.Application.Bookings.Commands.CreateBooking;
 using Autofix.Application.Bookings.Commands.DeleteBooking;
+using Autofix.Application.Bookings.Commands.RequestBookingChanges;
 using Autofix.Application.Bookings.Commands.UpdateBooking;
+using Autofix.Application.Bookings.Commands.UpdateBookingPaymentOption;
+using Autofix.Application.Bookings.Commands.UpdateBookingServiceOrderStatus;
 using Autofix.Application.Bookings.Queries.GetAvailableBookingSlots;
 using Autofix.Application.Bookings.Queries.GetBookingById;
 using Autofix.Application.Bookings.Queries.GetBookingQuote;
+using Autofix.Application.Bookings.Queries.GetCurrentUserBookings;
 using Autofix.Application.Bookings.Queries.GetBookings;
+using Autofix.Application.Common.Security;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Autofix.Api.Controllers;
@@ -24,6 +31,14 @@ public sealed class BookingsController(IMediator mediator) : BaseController
     public async Task<IActionResult> GetAll([FromQuery] GetBookingsQuery query, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(query, cancellationToken);
+        return OkResult(result);
+    }
+
+    [Authorize(Policy = PolicyNames.ActiveUser)]
+    [HttpGet("my")]
+    public async Task<IActionResult> GetMyBookings(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetCurrentUserBookingsQuery(), cancellationToken);
         return OkResult(result);
     }
 
@@ -90,5 +105,77 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         }
 
         return OkResult(new { });
+    }
+
+    [Authorize(Policy = PolicyNames.ActiveUser)]
+    [HttpPost("{id:guid}/approve-estimate")]
+    public async Task<IActionResult> ApproveEstimate(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new ApproveBookingEstimateCommand(id), cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(ApiResult.Failure($"Booking {id} not found"));
+        }
+
+        return OkResult(result);
+    }
+
+    [Authorize(Policy = PolicyNames.ActiveUser)]
+    [HttpPost("{id:guid}/request-changes")]
+    public async Task<IActionResult> RequestChanges(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new RequestBookingChangesCommand(id), cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(ApiResult.Failure($"Booking {id} not found"));
+        }
+
+        return OkResult(result);
+    }
+
+    [Authorize(Policy = PolicyNames.ActiveUser)]
+    [HttpPut("{id:guid}/payment-option")]
+    public async Task<IActionResult> UpdatePaymentOption(
+        Guid id,
+        [FromBody] UpdateBookingPaymentOptionCommand command,
+        CancellationToken cancellationToken)
+    {
+        if (id != command.Id)
+        {
+            return BadRequestResult("Route id does not match body id.");
+        }
+
+        var result = await mediator.Send(command, cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(ApiResult.Failure($"Booking {id} not found"));
+        }
+
+        return OkResult(result);
+    }
+
+    [Authorize(Policy = PolicyNames.AdminOnly)]
+    [HttpPut("{id:guid}/service-order-status")]
+    public async Task<IActionResult> UpdateServiceOrderStatus(
+        Guid id,
+        [FromBody] UpdateBookingServiceOrderStatusCommand command,
+        CancellationToken cancellationToken)
+    {
+        if (id != command.Id)
+        {
+            return BadRequestResult("Route id does not match body id.");
+        }
+
+        var result = await mediator.Send(command, cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(ApiResult.Failure($"Booking {id} not found"));
+        }
+
+        return OkResult(result);
     }
 }

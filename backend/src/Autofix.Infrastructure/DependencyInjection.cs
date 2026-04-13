@@ -2,7 +2,9 @@ using System.Security.Claims;
 using System.Text;
 using Autofix.Application.Common.Interfaces;
 using Autofix.Application.Common.Interfaces.Auth;
+using Autofix.Application.Common.Interfaces.Bookings;
 using Autofix.Application.Common.Interfaces.BookingFlow;
+using Autofix.Application.Common.Interfaces.ServiceOrders;
 using Autofix.Application.Common.Security;
 using Autofix.Domain.Constants;
 using Autofix.Infrastructure.Auth;
@@ -12,6 +14,7 @@ using Autofix.Infrastructure.Auth.Options;
 using Autofix.Infrastructure.Options;
 using Autofix.Infrastructure.Persistance;
 using Autofix.Infrastructure.Persistance.Repositories;
+using Autofix.Infrastructure.Persistance.Services;
 using Autofix.Infrastructure.Persistance.Seed;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -136,9 +139,12 @@ public static class DependencyInjection
         builder.Services.AddScoped<IServiceCatalogRepository, ServiceCatalogRepository>();
         builder.Services.AddScoped<IBookingRepository, BookingRepository>();
         builder.Services.AddScoped<IBookingTimeSlotRepository, BookingTimeSlotRepository>();
+        builder.Services.AddScoped<IServiceOrderRepository, ServiceOrderRepository>();
         builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
         builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+        builder.Services.AddScoped<IBookingLifecycleService, BookingLifecycleService>();
+        builder.Services.AddScoped<IServiceOrderManagementService, ServiceOrderManagementService>();
         builder.Services.AddSingleton<IBookingFlowSettings, BookingFlowSettings>();
     }
 

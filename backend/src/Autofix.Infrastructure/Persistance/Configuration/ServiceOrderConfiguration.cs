@@ -14,8 +14,12 @@ public sealed class ServiceOrderConfiguration : IEntityTypeConfiguration<Service
         builder.HasKey(x => x.Id);
 
         builder.HasOne<Booking>(x => x.Booking)
-            .WithMany()
-            .HasForeignKey(x => x.BookingId);
+            .WithOne(x => x.ServiceOrder)
+            .HasForeignKey<ServiceOrder>(x => x.BookingId);
+
+        builder.HasIndex(x => x.BookingId)
+            .IsUnique()
+            .HasFilter("\"is_deleted\" = false");
 
         builder.HasOne<Customer>(x => x.Customer)
             .WithMany()

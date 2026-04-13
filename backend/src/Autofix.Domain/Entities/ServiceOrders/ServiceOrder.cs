@@ -16,7 +16,9 @@ public sealed class ServiceOrder : BaseEntity
     public Vehicle? Vehicle { get; set; }
     public Guid? MechanicId { get; set; }
     public Employee? Mechanic { get; set; }
-    public ServiceOrderStatus Status { get; set; } = ServiceOrderStatus.Created;
+    public ServiceOrderStatus Status { get; set; } = ServiceOrderStatus.Pending;
+    public DateTime? CustomerApprovedAt { get; set; }
+    public DateTime? CustomerApprovalNotificationReadAt { get; set; }
     public decimal EstimatedLaborCost { get; set; }
     public decimal EstimatedPartsCost { get; set; }
     public decimal EstimatedTotalCost { get; set; }

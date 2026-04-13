@@ -20,6 +20,13 @@ public sealed class InventoryRepository(ApplicationDbContext dbContext) : IInven
             .FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted, cancellationToken);
     }
 
+    public Task<InventoryItem?> GetByPartIdAsync(Guid partId, CancellationToken cancellationToken)
+    {
+        return dbContext.InventoryItems
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.PartId == partId && !item.IsDeleted, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<InventoryItem>> GetAllAsync(CancellationToken cancellationToken)
     {
         var items = await dbContext.InventoryItems

@@ -6,6 +6,7 @@ public interface IInventoryRepository
 {
     Task<InventoryItem> AddAsync(InventoryItem item, CancellationToken cancellationToken);
     Task<InventoryItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+    Task<InventoryItem?> GetByPartIdAsync(Guid partId, CancellationToken cancellationToken);
     Task<IReadOnlyList<InventoryItem>> GetAllAsync(CancellationToken cancellationToken);
     Task UpdateAsync(InventoryItem item, CancellationToken cancellationToken);
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);

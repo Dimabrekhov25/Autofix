@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { SelectField } from '../../../shared/ui/SelectField'
 import type { IssueFormData, PartAvailability } from '../types/mechanic'
 
 interface AddIssueModalProps {
@@ -151,14 +152,14 @@ export function AddIssueModal({ isOpen, onClose, onSave, laborRate }: AddIssueMo
                       placeholder="Part name"
                       className="flex-1 px-4 py-3 bg-surface-container rounded-xl text-on-surface placeholder:text-on-surface-variant border-2 border-transparent focus:border-primary focus:outline-none transition-colors"
                     />
-                    <select
+                    <SelectField
                       value={part.availability}
                       onChange={(e) => handlePartChange(part.id, 'availability', e.target.value as PartAvailability)}
-                      className="px-4 py-3 bg-surface-container rounded-xl text-on-surface border-2 border-transparent focus:border-primary focus:outline-none transition-colors"
+                      className="border-2 border-transparent bg-surface-container py-3 focus:border-primary focus:ring-0"
                     >
                       <option value="in-stock">In Stock</option>
                       <option value="need-to-order">Need to Order</option>
-                    </select>
+                    </SelectField>
                     {parts.length > 1 && (
                       <button
                         type="button"

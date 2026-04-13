@@ -13,6 +13,7 @@ import { useAuth } from '../../features/auth/useAuth'
 import { APP_ROUTES } from '../../shared/config/routes'
 import { Button } from '../../shared/ui/Button'
 import { MaterialIcon } from '../../shared/ui/MaterialIcon'
+import { SelectField } from '../../shared/ui/SelectField'
 import { DashboardShell } from '../../widgets/dashboard-shell/DashboardShell'
 
 type InventoryStatusFilter = 'all' | 'healthy' | 'low' | 'out'
@@ -242,7 +243,7 @@ export function InventoryPage() {
   }
 
   async function handleDelete(item: InventoryItemDto) {
-    const shouldDelete = window.confirm(`Delete inventory entry ${item.id}?`)
+    const shouldDelete = window.confirm(`Delete inventory item ${item.id}?`)
 
     if (!shouldDelete) {
       return
@@ -272,15 +273,15 @@ export function InventoryPage() {
         <div className="relative">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
             <div className="space-y-3">
-              <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.24em] text-primary">
-                Internal Ops
-              </span>
+            <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-[0.6875rem] font-black uppercase tracking-[0.24em] text-primary">
+              Workshop Inventory
+            </span>
               <div>
                 <h1 className="font-headline text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
                   Inventory
                 </h1>
                 <p className="mt-3 max-w-3xl text-sm font-medium leading-7 text-on-surface-variant sm:text-base">
-                  Live inventory workspace connected to the backend `Inventory` and `Parts` endpoints.
+                  Track stock, reserved parts, and low levels for day-to-day workshop work.
                 </p>
               </div>
             </div>
@@ -336,23 +337,18 @@ export function InventoryPage() {
                   <span className="block pl-1 text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
                     Stock Status
                   </span>
-                  <div className="relative">
-                    <select
-                      value={statusValue}
-                      onChange={(event) => setStatusValue(event.target.value as InventoryStatusFilter)}
-                      className="w-full appearance-none rounded-xl border-none bg-white px-4 py-3 pr-11 text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
-                    >
-                      {(['all', 'healthy', 'low', 'out'] as const).map((option) => (
-                        <option key={option} value={option}>
-                          {option === 'all' ? 'All Statuses' : option.charAt(0).toUpperCase() + option.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                    <MaterialIcon
-                      name="expand_more"
-                      className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                  </div>
+                  <SelectField
+                    value={statusValue}
+                    onChange={(event) => setStatusValue(event.target.value as InventoryStatusFilter)}
+                    className="border-none bg-white py-3 text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20"
+                    iconClassName="text-slate-400"
+                  >
+                    {(['all', 'healthy', 'low', 'out'] as const).map((option) => (
+                      <option key={option} value={option}>
+                        {option === 'all' ? 'All Statuses' : option.charAt(0).toUpperCase() + option.slice(1)}
+                      </option>
+                    ))}
+                  </SelectField>
                 </label>
 
                 <div className="flex items-end">
@@ -486,10 +482,10 @@ export function InventoryPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 px-8 py-4">
               <p className="text-xs font-medium text-slate-500">
-                Showing {filteredRows.length} of {rows.length} backend inventory items
+                Showing {filteredRows.length} of {rows.length} inventory items
               </p>
               <span className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-slate-400">
-                CRUD synced with `/api/v1/Inventory`
+                Inventory is up to date
               </span>
             </div>
           </div>
@@ -508,7 +504,7 @@ export function InventoryPage() {
                       Edit inventory item
                     </h2>
                     <p className="mt-2 text-sm font-medium text-slate-500">
-                      This form maps directly to your backend DTO: `partId`, `quantityOnHand`, `reservedQuantity`, `minLevel`.
+                      Update part and stock values for this inventory line.
                     </p>
                   </div>
                   <button
@@ -533,26 +529,21 @@ export function InventoryPage() {
                   <span className="block pl-1 text-[0.6875rem] font-black uppercase tracking-[0.22em] text-slate-400">
                     Part
                   </span>
-                  <div className="relative">
-                    <select
-                      value={form.partId}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, partId: event.target.value }))
-                      }
-                      className="w-full appearance-none rounded-xl border-none bg-surface-container-low px-4 py-3 pr-11 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-primary/20"
-                    >
-                      <option value="">Select a part</option>
-                      {parts.map((part) => (
-                        <option key={part.id} value={part.id}>
-                          {part.name}
-                        </option>
-                      ))}
-                    </select>
-                    <MaterialIcon
-                      name="expand_more"
-                      className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                  </div>
+                  <SelectField
+                    value={form.partId}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, partId: event.target.value }))
+                    }
+                    className="border-none bg-surface-container-low py-3 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-primary/20"
+                    iconClassName="text-slate-400"
+                  >
+                    <option value="">Select a part</option>
+                    {parts.map((part) => (
+                      <option key={part.id} value={part.id}>
+                        {part.name}
+                      </option>
+                    ))}
+                  </SelectField>
                 </label>
 
                 <div className="grid gap-6 md:grid-cols-3">

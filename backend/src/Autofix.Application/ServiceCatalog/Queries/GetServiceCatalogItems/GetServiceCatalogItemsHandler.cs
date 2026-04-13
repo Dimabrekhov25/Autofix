@@ -5,7 +5,8 @@ using MediatR;
 
 namespace Autofix.Application.ServiceCatalog.Queries.GetServiceCatalogItems;
 
-public sealed class GetServiceCatalogItemsHandler(IServiceCatalogRepository repository)
+public sealed class GetServiceCatalogItemsHandler(
+    IServiceCatalogRepository repository)
     : IRequestHandler<GetServiceCatalogItemsQuery, IReadOnlyList<ServiceCatalogItemDto>>
 {
     public async Task<IReadOnlyList<ServiceCatalogItemDto>> Handle(GetServiceCatalogItemsQuery request, CancellationToken cancellationToken)

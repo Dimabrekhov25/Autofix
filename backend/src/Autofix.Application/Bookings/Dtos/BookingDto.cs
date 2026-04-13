@@ -6,6 +6,7 @@ public sealed record BookingDto(
     Guid Id,
     Guid CustomerId,
     Guid VehicleId,
+    BookingVehicleDto? Vehicle,
     Guid? BookingTimeSlotId,
     DateTime StartAt,
     DateTime EndAt,
@@ -13,5 +14,8 @@ public sealed record BookingDto(
     BookingPaymentOption PaymentOption,
     BookingPricingDto Pricing,
     string? Notes,
-    IReadOnlyList<BookingServiceItemDto> Services
+    IReadOnlyList<BookingServiceItemDto> Services,
+    BookingEstimateDto? Estimate,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt
 );

@@ -1,4 +1,5 @@
 import { useState, type FocusEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { APP_ROUTES } from '../../shared/config/routes'
@@ -8,6 +9,7 @@ import { MaterialIcon } from '../../shared/ui/MaterialIcon'
 interface ServicesDropdownProps {
   isActive: boolean
   to: string
+  triggerClassName?: string
 }
 
 interface ServiceCategory {
@@ -167,7 +169,8 @@ const serviceCategories: ServiceCategory[] = [
   },
 ]
 
-export function ServicesDropdown({ isActive, to }: ServicesDropdownProps) {
+export function ServicesDropdown({ isActive, to, triggerClassName }: ServicesDropdownProps) {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [selectedCategoryId, setSelectedCategoryId] = useState(serviceCategories[0].id)
 
@@ -197,11 +200,12 @@ export function ServicesDropdown({ isActive, to }: ServicesDropdownProps) {
         aria-expanded={isOpen}
         aria-haspopup="menu"
         className={cn(
-          'flex items-center gap-1 font-heading text-sm font-bold tracking-tight text-slate-600 transition-colors duration-300 hover:text-slate-900',
-          (isActive || isOpen) && 'border-b-2 border-cyan-500 pb-1 text-cyan-600',
+          'flex items-center gap-1',
+          triggerClassName,
+          (isActive || isOpen) && 'border-b-2 border-primary/85 pb-1 text-primary',
         )}
       >
-        <span>Services</span>
+        <span>{t('common.services')}</span>
         <MaterialIcon
           name="keyboard_arrow_down"
           className={cn('text-[18px] transition-transform duration-200', isOpen && 'rotate-180')}
@@ -217,7 +221,7 @@ export function ServicesDropdown({ isActive, to }: ServicesDropdownProps) {
         <div className="grid overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/95 shadow-card backdrop-blur-xl lg:grid-cols-[18rem_minmax(0,1fr)]">
           <div className="bg-surface-container-low p-5">
             <p className="mb-4 px-3 text-[0.6875rem] font-bold uppercase tracking-[0.24em] text-on-surface-variant">
-              System Categories
+              {t('site.servicesDropdown.systemCategories')}
             </p>
             <div className="space-y-1">
               {serviceCategories.map((category) => {
@@ -267,7 +271,9 @@ export function ServicesDropdown({ isActive, to }: ServicesDropdownProps) {
                 to={to}
                 className="shrink-0 rounded-full bg-primary-soft px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-primary"
               >
-                {selectedCategory.services.length} Services
+                {t('site.servicesDropdown.serviceCount', {
+                  count: selectedCategory.services.length,
+                })}
               </Link>
             </div>
 
@@ -293,7 +299,7 @@ export function ServicesDropdown({ isActive, to }: ServicesDropdownProps) {
                     </p>
                   </div>
                   <span className="hidden items-center gap-1 text-sm font-extrabold uppercase tracking-[0.12em] text-primary opacity-0 transition-opacity group-hover:flex group-hover:opacity-100 xl:flex">
-                    View
+                    {t('site.servicesDropdown.view')}
                     <MaterialIcon name="arrow_forward" className="text-base" />
                   </span>
                 </Link>

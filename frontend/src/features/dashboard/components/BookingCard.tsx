@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next'
+
 import type { Booking, BookingStatus } from '../types/booking'
-import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
+import { formatBookingCurrency, formatBookingReference, formatStartingPrice, getBookingStartingPrice } from '../../booking/lib/booking-api-helpers'
 import { cn } from '../../../shared/lib/cn'
+import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 
 interface BookingCardProps {
   booking: Booking
@@ -17,8 +20,8 @@ const statusConfig: Record<
     icon: string
   }
 > = {
-  'in-service': {
-    label: 'In Service',
+  'in-progress': {
+    label: 'In Progress',
     bgColor: 'bg-primary/10',
     textColor: 'text-primary',
     icon: 'build_circle',
@@ -29,11 +32,17 @@ const statusConfig: Record<
     textColor: 'text-green-700',
     icon: 'check_circle',
   },
-  confirmed: {
-    label: 'Confirmed',
+  'awaiting-approval': {
+    label: 'Awaiting Approval',
     bgColor: 'bg-blue-500/10',
     textColor: 'text-blue-700',
-    icon: 'event_available',
+    icon: 'approval',
+  },
+  approved: {
+    label: 'Approved',
+    bgColor: 'bg-cyan-500/10',
+    textColor: 'text-cyan-700',
+    icon: 'task_alt',
   },
   pending: {
     label: 'Pending',
@@ -47,71 +56,79 @@ const statusConfig: Record<
     textColor: 'text-error',
     icon: 'cancel',
   },
+  'changes-requested': {
+    label: 'Estimate Revision',
+    bgColor: 'bg-amber-500/10',
+    textColor: 'text-amber-700',
+    icon: 'sync_problem',
+  },
 }
 
 export function BookingCard({ booking, isSelected = false, onClick }: BookingCardProps) {
-  const { vehicle } = booking.diagnosticData
+  const { t } = useTranslation()
   const config = statusConfig[booking.status]
-  const issuesCount = booking.diagnosticData.issues.filter((i: { priority: string }) => i.priority !== 'resolved').length
+  const servicesCount = booking.services.length
+  const secondaryLine = [booking.vehicle.plateNumber, booking.vehicle.trim].filter(Boolean).join(' | ')
+  const priceLabel = booking.estimate
+    ? formatBookingCurrency(booking.estimate.estimatedTotalCost, booking.pricing.currency)
+    : formatStartingPrice(getBookingStartingPrice(booking.pricing), booking.pricing.currency)
 
   return (
     <button
       type="button"
       onClick={() => onClick?.(booking.id)}
       className={cn(
-        'w-full text-left rounded-xl p-5 transition-all duration-200',
-        'border-2 hover:shadow-lg hover:-translate-y-0.5',
+        'w-full rounded-xl p-5 text-left transition-all duration-200',
+        'border-2 hover:-translate-y-0.5 hover:shadow-lg',
         isSelected
           ? 'border-primary bg-primary/5 shadow-panel'
-          : 'border-white bg-white hover:border-primary/30'
+          : 'border-white bg-white hover:border-primary/30',
       )}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
-          <h3 className="font-headline font-bold text-lg text-on-surface mb-1">
-            {vehicle.year} {vehicle.make} {vehicle.model}
+          <h3 className="mb-1 font-headline text-lg font-bold text-on-surface">
+            {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
           </h3>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+            #{formatBookingReference(booking.id)}
+          </p>
           <p className="text-sm text-on-surface-variant">
-            {vehicle.plateNumber} • {vehicle.trim}
+            {secondaryLine || t('app.bookingDetails.vehicleInformation')}
           </p>
         </div>
-        <div className={cn('flex items-center gap-1.5 px-2 py-1 rounded-full', config.bgColor)}>
+        <div className={cn('flex items-center gap-1.5 rounded-full px-2 py-1', config.bgColor)}>
           <MaterialIcon name={config.icon} className={cn('text-sm', config.textColor)} />
           <span className={cn('text-[10px] font-bold uppercase tracking-wider', config.textColor)}>
-            {config.label}
+            {t(`app.status.${booking.status === 'awaiting-approval' ? 'awaitingApproval' : booking.status === 'in-progress' ? 'inProgress' : booking.status === 'changes-requested' ? 'estimateRevision' : booking.status}`)}
           </span>
         </div>
       </div>
 
-      {/* Details */}
-      <div className="space-y-2 mb-4">
+      <div className="mb-4 space-y-2">
         <div className="flex items-center gap-2 text-xs text-on-surface-variant">
           <MaterialIcon name="calendar_today" className="text-sm" />
-          <span>{booking.scheduledDate} at {booking.scheduledTime}</span>
+          <span>{booking.scheduledDate} {t('app.common.at')} {booking.scheduledTime}</span>
         </div>
-        {booking.estimatedCompletion && (
+        {booking.estimatedCompletion ? (
           <div className="flex items-center gap-2 text-xs text-on-surface-variant">
             <MaterialIcon name="schedule" className="text-sm" />
-            <span>Est. completion: {booking.estimatedCompletion}</span>
+            <span>{t('app.bookingDetails.ends', { date: booking.estimatedCompletion })}</span>
           </div>
-        )}
+        ) : null}
       </div>
 
-      {/* Summary Stats */}
-      <div className="flex items-center gap-4 pt-3 border-t border-outline-variant/10">
-        {issuesCount > 0 && (
-          <div className="flex items-center gap-1.5">
-            <MaterialIcon name="warning" className="text-secondary text-sm" />
-            <span className="text-xs font-bold text-on-surface">
-              {issuesCount} {issuesCount === 1 ? 'Issue' : 'Issues'}
-            </span>
-          </div>
-        )}
+      <div className="flex items-center gap-4 border-t border-outline-variant/10 pt-3">
+        <div className="flex items-center gap-1.5">
+          <MaterialIcon name="build" className="text-secondary text-sm" />
+          <span className="text-xs font-bold text-on-surface">
+            {servicesCount} {t('app.bookingDetails.service', { count: servicesCount })}
+          </span>
+        </div>
         <div className="flex items-center gap-1.5">
           <MaterialIcon name="attach_money" className="text-primary text-sm" />
           <span className="text-xs font-bold text-on-surface">
-            ${booking.diagnosticData.costBreakdown.grandTotal.toFixed(0)}
+            {priceLabel}
           </span>
         </div>
       </div>
