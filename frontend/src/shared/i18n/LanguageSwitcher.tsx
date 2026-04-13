@@ -87,12 +87,12 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
                 className={cn(
                   'flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-xs font-bold transition',
                   isSelected
-                    ? 'bg-slate-950 text-white'
+                    ? 'bg-emerald-600 text-white shadow-sm'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
                 )}
               >
                 <span>{language.name}</span>
-                <span className={isSelected ? 'text-white/80' : 'text-slate-400'}>{language.label}</span>
+                <span className={isSelected ? 'text-emerald-100' : 'text-slate-400'}>{language.label}</span>
               </button>
             )
           })}
