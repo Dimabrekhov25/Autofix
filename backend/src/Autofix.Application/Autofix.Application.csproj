@@ -16,4 +16,12 @@
       <PackageReference Include="MediatR" Version="14.1.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Common\Interfaces\Loyalty\ILoyaltyRewardService.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Common\Interfaces\Loyalty\" />
+    </ItemGroup>
+
 </Project>
