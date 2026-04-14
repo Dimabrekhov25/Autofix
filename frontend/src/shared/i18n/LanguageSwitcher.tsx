@@ -56,12 +56,12 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         onClick={() => setIsOpen((currentValue) => !currentValue)}
-        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-[0.6875rem] font-black uppercase tracking-[0.14em] text-slate-700 shadow-sm backdrop-blur transition hover:bg-white hover:text-slate-950"
+        className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary px-3 py-2 text-[0.6875rem] font-black uppercase tracking-[0.14em] text-white shadow-sm transition hover:bg-primary-dim"
       >
         <span>{selectedLanguage.label}</span>
         <MaterialIcon
           name="keyboard_arrow_down"
-          className={cn('text-[1rem] transition-transform', isOpen && 'rotate-180')}
+          className={cn('text-[1rem] text-white/90 transition-transform', isOpen && 'rotate-180')}
         />
       </button>
 
@@ -69,7 +69,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
         <div
           role="listbox"
           aria-label={t('common.language')}
-          className="absolute right-0 top-[calc(100%+0.5rem)] z-[80] min-w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl"
+          className="absolute right-0 top-[calc(100%+0.5rem)] z-[80] min-w-44 overflow-hidden rounded-[1.4rem] border border-slate-200/80 bg-white p-1.5 shadow-[0_20px_45px_rgba(15,23,42,0.16)]"
         >
           {supportedLanguages.map((language) => {
             const isSelected = language.code === currentLanguage
@@ -85,14 +85,14 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
                   setIsOpen(false)
                 }}
                 className={cn(
-                  'flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-xs font-bold transition',
+                  'flex w-full items-center justify-between gap-3 rounded-full px-3 py-2 text-left text-xs font-bold transition',
                   isSelected
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950',
                 )}
               >
                 <span>{language.name}</span>
-                <span className={isSelected ? 'text-emerald-100' : 'text-slate-400'}>{language.label}</span>
+                <span className={isSelected ? 'text-white/80' : 'text-slate-400'}>{language.label}</span>
               </button>
             )
           })}
