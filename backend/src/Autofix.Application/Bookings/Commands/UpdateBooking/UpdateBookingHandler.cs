@@ -22,6 +22,7 @@ public sealed class UpdateBookingHandler(
 {
     public async Task<BookingDto?> Handle(UpdateBookingCommand request, CancellationToken cancellationToken)
     {
+        // Update follows "null when missing" contract for booking lookup.
         var existingBooking = await bookingRepository.GetByIdAsync(request.Id, cancellationToken);
         if (existingBooking is null)
         {
@@ -45,6 +46,7 @@ public sealed class UpdateBookingHandler(
             throw new BadRequestException("Vehicle does not belong to customer");
         }
 
+        // Updated bookings must still align with an active slot definition.
         var timeSlot = await bookingTimeSlotRepository.GetActiveByStartAtAsync(request.StartAt, cancellationToken);
         if (timeSlot is null)
         {
@@ -55,6 +57,7 @@ public sealed class UpdateBookingHandler(
         var endAt = BookingFlowCalculator.CalculateEndAt(timeSlot.StartAt, services, bookingFlowSettings);
         var pricing = BookingFlowCalculator.CalculatePricing(services, bookingFlowSettings);
 
+        // Vehicle-level overlap check prevents one vehicle being double-booked.
         var hasVehicleOverlap = await bookingRepository.HasOverlappingBookingAsync(
             request.VehicleId,
             timeSlot.StartAt,
@@ -67,6 +70,7 @@ public sealed class UpdateBookingHandler(
             throw new BadRequestException("Selected time slot is unavailable");
         }
 
+        // Capacity-level overlap check prevents oversubscribing the workshop window.
         var overlapCount = await bookingRepository.CountOverlappingBookingsAsync(
             timeSlot.StartAt,
             endAt,
@@ -78,6 +82,7 @@ public sealed class UpdateBookingHandler(
             throw new BadRequestException("Selected time slot is unavailable");
         }
 
+        // Cancellation goes through a dedicated workflow endpoint to keep transitions explicit.
         if (request.Status == Autofix.Domain.Enum.BookingStatus.Cancelled)
         {
             throw new BadRequestException("Use the cancel endpoint to cancel a booking.");
@@ -103,6 +108,7 @@ public sealed class UpdateBookingHandler(
             Services = BookingFlowCalculator.CreateSnapshots(services)
         };
 
+        // Lifecycle service applies update and synchronizes related booking flow changes.
         var updated = await bookingLifecycleService.UpdateAsync(booking, services, cancellationToken);
         return updated?.ToDto();
     }
@@ -111,6 +117,7 @@ public sealed class UpdateBookingHandler(
         IReadOnlyList<Guid>? serviceCatalogItemIds,
         CancellationToken cancellationToken)
     {
+        // Normalize incoming IDs so downstream lookups operate on a clean, unique set.
         var normalizedIds = serviceCatalogItemIds?
             .Where(id => id != Guid.Empty)
             .Distinct()
@@ -121,6 +128,7 @@ public sealed class UpdateBookingHandler(
             throw new NotFoundException("ServiceCatalogItem", "No services selected");
         }
 
+        // Count mismatch means at least one requested service ID does not exist.
         var catalogItems = await serviceCatalogRepository.GetByIdsAsync(normalizedIds, cancellationToken);
         if (catalogItems.Count != normalizedIds.Count)
         {

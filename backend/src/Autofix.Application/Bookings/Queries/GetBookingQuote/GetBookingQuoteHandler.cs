@@ -20,12 +20,14 @@ public sealed class GetBookingQuoteHandler(
 {
     public async Task<BookingQuoteDto> Handle(GetBookingQuoteQuery request, CancellationToken cancellationToken)
     {
+        // Quote generation requires a real vehicle because returned DTO includes vehicle snapshot details.
         var vehicle = await vehicleRepository.GetByIdAsync(request.VehicleId, cancellationToken);
         if (vehicle is null)
         {
             throw new NotFoundException("Vehicle", request.VehicleId);
         }
 
+        // Quotes are only computed for active predefined slot starts.
         var timeSlot = await bookingTimeSlotRepository.GetActiveByStartAtAsync(request.StartAt, cancellationToken);
         if (timeSlot is null)
         {
@@ -34,6 +36,7 @@ public sealed class GetBookingQuoteHandler(
 
         var services = await LoadRequestedServicesAsync(request.ServiceCatalogItemIds, cancellationToken);
         var endAt = BookingFlowCalculator.CalculateEndAt(timeSlot.StartAt, services, bookingFlowSettings);
+        // Availability gate: quote is rejected when the computed interval is already occupied.
         var overlapCount = await bookingRepository.CountOverlappingBookingsAsync(
             timeSlot.StartAt,
             endAt,
@@ -47,6 +50,7 @@ public sealed class GetBookingQuoteHandler(
 
         var pricing = BookingFlowCalculator.CalculatePricing(services, bookingFlowSettings);
 
+        // Response intentionally returns deterministic service ordering for stable UI rendering.
         return new BookingQuoteDto(
             new BookingQuoteVehicleDto(
                 vehicle.Id,
@@ -88,6 +92,7 @@ public sealed class GetBookingQuoteHandler(
         IReadOnlyList<Guid>? serviceCatalogItemIds,
         CancellationToken cancellationToken)
     {
+        // Normalize incoming IDs so downstream lookups operate on a clean, unique set.
         var normalizedIds = serviceCatalogItemIds?
             .Where(id => id != Guid.Empty)
             .Distinct()
@@ -98,6 +103,7 @@ public sealed class GetBookingQuoteHandler(
             throw new NotFoundException("ServiceCatalogItem", "No services selected");
         }
 
+        // Count mismatch means at least one requested service ID does not exist.
         var catalogItems = await serviceCatalogRepository.GetByIdsAsync(normalizedIds, cancellationToken);
         if (catalogItems.Count != normalizedIds.Count)
         {

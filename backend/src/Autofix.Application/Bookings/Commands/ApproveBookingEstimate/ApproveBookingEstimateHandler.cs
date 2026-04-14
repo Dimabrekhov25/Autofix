@@ -18,22 +18,26 @@ public sealed class ApproveBookingEstimateHandler(
 {
     public async Task<BookingDto?> Handle(ApproveBookingEstimateCommand request, CancellationToken cancellationToken)
     {
+        // Ownership check is centralized to enforce consistent customer authorization rules.
         var booking = await GetOwnedBookingAsync(request.Id, cancellationToken);
         if (booking is null)
         {
             return null;
         }
 
+        // Service order transition drives the booking state change after customer approval.
         await serviceOrderManagementService.ApproveByCustomerAsync(
             request.Id,
             cancellationToken);
 
+        // Reload reflects status/timestamps updated by service-order workflow side effects.
         var updatedBooking = await bookingRepository.GetByIdAsync(request.Id, cancellationToken);
         return updatedBooking?.ToDto();
     }
 
     private async Task<Domain.Entities.Booking.Booking?> GetOwnedBookingAsync(Guid bookingId, CancellationToken cancellationToken)
     {
+        // Authorization boundary: command requires an authenticated customer user.
         var userId = currentUserService.UserId;
         if (userId is null)
         {

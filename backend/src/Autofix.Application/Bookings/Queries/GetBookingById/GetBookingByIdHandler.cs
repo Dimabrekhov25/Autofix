@@ -10,6 +10,7 @@ public sealed class GetBookingByIdHandler(IBookingRepository repository)
 {
     public async Task<BookingDto?> Handle(GetBookingByIdQuery request, CancellationToken cancellationToken)
     {
+        // Query follows "null when missing" contract for callers that map 404 at API boundary.
         var booking = await repository.GetByIdAsync(request.Id, cancellationToken);
         return booking?.ToDto();
     }

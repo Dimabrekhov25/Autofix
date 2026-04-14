@@ -10,6 +10,7 @@ public sealed class GetBookingsHandler(IBookingRepository repository)
 {
     public async Task<IReadOnlyList<BookingDto>> Handle(GetBookingsQuery request, CancellationToken cancellationToken)
     {
+        // Optional customer/vehicle filters are applied in repository to keep query handler thin.
         var bookings = await repository.GetAllAsync(request.CustomerId, request.VehicleId, cancellationToken);
         return bookings.Select(booking => booking.ToDto()).ToList();
     }
