@@ -9,6 +9,7 @@ public sealed class GetVehicleByIdHandler(IVehicleRepository repository)
 {
     public async Task<VehicleDto?> Handle(GetVehicleByIdQuery request, CancellationToken cancellationToken)
     {
+        // Query follows "null when missing" contract for API-layer 404 mapping.
         var vehicle = await repository.GetByIdAsync(request.Id, cancellationToken);
         if (vehicle is null)
         {

@@ -11,6 +11,7 @@ public sealed class LogoutHandler(
 {
     public async Task Handle(LogoutCommand request, CancellationToken cancellationToken)
     {
+        // Logout requires a resolved authenticated user to revoke the provided refresh token.
         var userId = currentUserService.UserId;
         if (userId is null)
         {

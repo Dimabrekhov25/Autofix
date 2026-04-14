@@ -11,6 +11,7 @@ public sealed class GetVehiclesQueryValidator : AbstractValidator<GetVehiclesQue
 
         RuleFor(x => x.Page.PageSize)
             .GreaterThan(0)
+            // Hard upper bound protects endpoints from excessive page-size requests.
             .LessThanOrEqualTo(100);
 
         RuleFor(x => x.Vin)

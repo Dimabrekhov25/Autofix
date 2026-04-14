@@ -27,6 +27,7 @@ public sealed class UpdateCustomerCommandValidator : AbstractValidator<UpdateCus
         RuleFor(x => x.Email)
             .MaximumLength(320)
             .EmailAddress()
+            // Email is optional, but if provided it must pass format and length checks.
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
         RuleFor(x => x.Notes)

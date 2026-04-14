@@ -9,6 +9,7 @@ public sealed class RegisterHandler(IIdentityService identityService)
 {
     public Task<AuthResponseDto> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
+        // Identity service owns registration flow and initial token creation.
         return identityService.RegisterAsync(
             request.UserName,
             request.Email,

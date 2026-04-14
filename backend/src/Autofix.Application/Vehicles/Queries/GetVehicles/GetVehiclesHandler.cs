@@ -10,6 +10,7 @@ public sealed class GetVehiclesHandler(IVehicleRepository repository)
 {
     public async Task<PagedResult<VehicleDto>> Handle(GetVehiclesQuery request, CancellationToken cancellationToken)
     {
+        // Count-first flow avoids page query when filters produce no results.
         var totalCount = await repository.CountAsync(request.OwnerCustomerId, request.Vin, cancellationToken);
         if (totalCount == 0)
         {
@@ -25,6 +26,7 @@ public sealed class GetVehiclesHandler(IVehicleRepository repository)
             request.OwnerCustomerId,
             request.Vin,
             cancellationToken);
+        // DTO projection keeps API contract stable and decoupled from domain entity shape.
         var items = vehicles
             .Select(vehicle => new VehicleDto(
                 vehicle.Id,

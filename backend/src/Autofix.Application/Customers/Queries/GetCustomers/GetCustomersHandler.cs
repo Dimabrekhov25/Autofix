@@ -10,6 +10,7 @@ public sealed class GetCustomersHandler(ICustomerRepository repository)
 {
     public async Task<IReadOnlyList<CustomerDto>> Handle(GetCustomersQuery request, CancellationToken cancellationToken)
     {
+        // List retrieval intentionally delegates filtering/paging concerns to repository layer.
         var customers = await repository.GetAllAsync(cancellationToken);
         return customers.Select(customer => customer.ToDto()).ToList();
     }

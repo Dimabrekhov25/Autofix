@@ -11,6 +11,7 @@ public sealed class CreateVehicleHandler(
 {
     public async Task<VehicleDto> Handle(CreateVehicleCommand request, CancellationToken cancellationToken)
     {
+        // Input normalization keeps VIN/optional fields consistent at write boundary.
         var vehicle = new Vehicle
         {
             OwnerCustomerId = request.OwnerCustomerId,
@@ -24,6 +25,7 @@ public sealed class CreateVehicleHandler(
             IsDrivable = request.IsDrivable
         };
 
+        // Repository assigns identity and persistence metadata before projection.
         var saved = await repository.AddAsync(vehicle, cancellationToken);
         
         return new VehicleDto(
