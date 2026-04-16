@@ -12,7 +12,6 @@ import {
   buildVehicleLabel,
   formatBookingReference,
   formatStartingPrice,
-  getBookingStartingPrice,
 } from '../../features/booking/lib/booking-api-helpers'
 import { resolveBookingFlowState } from '../../features/booking/lib/booking-flow'
 import { APP_ROUTES } from '../../shared/config/routes'
@@ -252,10 +251,15 @@ export function BookingConfirmationPage() {
                       </p>
                       <p className="mt-2 font-headline text-3xl font-extrabold tracking-tight text-slate-900">
                         {formatStartingPrice(
-                          booking ? getBookingStartingPrice(booking.pricing) : 0,
+                          booking ? booking.pricing.totalEstimate : 0,
                           booking?.pricing.currency,
                         )}
                       </p>
+                      {booking?.pricing.hasLoyaltyDiscount ? (
+                        <p className="mt-3 text-sm leading-6 text-emerald-700">
+                          Loyalty discount reserved: {Math.round(booking.pricing.loyaltyDiscountRate * 100)}% off this booking.
+                        </p>
+                      ) : null}
                       <p className="mt-3 text-sm leading-6 text-slate-500">
                         This is the booking-time service price only. Parts and any vehicle-specific adjustments are prepared later in the mechanic estimate.
                       </p>
