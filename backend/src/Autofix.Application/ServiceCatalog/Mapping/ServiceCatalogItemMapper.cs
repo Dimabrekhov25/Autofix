@@ -6,6 +6,7 @@ namespace Autofix.Application.ServiceCatalog.Mapping;
 public static class ServiceCatalogItemMapper
 {
     public static ServiceCatalogItemDto ToDto(this ServiceCatalogItem entity)
+        // Mapper filters soft-deleted links and exposes parts in stable alphabetical order.
         => new(
             entity.Id,
             entity.Name,

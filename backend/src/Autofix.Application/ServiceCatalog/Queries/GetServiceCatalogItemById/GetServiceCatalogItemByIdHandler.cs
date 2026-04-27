@@ -10,6 +10,7 @@ public sealed class GetServiceCatalogItemByIdHandler(IServiceCatalogRepository r
 {
     public async Task<ServiceCatalogItemDto?> Handle(GetServiceCatalogItemByIdQuery request, CancellationToken cancellationToken)
     {
+        // Query follows "null when missing" contract for API-layer 404 mapping.
         var item = await repository.GetByIdAsync(request.Id, cancellationToken);
         return item is null ? null : item.ToDto();
     }

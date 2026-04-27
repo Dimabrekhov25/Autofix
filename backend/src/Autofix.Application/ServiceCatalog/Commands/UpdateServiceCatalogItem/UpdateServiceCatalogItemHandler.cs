@@ -17,6 +17,7 @@ public sealed class UpdateServiceCatalogItemHandler(
         UpdateServiceCatalogItemCommand request,
         CancellationToken cancellationToken)
     {
+        // Update follows "null when missing" contract for absent catalog items.
         var item = await repository.GetByIdAsync(request.Id, cancellationToken);
 
         if (item is null)
@@ -34,6 +35,7 @@ public sealed class UpdateServiceCatalogItemHandler(
         item.RequiredParts = await BuildRequiredPartsAsync(request.RequiredParts, cancellationToken);
         item.UpdatedAt = DateTime.UtcNow;
 
+        // Repository persists in-place aggregate mutation.
         await repository.UpdateAsync(item, cancellationToken);
         return item.ToDto();
     }
@@ -42,6 +44,7 @@ public sealed class UpdateServiceCatalogItemHandler(
         IReadOnlyList<ServiceCatalogRequiredPartInputDto>? requestedRequirements,
         CancellationToken cancellationToken)
     {
+        // Deduplicate part entries and merge quantities per part ID.
         var normalizedRequirements = requestedRequirements?
             .Where(requirement => requirement.PartId != Guid.Empty && requirement.Quantity > 0)
             .GroupBy(requirement => requirement.PartId)
@@ -62,6 +65,7 @@ public sealed class UpdateServiceCatalogItemHandler(
             throw new NotFoundException("Part", string.Join(", ", normalizedRequirements.Select(requirement => requirement.PartId)));
         }
 
+        // Required parts must already exist in inventory to ensure fulfillable services.
         foreach (var part in parts)
         {
             var inventoryItem = await inventoryRepository.GetByPartIdAsync(part.Id, cancellationToken);
