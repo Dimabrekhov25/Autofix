@@ -22,7 +22,7 @@ public sealed class VehiclesController(IMediator mediator) : BaseController
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] GetVehiclesQuery query,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         var result = await mediator.Send(query, cancellationToken);
         return OkResult(result);
