@@ -54,10 +54,8 @@ public sealed class VehiclesController(IMediator mediator) : BaseController
         [FromBody] UpdateVehicleCommand command,
         CancellationToken cancellationToken)
     {
-        if (id != command.Id)
-        {
-            return BadRequestResult("Route id does not match body id.");
-        }
+        var routeIdMismatch = EnsureRouteIdMatchesBodyId(id, command.Id);
+        if (routeIdMismatch is not null) return routeIdMismatch;
 
         var result = await mediator.Send(command, cancellationToken);
 

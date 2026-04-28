@@ -303,6 +303,8 @@ public sealed class ServiceOrderManagementService(ApplicationDbContext dbContext
         var existingItem = serviceOrder.PartItems
             .FirstOrDefault(item => item.PartId == partId && item.UnitPrice == inventoryItem.Part.UnitPrice);
 
+        var now = DateTime.UtcNow;
+
         ServicePartItem? newPartItem = null;
         if (existingItem is null)
         {
@@ -323,11 +325,11 @@ public sealed class ServiceOrderManagementService(ApplicationDbContext dbContext
         {
             existingItem.Quantity += quantity;
             existingItem.Availability = availability;
-            existingItem.UpdatedAt = DateTime.UtcNow;
+            existingItem.UpdatedAt = now;
         }
 
         RecalculateTotals(serviceOrder, newPartItem);
-        serviceOrder.UpdatedAt = DateTime.UtcNow;
+        serviceOrder.UpdatedAt = now;
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
