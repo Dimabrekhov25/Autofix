@@ -11,10 +11,12 @@ public sealed class GetServiceCatalogItemsHandler(
 {
     public async Task<IReadOnlyList<ServiceCatalogItemDto>> Handle(GetServiceCatalogItemsQuery request, CancellationToken cancellationToken)
     {
+        // Base retrieval applies active-state filter at repository level.
         var items = await repository.GetAllAsync(request.IsActive, null, cancellationToken);
 
         if (request.Category.HasValue)
         {
+            // Category filter is applied in-memory on the already fetched active subset.
             items = items
                 .Where(item => item.Category == request.Category.Value)
                 .ToList();

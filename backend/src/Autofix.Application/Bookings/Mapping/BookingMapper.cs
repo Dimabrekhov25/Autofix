@@ -6,6 +6,7 @@ namespace Autofix.Application.Bookings.Mapping;
 public static class BookingMapper
 {
     public static BookingDto ToDto(this Booking entity)
+        // Mapper returns a read model with soft-deleted nested items filtered out for API consumers.
         => new(
             entity.Id,
             entity.CustomerId,
@@ -35,6 +36,7 @@ public static class BookingMapper
                 entity.Currency),
             entity.Notes,
             entity.Services
+                // Stable ordering keeps API responses deterministic for clients and tests.
                 .Where(service => !service.IsDeleted)
                 .OrderBy(service => service.Name)
                 .Select(service => new BookingServiceItemDto(
@@ -56,6 +58,7 @@ public static class BookingMapper
                     entity.ServiceOrder.EstimatedPartsCost,
                     entity.ServiceOrder.EstimatedTotalCost,
                     entity.ServiceOrder.WorkItems
+                        // Computed labor total is derived here to keep DTO self-contained.
                         .Where(item => !item.IsDeleted)
                         .OrderBy(item => item.Description)
                         .Select(item => new BookingEstimateWorkItemDto(
@@ -66,6 +69,7 @@ public static class BookingMapper
                             item.LaborHours * item.HourlyRate))
                         .ToList(),
                     entity.ServiceOrder.PartItems
+                        // Part line total is computed from quantity and unit price at projection time.
                         .Where(item => !item.IsDeleted)
                         .OrderBy(item => item.PartName)
                         .Select(item => new BookingEstimatePartItemDto(

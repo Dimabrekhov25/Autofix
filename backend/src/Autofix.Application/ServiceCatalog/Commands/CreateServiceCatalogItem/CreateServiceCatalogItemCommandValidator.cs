@@ -37,6 +37,7 @@ public sealed class CreateServiceCatalogItemCommandValidator : AbstractValidator
             });
 
         RuleFor(x => x)
+            // Required parts are allowed only for real services, not diagnostic-only catalog entries.
             .Must(command => command.Category == ServiceCatalogCategory.Service || command.RequiredParts is not { Count: > 0 })
             .WithMessage("Diagnostic catalog items cannot have required parts.");
     }

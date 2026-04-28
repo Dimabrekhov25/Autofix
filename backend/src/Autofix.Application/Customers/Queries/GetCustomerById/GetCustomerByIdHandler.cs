@@ -10,6 +10,7 @@ public sealed class GetCustomerByIdHandler(ICustomerRepository repository)
 {
     public async Task<CustomerDto?> Handle(GetCustomerByIdQuery request, CancellationToken cancellationToken)
     {
+        // Query follows "null when missing" contract for API-layer 404 mapping.
         var customer = await repository.GetByIdAsync(request.Id, cancellationToken);
         return customer?.ToDto();
     }

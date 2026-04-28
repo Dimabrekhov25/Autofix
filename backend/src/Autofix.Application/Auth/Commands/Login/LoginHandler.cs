@@ -9,6 +9,7 @@ public sealed class LoginHandler(IIdentityService identityService)
 {
     public Task<AuthResponseDto> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
+        // Authentication and token issuance are centralized in identity service.
         return identityService.LoginAsync(
             request.UserNameOrEmail,
             request.Password,

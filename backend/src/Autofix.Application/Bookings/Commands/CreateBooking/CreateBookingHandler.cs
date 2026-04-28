@@ -23,6 +23,7 @@ public sealed class CreateBookingHandler(
 {
     public async Task<BookingDto> Handle(CreateBookingCommand request, CancellationToken cancellationToken)
     {
+        // Booking creation must reference existing customer and vehicle records.
         var customer = await customerRepository.GetByIdAsync(request.CustomerId, cancellationToken);
         if (customer is null)
         {
@@ -40,6 +41,7 @@ public sealed class CreateBookingHandler(
             throw new BadRequestException("Vehicle does not belong to customer");
         }
 
+        // Bookings can only start at an active predefined slot.
         var timeSlot = await bookingTimeSlotRepository.GetActiveByStartAtAsync(request.StartAt, cancellationToken);
         if (timeSlot is null)
         {
@@ -50,6 +52,7 @@ public sealed class CreateBookingHandler(
         var endAt = BookingFlowCalculator.CalculateEndAt(timeSlot.StartAt, services, bookingFlowSettings);
         var pricing = BookingFlowCalculator.CalculatePricing(services, bookingFlowSettings);
 
+        // First overlap check enforces one booking per vehicle in the same interval.
         var hasVehicleOverlap = await bookingRepository.HasOverlappingBookingAsync(
             request.VehicleId,
             timeSlot.StartAt,
@@ -62,6 +65,7 @@ public sealed class CreateBookingHandler(
             throw new BadRequestException("Selected time slot is unavailable");
         }
 
+        // Second overlap check enforces workshop-wide capacity for the interval.
         var overlapCount = await bookingRepository.CountOverlappingBookingsAsync(
             timeSlot.StartAt,
             endAt,
@@ -91,6 +95,7 @@ public sealed class CreateBookingHandler(
             Services = BookingFlowCalculator.CreateSnapshots(services)
         };
 
+        // Lifecycle service persists booking and synchronizes related booking flow side effects.
         var saved = await bookingLifecycleService.CreateAsync(booking, services, cancellationToken);
         return saved.ToDto();
     }
@@ -99,6 +104,7 @@ public sealed class CreateBookingHandler(
         IReadOnlyList<Guid>? serviceCatalogItemIds,
         CancellationToken cancellationToken)
     {
+        // Normalize incoming IDs so downstream lookups operate on a clean, unique set.
         var normalizedIds = serviceCatalogItemIds?
             .Where(id => id != Guid.Empty)
             .Distinct()
@@ -109,6 +115,7 @@ public sealed class CreateBookingHandler(
             throw new NotFoundException("ServiceCatalogItem", "No services selected");
         }
 
+        // Count mismatch means at least one requested service ID does not exist.
         var catalogItems = await serviceCatalogRepository.GetByIdsAsync(normalizedIds, cancellationToken);
         if (catalogItems.Count != normalizedIds.Count)
         {

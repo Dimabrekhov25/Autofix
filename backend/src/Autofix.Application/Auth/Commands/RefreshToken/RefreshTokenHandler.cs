@@ -9,6 +9,7 @@ public sealed class RefreshTokenHandler(IIdentityService identityService)
 {
     public Task<AuthResponseDto> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
+        // Token rotation and refresh-token validation are encapsulated in identity service.
         return identityService.RefreshTokenAsync(request.RefreshToken, cancellationToken);
     }
 }

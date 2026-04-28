@@ -9,6 +9,7 @@ public sealed class GoogleLoginHandler(IIdentityService identityService)
 {
     public Task<AuthResponseDto> Handle(GoogleLoginCommand request, CancellationToken cancellationToken)
     {
+        // External token verification and account linking are delegated to identity service.
         return identityService.LoginWithGoogleAsync(request.IdToken, cancellationToken);
     }
 }

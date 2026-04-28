@@ -11,6 +11,7 @@ internal static class BookingFlowCalculator
         IReadOnlyCollection<ServiceCatalogItem> services,
         IBookingFlowSettings settings)
     {
+        // Booking windows include service duration plus configurable buffer for handoff/cleanup.
         var serviceDuration = services.Aggregate(TimeSpan.Zero, (current, item) => current + item.EstimatedDuration);
         return serviceDuration + TimeSpan.FromMinutes(settings.BufferMinutes);
     }
@@ -25,6 +26,7 @@ internal static class BookingFlowCalculator
         IReadOnlyCollection<ServiceCatalogItem> services,
         IBookingFlowSettings settings)
     {
+        // Tax is applied on combined parts+labor estimate using shared booking flow settings.
         var subtotal = services.Sum(service => service.BasePrice);
         var estimatedLaborCost = services.Sum(service => service.EstimatedLaborCost);
         var taxAmount = decimal.Round((subtotal + estimatedLaborCost) * settings.DefaultTaxRate, 2, MidpointRounding.AwayFromZero);
@@ -34,6 +36,7 @@ internal static class BookingFlowCalculator
     }
 
     public static List<BookingServiceItem> CreateSnapshots(IReadOnlyCollection<ServiceCatalogItem> services)
+        // Snapshot preserves catalog values at booking time, even if catalog entries change later.
         => services
             .Select(service => new BookingServiceItem
             {

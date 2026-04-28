@@ -11,6 +11,7 @@ public sealed class GetBookingQuoteQueryValidator : AbstractValidator<GetBooking
 
         RuleFor(x => x.StartAt)
             .NotEmpty()
+            // Quote endpoint only supports future bookings; past timestamps are invalid input.
             .Must(startAt => startAt > DateTime.UtcNow)
             .WithMessage("StartAt must be in the future.");
 

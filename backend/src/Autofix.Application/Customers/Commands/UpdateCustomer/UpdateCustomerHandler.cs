@@ -10,6 +10,7 @@ public sealed class UpdateCustomerHandler(ICustomerRepository repository)
 {
     public async Task<CustomerDto?> Handle(UpdateCustomerCommand request, CancellationToken cancellationToken)
     {
+        // Update follows "null when missing" contract for absent customers.
         var customer = await repository.GetByIdAsync(request.Id, cancellationToken);
 
         if (customer is null)
@@ -24,6 +25,7 @@ public sealed class UpdateCustomerHandler(ICustomerRepository repository)
         customer.Notes = request.Notes;
         customer.UpdatedAt = DateTime.UtcNow;
 
+        // Persistence is handled in repository; handler returns mapped in-memory aggregate.
         await repository.UpdateAsync(customer, cancellationToken);
         return customer.ToDto();
     }

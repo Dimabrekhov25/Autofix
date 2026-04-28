@@ -9,6 +9,7 @@ public sealed class DecodeVinHandler(IVehicleRepository vehicleRepository)
 {
     public async Task<VinDecodeResultDto> Handle(DecodeVinQuery request, CancellationToken cancellationToken)
     {
+        // VIN normalization ensures cache/repository lookup and fallback logic use one canonical value.
         var normalizedVin = request.Vin.Trim().ToUpperInvariant();
         var existingVehicle = await vehicleRepository.GetByVinAsync(normalizedVin, cancellationToken);
 
@@ -29,6 +30,7 @@ public sealed class DecodeVinHandler(IVehicleRepository vehicleRepository)
             false,
             null,
             null,
+            // Fallback decodes model year locally when VIN is not found in repository.
             DecodeModelYear(normalizedVin),
             null,
             null);
@@ -36,6 +38,7 @@ public sealed class DecodeVinHandler(IVehicleRepository vehicleRepository)
 
     private static int? DecodeModelYear(string vin)
     {
+        // Basic VIN-year decoding uses the 10th character mapping for 2010-2039 cycle.
         if (vin.Length != 17)
         {
             return null;

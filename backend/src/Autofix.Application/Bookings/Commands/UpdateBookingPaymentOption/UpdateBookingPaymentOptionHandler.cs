@@ -18,6 +18,7 @@ public sealed class UpdateBookingPaymentOptionHandler(
         UpdateBookingPaymentOptionCommand request,
         CancellationToken cancellationToken)
     {
+        // Authorization boundary: payment option can only be changed by the booking's customer.
         var userId = currentUserService.UserId;
         if (userId is null)
         {
@@ -33,6 +34,7 @@ public sealed class UpdateBookingPaymentOptionHandler(
         var booking = await bookingRepository.GetByIdAsync(request.Id, cancellationToken);
         if (booking is null)
         {
+            // Handler follows "null when missing" contract for absent bookings.
             return null;
         }
 
@@ -46,6 +48,7 @@ public sealed class UpdateBookingPaymentOptionHandler(
             throw new BadRequestException("Payment can only be selected after the estimate has been approved.");
         }
 
+        // Repository call applies payment option update without modifying other booking fields.
         var updatedBooking = await bookingRepository.UpdatePaymentOptionAsync(
             request.Id,
             request.PaymentOption,

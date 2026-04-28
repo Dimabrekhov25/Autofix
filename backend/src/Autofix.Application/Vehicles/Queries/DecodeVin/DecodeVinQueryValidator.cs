@@ -10,6 +10,7 @@ public sealed class DecodeVinQueryValidator : AbstractValidator<DecodeVinQuery>
             .NotEmpty()
             .Must(vin => !string.IsNullOrWhiteSpace(vin))
             .WithMessage("VIN must not be empty or whitespace.")
+            // VIN length is fixed for standard passenger vehicles.
             .Length(17);
     }
 }
