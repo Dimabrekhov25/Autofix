@@ -92,14 +92,12 @@ public class GlobalExceptionHandler(
         if (isDevelopment)
         {
             var apiError = new ApiError(
-                message: exception.Message,
+                message: "An internal server error occurred.",
                 code: "INTERNAL_ERROR",
                 validationErrors: null,
                 details: new
                 {
-                    type = exception.GetType().Name,
-                    stackTrace = exception.StackTrace,
-                    innerException = exception.InnerException?.Message
+                    type = exception.GetType().Name
                 });
 
             return ((int)HttpStatusCode.InternalServerError, ApiResult.Failure(apiError));
