@@ -16,7 +16,8 @@ internal static class ServiceCatalogRequiredPartsBuilder
         var normalizedRequirements = requestedRequirements?
             .Where(requirement => requirement.PartId != Guid.Empty && requirement.Quantity > 0)
             .GroupBy(requirement => requirement.PartId)
-            .Select(group => new ServiceCatalogRequiredPartInputDto(group.Key, group.Sum(item => item.Quantity)))
+            .Select(group =>
+                new ServiceCatalogRequiredPartInputDto(group.Key, group.Sum(item => item.Quantity)))
             .ToList() ?? [];
 
         if (normalizedRequirements.Count == 0)
@@ -30,7 +31,11 @@ internal static class ServiceCatalogRequiredPartsBuilder
 
         if (parts.Count != normalizedRequirements.Count)
         {
-            throw new NotFoundException("Part", string.Join(", ", normalizedRequirements.Select(requirement => requirement.PartId)));
+            var missingPartIds = string.Join(
+                ", ",
+                normalizedRequirements.Select(requirement => requirement.PartId));
+
+            throw new NotFoundException("Part", missingPartIds);
         }
 
         foreach (var part in parts)
