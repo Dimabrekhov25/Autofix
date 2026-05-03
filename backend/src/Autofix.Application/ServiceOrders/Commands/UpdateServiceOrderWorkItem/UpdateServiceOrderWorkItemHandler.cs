@@ -5,9 +5,13 @@ using MediatR;
 
 namespace Autofix.Application.ServiceOrders.Commands.UpdateServiceOrderWorkItem;
 
+/// <summary>
+/// Delegates to <see cref="IServiceOrderManagementService.UpdateWorkItemAsync"/>.
+/// </summary>
 public sealed class UpdateServiceOrderWorkItemHandler(IServiceOrderManagementService serviceOrderManagementService)
     : IRequestHandler<UpdateServiceOrderWorkItemCommand, ServiceOrderDto?>
 {
+    /// <inheritdoc />
     public async Task<ServiceOrderDto?> Handle(
         UpdateServiceOrderWorkItemCommand request,
         CancellationToken cancellationToken)

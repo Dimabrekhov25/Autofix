@@ -5,9 +5,13 @@ using MediatR;
 
 namespace Autofix.Application.ServiceOrders.Commands.UpdateServiceOrderStatus;
 
+/// <summary>
+/// Delegates to <see cref="IServiceOrderManagementService.UpdateStatusAsync"/>.
+/// </summary>
 public sealed class UpdateServiceOrderStatusHandler(IServiceOrderManagementService serviceOrderManagementService)
     : IRequestHandler<UpdateServiceOrderStatusCommand, ServiceOrderDto?>
 {
+    /// <inheritdoc />
     public async Task<ServiceOrderDto?> Handle(
         UpdateServiceOrderStatusCommand request,
         CancellationToken cancellationToken)

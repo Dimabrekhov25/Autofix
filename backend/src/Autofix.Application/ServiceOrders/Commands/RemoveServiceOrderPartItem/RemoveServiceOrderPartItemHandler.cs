@@ -5,9 +5,13 @@ using MediatR;
 
 namespace Autofix.Application.ServiceOrders.Commands.RemoveServiceOrderPartItem;
 
+/// <summary>
+/// Delegates to <see cref="IServiceOrderManagementService.RemovePartItemAsync"/>.
+/// </summary>
 public sealed class RemoveServiceOrderPartItemHandler(IServiceOrderManagementService serviceOrderManagementService)
     : IRequestHandler<RemoveServiceOrderPartItemCommand, ServiceOrderDto?>
 {
+    /// <inheritdoc />
     public async Task<ServiceOrderDto?> Handle(
         RemoveServiceOrderPartItemCommand request,
         CancellationToken cancellationToken)
