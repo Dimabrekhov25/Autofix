@@ -8,4 +8,5 @@ public interface IServiceOrderRepository
     Task<ServiceOrder?> GetByBookingIdAsync(Guid bookingId, CancellationToken cancellationToken);
     Task<IReadOnlyList<ServiceOrder>> GetUnreadCustomerApprovalNotificationsAsync(CancellationToken cancellationToken);
     Task<ServiceOrder?> MarkCustomerApprovalNotificationReadAsync(Guid serviceOrderId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<ServiceOrder>> GetAllAsync(CancellationToken cancellationToken);
 }

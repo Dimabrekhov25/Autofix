@@ -145,4 +145,19 @@ public sealed class ServiceOrderRepository(ApplicationDbContext dbContext) : ISe
             IsApproved = false
         };
     }
+
+    public Task<IReadOnlyList<ServiceOrder>> GetAllAsync(CancellationToken cancellationToken)
+    {
+        return dbContext.ServiceOrders
+            .AsNoTracking()
+            .Include(x => x.Customer)
+            .Include(x => x.Vehicle)
+            .Include(x => x.Booking!)
+            .ThenInclude(x => x.Services.Where(service => !service.IsDeleted))
+            .Include(x => x.WorkItems.Where(item => !item.IsDeleted))
+            .Include(x => x.PartItems.Where(item => !item.IsDeleted))
+            .Where(x => !x.IsDeleted)
+            .ToListAsync(cancellationToken)
+            .ContinueWith(t => (IReadOnlyList<ServiceOrder>)t.Result);
+    }
 }

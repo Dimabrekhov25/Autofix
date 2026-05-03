@@ -19,4 +19,5 @@ public interface IVehicleRepository
         CancellationToken cancellationToken);
     Task UpdateAsync(Vehicle vehicle, CancellationToken cancellationToken);
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Vehicle>> GetAllAsync(CancellationToken cancellationToken);
 }
