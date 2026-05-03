@@ -78,11 +78,15 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns a single booking by its identifier, or 404 if it does not exist.
+    /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetBookingByIdQuery(id), cancellationToken);
 
+        // Handler returns null when no booking matches the id.
         if (result is null)
         {
             return NotFound(ApiResult.Failure($"Booking {id} not found"));
@@ -91,12 +95,16 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Updates an existing booking. The route id must match <see cref="UpdateBookingCommand.Id"/> in the body.
+    /// </summary>
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateBookingCommand command,
         CancellationToken cancellationToken)
     {
+        // Avoid applying updates to the wrong entity when client sends mismatched ids.
         if (id != command.Id)
         {
             return BadRequestResult("Route id does not match body id.");
@@ -112,6 +120,9 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Deletes a booking by id. Returns 404 when the booking is missing.
+    /// </summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
@@ -122,6 +133,7 @@ public sealed class BookingsController(IMediator mediator) : BaseController
             return NotFound(ApiResult.Failure($"Booking {id} not found"));
         }
 
+        // Empty object signals success with no response body fields beyond the standard envelope.
         return OkResult(new { });
     }
 
