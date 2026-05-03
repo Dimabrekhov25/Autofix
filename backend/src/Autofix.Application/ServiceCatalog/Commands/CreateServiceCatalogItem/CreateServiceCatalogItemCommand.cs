@@ -4,6 +4,9 @@ using MediatR;
 
 namespace Autofix.Application.ServiceCatalog.Commands.CreateServiceCatalogItem;
 
+/// <summary>
+/// Creates a service catalog entry with pricing, duration, and optional required parts.
+/// </summary>
 public sealed record CreateServiceCatalogItemCommand(
     string Name,
     string Description,

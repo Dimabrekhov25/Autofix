@@ -7,12 +7,16 @@ using MediatR;
 
 namespace Autofix.Application.ServiceCatalog.Commands.CreateServiceCatalogItem;
 
+/// <summary>
+/// Validates required parts and inventory, builds a <see cref="ServiceCatalogItem"/>, and persists it.
+/// </summary>
 public sealed class CreateServiceCatalogItemHandler(
     IServiceCatalogRepository repository,
     IPartRepository partRepository,
     IInventoryRepository inventoryRepository)
     : IRequestHandler<CreateServiceCatalogItemCommand, ServiceCatalogItemDto>
 {
+    /// <inheritdoc />
     public async Task<ServiceCatalogItemDto> Handle(CreateServiceCatalogItemCommand request, CancellationToken cancellationToken)
     {
         // Required parts are validated/normalized before building aggregate.

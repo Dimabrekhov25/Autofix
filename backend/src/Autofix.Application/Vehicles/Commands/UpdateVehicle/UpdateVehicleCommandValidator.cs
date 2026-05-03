@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Vehicles.Commands.UpdateVehicle;
 
+/// <summary>
+/// Validation for <see cref="UpdateVehicleCommand"/>.
+/// </summary>
 public sealed class UpdateVehicleCommandValidator : AbstractValidator<UpdateVehicleCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public UpdateVehicleCommandValidator()
     {
         RuleFor(x => x.Id)

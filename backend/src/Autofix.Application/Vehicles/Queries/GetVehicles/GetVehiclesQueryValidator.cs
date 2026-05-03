@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Vehicles.Queries.GetVehicles;
 
+/// <summary>
+/// Validation for <see cref="GetVehiclesQuery"/>.
+/// </summary>
 public sealed class GetVehiclesQueryValidator : AbstractValidator<GetVehiclesQuery>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public GetVehiclesQueryValidator()
     {
         RuleFor(x => x.Page.Page)

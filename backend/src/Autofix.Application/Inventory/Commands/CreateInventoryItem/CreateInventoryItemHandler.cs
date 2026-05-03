@@ -7,11 +7,15 @@ using MediatR;
 
 namespace Autofix.Application.Inventory.Commands.CreateInventoryItem;
 
+/// <summary>
+/// Validates the part exists, builds an <see cref="InventoryItem"/>, and persists it.
+/// </summary>
 public sealed class CreateInventoryItemHandler(
     IInventoryRepository inventoryRepository,
     IPartRepository partRepository)
     : IRequestHandler<CreateInventoryItemCommand, InventoryItemDto>
 {
+    /// <inheritdoc />
     public async Task<InventoryItemDto> Handle(CreateInventoryItemCommand request, CancellationToken cancellationToken)
     {
         var part = await partRepository.GetByIdAsync(request.PartId, cancellationToken);

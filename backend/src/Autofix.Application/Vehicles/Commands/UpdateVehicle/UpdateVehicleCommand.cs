@@ -3,6 +3,9 @@ using MediatR;
 
 namespace Autofix.Application.Vehicles.Commands.UpdateVehicle;
 
+/// <summary>
+/// Updates an existing vehicle's owner, identifiers, and specification fields.
+/// </summary>
 public sealed record UpdateVehicleCommand(
     Guid Id,
     Guid OwnerCustomerId,

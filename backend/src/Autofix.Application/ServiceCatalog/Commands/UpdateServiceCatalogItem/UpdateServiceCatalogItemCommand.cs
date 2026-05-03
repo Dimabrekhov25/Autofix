@@ -4,6 +4,9 @@ using MediatR;
 
 namespace Autofix.Application.ServiceCatalog.Commands.UpdateServiceCatalogItem;
 
+/// <summary>
+/// Updates catalog metadata, economics, duration, active state, and required parts.
+/// </summary>
 public sealed record UpdateServiceCatalogItemCommand(
     Guid Id,
     string Name,

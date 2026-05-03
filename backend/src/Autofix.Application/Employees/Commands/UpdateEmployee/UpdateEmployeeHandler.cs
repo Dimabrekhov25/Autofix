@@ -5,9 +5,13 @@ using MediatR;
 
 namespace Autofix.Application.Employees.Commands.UpdateEmployee;
 
+/// <summary>
+/// Loads an employee by id, applies changes, and persists the aggregate.
+/// </summary>
 public sealed class UpdateEmployeeHandler(IEmployeeRepository repository)
     : IRequestHandler<UpdateEmployeeCommand, EmployeeDto?>
 {
+    /// <inheritdoc />
     public async Task<EmployeeDto?> Handle(UpdateEmployeeCommand request, CancellationToken cancellationToken)
     {
         var employee = await repository.GetByIdAsync(request.Id, cancellationToken);

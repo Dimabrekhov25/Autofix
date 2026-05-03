@@ -7,12 +7,16 @@ using MediatR;
 
 namespace Autofix.Application.ServiceCatalog.Commands.UpdateServiceCatalogItem;
 
+/// <summary>
+/// Loads a catalog item, revalidates required parts, applies changes, and persists.
+/// </summary>
 public sealed class UpdateServiceCatalogItemHandler(
     IServiceCatalogRepository repository,
     IPartRepository partRepository,
     IInventoryRepository inventoryRepository)
     : IRequestHandler<UpdateServiceCatalogItemCommand, ServiceCatalogItemDto?>
 {
+    /// <inheritdoc />
     public async Task<ServiceCatalogItemDto?> Handle(
         UpdateServiceCatalogItemCommand request,
         CancellationToken cancellationToken)
