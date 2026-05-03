@@ -33,6 +33,7 @@ builder.Services.AddApiVersioning(options =>
 builder.Services.AddControllers();
 
 var app = builder.Build();
+// Runs EF migrations / seed hooks defined in Infrastructure for the current environment.
 await app.InitializeInfrastructureAsync();
 
 // Configure the HTTP request pipeline.
