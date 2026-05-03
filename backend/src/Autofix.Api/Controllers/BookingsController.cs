@@ -18,8 +18,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Autofix.Api.Controllers;
 
+/// <summary>
+/// Exposes booking-related API endpoints and delegates business logic to MediatR handlers.
+/// </summary>
 public sealed class BookingsController(IMediator mediator) : BaseController
 {
+    /// <summary>
+    /// Creates a new booking from the provided request payload.
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateBookingCommand command, CancellationToken cancellationToken)
     {
@@ -27,6 +33,9 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns a paginated and/or filtered list of bookings.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] GetBookingsQuery query, CancellationToken cancellationToken)
     {
@@ -34,6 +43,9 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns bookings that belong to the currently authenticated user.
+    /// </summary>
     [Authorize(Policy = PolicyNames.ActiveUser)]
     [HttpGet("my")]
     public async Task<IActionResult> GetMyBookings(CancellationToken cancellationToken)
@@ -42,6 +54,9 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Calculates and returns a booking quote for the provided request details.
+    /// </summary>
     [HttpPost("quote")]
     public async Task<IActionResult> GetQuote(
         [FromBody] GetBookingQuoteQuery query,
@@ -51,6 +66,9 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns available booking time slots that match the supplied criteria.
+    /// </summary>
     [HttpGet("slots")]
     public async Task<IActionResult> GetAvailableSlots(
         [FromQuery] GetAvailableBookingSlotsQuery query,
