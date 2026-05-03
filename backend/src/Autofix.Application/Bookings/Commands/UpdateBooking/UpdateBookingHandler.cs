@@ -10,6 +10,9 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Commands.UpdateBooking;
 
+/// <summary>
+/// Loads the booking, re-validates slot and overlaps, blocks cancel-via-update, then applies changes through lifecycle.
+/// </summary>
 public sealed class UpdateBookingHandler(
     IBookingRepository bookingRepository,
     IBookingLifecycleService bookingLifecycleService,
@@ -20,6 +23,7 @@ public sealed class UpdateBookingHandler(
     IBookingFlowSettings bookingFlowSettings)
     : IRequestHandler<UpdateBookingCommand, BookingDto?>
 {
+    /// <inheritdoc />
     public async Task<BookingDto?> Handle(UpdateBookingCommand request, CancellationToken cancellationToken)
     {
         // Update follows "null when missing" contract for booking lookup.

@@ -1,5 +1,8 @@
 namespace Autofix.Application.Bookings.Dtos;
 
+/// <summary>
+/// Vehicle details included in a booking quote response.
+/// </summary>
 public sealed record BookingQuoteVehicleDto(
     Guid Id,
     string LicensePlate,

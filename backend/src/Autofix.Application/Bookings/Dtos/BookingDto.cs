@@ -2,6 +2,9 @@ using Autofix.Domain.Enum;
 
 namespace Autofix.Application.Bookings.Dtos;
 
+/// <summary>
+/// Full booking read model for API and application layers, including vehicle, pricing, selected services, and optional workshop estimate.
+/// </summary>
 public sealed record BookingDto(
     Guid Id,
     Guid CustomerId,

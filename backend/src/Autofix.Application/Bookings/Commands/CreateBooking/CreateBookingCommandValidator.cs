@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Bookings.Commands.CreateBooking;
 
+/// <summary>
+/// FluentValidation rules for <see cref="CreateBookingCommand"/> (ids, future start, non-empty service list).
+/// </summary>
 public sealed class CreateBookingCommandValidator : AbstractValidator<CreateBookingCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public CreateBookingCommandValidator()
     {
         RuleFor(x => x.CustomerId)
