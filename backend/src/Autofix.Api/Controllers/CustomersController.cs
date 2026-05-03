@@ -9,8 +9,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Autofix.Api.Controllers;
 
+/// <summary>
+/// CRUD-style API for customer records.
+/// </summary>
 public sealed class CustomersController(IMediator mediator) : BaseController
 {
+    /// <summary>
+    /// Creates a customer from the request body.
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateCustomerCommand command, CancellationToken cancellationToken)
     {
@@ -18,6 +24,9 @@ public sealed class CustomersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns all customers (or a filtered list, depending on handler/query defaults).
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
@@ -25,6 +34,9 @@ public sealed class CustomersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns a single customer by id, or 404 if missing.
+    /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -38,6 +50,9 @@ public sealed class CustomersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Updates a customer; route id must match <see cref="UpdateCustomerCommand.Id"/> in the body.
+    /// </summary>
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
         Guid id,
@@ -59,6 +74,9 @@ public sealed class CustomersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Deletes a customer by id; 404 when not found.
+    /// </summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
