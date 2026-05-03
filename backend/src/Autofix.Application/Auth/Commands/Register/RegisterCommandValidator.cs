@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Auth.Commands.Register;
 
+/// <summary>
+/// Validation for <see cref="RegisterCommand"/> (lengths, email format, password strength).
+/// </summary>
 public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public RegisterCommandValidator()
     {
         RuleFor(x => x.UserName)

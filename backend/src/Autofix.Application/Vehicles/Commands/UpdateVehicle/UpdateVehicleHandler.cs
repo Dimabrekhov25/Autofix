@@ -4,9 +4,13 @@ using MediatR;
 
 namespace Autofix.Application.Vehicles.Commands.UpdateVehicle;
 
+/// <summary>
+/// Loads a vehicle by id, applies changes, and persists the aggregate.
+/// </summary>
 public sealed class UpdateVehicleHandler(IVehicleRepository repository)
     : IRequestHandler<UpdateVehicleCommand, VehicleDto?>
 {
+    /// <inheritdoc />
     public async Task<VehicleDto?> Handle(UpdateVehicleCommand request, CancellationToken cancellationToken)
     {
         // Update follows "null when missing" contract for absent vehicles.

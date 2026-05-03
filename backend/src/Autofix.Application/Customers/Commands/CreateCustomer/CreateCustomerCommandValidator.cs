@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Customers.Commands.CreateCustomer;
 
+/// <summary>
+/// Validation for <see cref="CreateCustomerCommand"/>.
+/// </summary>
 public sealed class CreateCustomerCommandValidator : AbstractValidator<CreateCustomerCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public CreateCustomerCommandValidator()
     {
         RuleFor(x => x.UserId)

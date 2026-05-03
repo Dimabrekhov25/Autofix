@@ -6,6 +6,8 @@ using Autofix.Infrastructure;
 using Asp.Versioning;
 using Scalar.AspNetCore;
 
+// Autofix HTTP API host: wires application and infrastructure, API versioning, auth, exception handling, and OpenAPI/Scalar in development.
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -31,6 +33,7 @@ builder.Services.AddApiVersioning(options =>
 builder.Services.AddControllers();
 
 var app = builder.Build();
+// Runs EF migrations / seed hooks defined in Infrastructure for the current environment.
 await app.InitializeInfrastructureAsync();
 
 // Configure the HTTP request pipeline.

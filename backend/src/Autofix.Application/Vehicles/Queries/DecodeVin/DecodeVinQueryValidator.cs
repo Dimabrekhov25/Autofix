@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Vehicles.Queries.DecodeVin;
 
+/// <summary>
+/// Validation for <see cref="DecodeVinQuery"/>.
+/// </summary>
 public sealed class DecodeVinQueryValidator : AbstractValidator<DecodeVinQuery>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public DecodeVinQueryValidator()
     {
         RuleFor(x => x.Vin)

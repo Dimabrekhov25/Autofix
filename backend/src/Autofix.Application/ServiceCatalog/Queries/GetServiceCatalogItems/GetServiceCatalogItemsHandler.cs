@@ -5,10 +5,14 @@ using MediatR;
 
 namespace Autofix.Application.ServiceCatalog.Queries.GetServiceCatalogItems;
 
+/// <summary>
+/// Queries catalog items from the repository and maps them to DTOs.
+/// </summary>
 public sealed class GetServiceCatalogItemsHandler(
     IServiceCatalogRepository repository)
     : IRequestHandler<GetServiceCatalogItemsQuery, IReadOnlyList<ServiceCatalogItemDto>>
 {
+    /// <inheritdoc />
     public async Task<IReadOnlyList<ServiceCatalogItemDto>> Handle(GetServiceCatalogItemsQuery request, CancellationToken cancellationToken)
     {
         // Base retrieval applies active-state filter at repository level.

@@ -10,8 +10,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Autofix.Api.Controllers;
 
+/// <summary>
+/// API for customer vehicles (garage) and VIN decode helpers.
+/// </summary>
 public sealed class VehiclesController(IMediator mediator) : BaseController
 {
+    /// <summary>
+    /// Registers a vehicle.
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateVehicleCommand command, CancellationToken cancellationToken)
     {
@@ -19,6 +25,9 @@ public sealed class VehiclesController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Lists vehicles using query filters bound to <see cref="GetVehiclesQuery"/>.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] GetVehiclesQuery query,
@@ -28,6 +37,9 @@ public sealed class VehiclesController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns one vehicle by id, or 404.
+    /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -41,6 +53,9 @@ public sealed class VehiclesController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Decodes a VIN and returns normalized vehicle attributes (provider-dependent).
+    /// </summary>
     [HttpPost("decode-vin")]
     public async Task<IActionResult> DecodeVin([FromBody] DecodeVinQuery query, CancellationToken cancellationToken)
     {
@@ -48,6 +63,9 @@ public sealed class VehiclesController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Updates a vehicle; route id must match <see cref="UpdateVehicleCommand.Id"/>.
+    /// </summary>
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
         Guid id,
@@ -69,6 +87,9 @@ public sealed class VehiclesController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Deletes a vehicle; 404 when not found.
+    /// </summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {

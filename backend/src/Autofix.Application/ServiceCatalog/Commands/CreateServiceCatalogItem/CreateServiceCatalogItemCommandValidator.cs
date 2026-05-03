@@ -3,8 +3,14 @@ using Autofix.Domain.Enum;
 
 namespace Autofix.Application.ServiceCatalog.Commands.CreateServiceCatalogItem;
 
+/// <summary>
+/// Validation for <see cref="CreateServiceCatalogItemCommand"/>.
+/// </summary>
 public sealed class CreateServiceCatalogItemCommandValidator : AbstractValidator<CreateServiceCatalogItemCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public CreateServiceCatalogItemCommandValidator()
     {
         RuleFor(x => x.Name)

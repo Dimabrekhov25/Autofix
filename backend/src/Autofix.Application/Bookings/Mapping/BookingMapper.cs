@@ -3,8 +3,14 @@ using Autofix.Domain.Entities.Booking;
 
 namespace Autofix.Application.Bookings.Mapping;
 
+/// <summary>
+/// Maps domain <see cref="Booking"/> aggregates to <see cref="BookingDto"/> for reads, filtering soft-deleted children and ordering for stable output.
+/// </summary>
 public static class BookingMapper
 {
+    /// <summary>
+    /// Projects a booking entity into a DTO; nested collections exclude deleted rows and use deterministic sort keys.
+    /// </summary>
     public static BookingDto ToDto(this Booking entity)
         // Mapper returns a read model with soft-deleted nested items filtered out for API consumers.
         => new(

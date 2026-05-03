@@ -3,8 +3,14 @@ using Autofix.Domain.Entities.ServiceOrders;
 
 namespace Autofix.Application.ServiceOrders.Mapping;
 
+/// <summary>
+/// Maps <see cref="ServiceOrder"/> aggregates to API-facing DTOs; excludes soft-deleted lines and sorts for stable output.
+/// </summary>
 public static class ServiceOrderMapper
 {
+    /// <summary>
+    /// Full service order projection with work and part lines.
+    /// </summary>
     public static ServiceOrderDto ToDto(this ServiceOrder entity)
         => new(
             entity.Id,
@@ -42,6 +48,9 @@ public static class ServiceOrderMapper
                     item.Quantity * item.UnitPrice))
                 .ToList());
 
+    /// <summary>
+    /// Compact card for customer-approval notifications (display names, services, timestamps).
+    /// </summary>
     public static ServiceOrderApprovalNotificationDto ToApprovalNotificationDto(this ServiceOrder entity)
         => new(
             entity.Id,
@@ -67,6 +76,9 @@ public static class ServiceOrderMapper
             entity.CustomerApprovedAt ?? entity.UpdatedAt ?? entity.CreatedAt,
             entity.CustomerApprovalNotificationReadAt);
 
+    /// <summary>
+    /// Builds a short year/make/model string, falling back to plate or a placeholder.
+    /// </summary>
     private static string BuildVehicleDisplayName(ServiceOrder entity)
     {
         if (entity.Vehicle is null)

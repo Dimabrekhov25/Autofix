@@ -5,9 +5,13 @@ using MediatR;
 
 namespace Autofix.Application.ServiceOrders.Commands.AddServiceOrderCatalogItems;
 
+/// <summary>
+/// Delegates to <see cref="IServiceOrderManagementService.AddCatalogItemsAsync"/> and returns updated DTO.
+/// </summary>
 public sealed class AddServiceOrderCatalogItemsHandler(IServiceOrderManagementService serviceOrderManagementService)
     : IRequestHandler<AddServiceOrderCatalogItemsCommand, ServiceOrderDto>
 {
+    /// <inheritdoc />
     public async Task<ServiceOrderDto> Handle(
         AddServiceOrderCatalogItemsCommand request,
         CancellationToken cancellationToken)

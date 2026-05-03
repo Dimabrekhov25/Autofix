@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Vehicles.Commands.CreateVehicle;
 
+/// <summary>
+/// Validation for <see cref="CreateVehicleCommand"/>.
+/// </summary>
 public sealed class CreateVehicleCommandValidator : AbstractValidator<CreateVehicleCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public CreateVehicleCommandValidator()
     {
         RuleFor(x => x.OwnerCustomerId)

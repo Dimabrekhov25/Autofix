@@ -4,6 +4,9 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Commands.UpdateBooking;
 
+/// <summary>
+/// MediatR command to update booking schedule, services, status (except cancel), and payment option.
+/// </summary>
 public sealed record UpdateBookingCommand(
     Guid Id,
     Guid CustomerId,

@@ -10,6 +10,9 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Queries.GetBookingQuote;
 
+/// <summary>
+/// Validates vehicle and slot, checks overlap, builds pricing and quote DTO (including required parts per service).
+/// </summary>
 public sealed class GetBookingQuoteHandler(
     IVehicleRepository vehicleRepository,
     IServiceCatalogRepository serviceCatalogRepository,
@@ -18,6 +21,7 @@ public sealed class GetBookingQuoteHandler(
     IBookingFlowSettings bookingFlowSettings)
     : IRequestHandler<GetBookingQuoteQuery, BookingQuoteDto>
 {
+    /// <inheritdoc />
     public async Task<BookingQuoteDto> Handle(GetBookingQuoteQuery request, CancellationToken cancellationToken)
     {
         // Quote generation requires a real vehicle because returned DTO includes vehicle snapshot details.

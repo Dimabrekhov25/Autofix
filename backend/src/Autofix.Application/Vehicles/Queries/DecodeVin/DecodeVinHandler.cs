@@ -4,9 +4,13 @@ using MediatR;
 
 namespace Autofix.Application.Vehicles.Queries.DecodeVin;
 
+/// <summary>
+/// Returns known vehicle details for a VIN when present, otherwise a minimal decode result.
+/// </summary>
 public sealed class DecodeVinHandler(IVehicleRepository vehicleRepository)
     : IRequestHandler<DecodeVinQuery, VinDecodeResultDto>
 {
+    /// <inheritdoc />
     public async Task<VinDecodeResultDto> Handle(DecodeVinQuery request, CancellationToken cancellationToken)
     {
         // VIN normalization ensures cache/repository lookup and fallback logic use one canonical value.

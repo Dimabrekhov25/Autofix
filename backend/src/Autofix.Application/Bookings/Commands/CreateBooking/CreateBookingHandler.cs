@@ -11,6 +11,9 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Commands.CreateBooking;
 
+/// <summary>
+/// Validates references, slot availability, overlaps, pricing, then persists a new booking via <see cref="IBookingLifecycleService"/>.
+/// </summary>
 public sealed class CreateBookingHandler(
     IBookingRepository bookingRepository,
     IBookingLifecycleService bookingLifecycleService,
@@ -21,6 +24,7 @@ public sealed class CreateBookingHandler(
     IBookingFlowSettings bookingFlowSettings)
     : IRequestHandler<CreateBookingCommand, BookingDto>
 {
+    /// <inheritdoc />
     public async Task<BookingDto> Handle(CreateBookingCommand request, CancellationToken cancellationToken)
     {
         // Booking creation must reference existing customer and vehicle records.

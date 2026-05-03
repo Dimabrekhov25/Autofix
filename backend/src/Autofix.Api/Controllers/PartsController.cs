@@ -9,8 +9,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Autofix.Api.Controllers;
 
+/// <summary>
+/// API for part master data (SKUs, descriptions, pricing metadata used by inventory and service orders).
+/// </summary>
 public sealed class PartsController(IMediator mediator) : BaseController
 {
+    /// <summary>
+    /// Creates a part definition.
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreatePartCommand command, CancellationToken cancellationToken)
     {
@@ -18,6 +24,9 @@ public sealed class PartsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Lists parts.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
@@ -25,6 +34,9 @@ public sealed class PartsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns one part by id, or 404.
+    /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -38,6 +50,9 @@ public sealed class PartsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Updates a part; route id must match <see cref="UpdatePartCommand.Id"/>.
+    /// </summary>
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
         Guid id,
@@ -59,6 +74,9 @@ public sealed class PartsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Deletes a part; 404 when not found.
+    /// </summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {

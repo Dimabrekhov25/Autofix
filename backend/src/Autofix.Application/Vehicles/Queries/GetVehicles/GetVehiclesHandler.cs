@@ -5,9 +5,13 @@ using MediatR;
 
 namespace Autofix.Application.Vehicles.Queries.GetVehicles;
 
+/// <summary>
+/// Queries vehicles with optional owner and VIN filters and maps results to DTOs.
+/// </summary>
 public sealed class GetVehiclesHandler(IVehicleRepository repository)
     : IRequestHandler<GetVehiclesQuery, PagedResult<VehicleDto>>
 {
+    /// <inheritdoc />
     public async Task<PagedResult<VehicleDto>> Handle(GetVehiclesQuery request, CancellationToken cancellationToken)
     {
         // Count-first flow avoids page query when filters produce no results.

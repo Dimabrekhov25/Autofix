@@ -8,6 +8,9 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Queries.GetAvailableBookingSlots;
 
+/// <summary>
+/// Expands active time templates for the date, computes end times from service duration, counts overlaps per slot.
+/// </summary>
 public sealed class GetAvailableBookingSlotsHandler(
     IServiceCatalogRepository serviceCatalogRepository,
     IBookingTimeSlotRepository bookingTimeSlotRepository,
@@ -15,6 +18,7 @@ public sealed class GetAvailableBookingSlotsHandler(
     IBookingFlowSettings bookingFlowSettings)
     : IRequestHandler<GetAvailableBookingSlotsQuery, BookingAvailableSlotsDto>
 {
+    /// <inheritdoc />
     public async Task<BookingAvailableSlotsDto> Handle(
         GetAvailableBookingSlotsQuery request,
         CancellationToken cancellationToken)

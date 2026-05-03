@@ -6,9 +6,13 @@ using MediatR;
 
 namespace Autofix.Application.Customers.Commands.CreateCustomer;
 
+/// <summary>
+/// Builds a <see cref="Customer"/> aggregate and persists it via the repository.
+/// </summary>
 public sealed class CreateCustomerHandler(ICustomerRepository repository)
     : IRequestHandler<CreateCustomerCommand, CustomerDto>
 {
+    /// <inheritdoc />
     public async Task<CustomerDto> Handle(CreateCustomerCommand request, CancellationToken cancellationToken)
     {
         // Command maps incoming profile fields into a new customer aggregate.

@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Bookings.Queries.GetBookingQuote;
 
+/// <summary>
+/// FluentValidation rules for <see cref="GetBookingQuoteQuery"/>.
+/// </summary>
 public sealed class GetBookingQuoteQueryValidator : AbstractValidator<GetBookingQuoteQuery>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public GetBookingQuoteQueryValidator()
     {
         RuleFor(x => x.VehicleId)

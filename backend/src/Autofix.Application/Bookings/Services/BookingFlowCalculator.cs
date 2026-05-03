@@ -5,8 +5,14 @@ using Autofix.Domain.Entities.Catalog;
 
 namespace Autofix.Application.Bookings.Services;
 
+/// <summary>
+/// Pure helpers for booking duration, end time, pricing, and persisting catalog snapshots when creating a booking.
+/// </summary>
 internal static class BookingFlowCalculator
 {
+    /// <summary>
+    /// Sums catalog service durations and adds the configured buffer (e.g. handoff time).
+    /// </summary>
     public static TimeSpan CalculateTotalDuration(
         IReadOnlyCollection<ServiceCatalogItem> services,
         IBookingFlowSettings settings)
@@ -16,12 +22,18 @@ internal static class BookingFlowCalculator
         return serviceDuration + TimeSpan.FromMinutes(settings.BufferMinutes);
     }
 
+    /// <summary>
+    /// Computes the booking end instant from <paramref name="startAt"/> and total duration (including buffer).
+    /// </summary>
     public static DateTime CalculateEndAt(
         DateTime startAt,
         IReadOnlyCollection<ServiceCatalogItem> services,
         IBookingFlowSettings settings)
         => startAt + CalculateTotalDuration(services, settings);
 
+    /// <summary>
+    /// Builds subtotal, labor, tax (from settings), and total estimate for the selected services.
+    /// </summary>
     public static BookingPricingDto CalculatePricing(
         IReadOnlyCollection<ServiceCatalogItem> services,
         IBookingFlowSettings settings)
@@ -35,6 +47,9 @@ internal static class BookingFlowCalculator
         return new BookingPricingDto(subtotal, estimatedLaborCost, taxAmount, totalEstimate, settings.Currency);
     }
 
+    /// <summary>
+    /// Creates <see cref="BookingServiceItem"/> rows that copy catalog fields at booking time.
+    /// </summary>
     public static List<BookingServiceItem> CreateSnapshots(IReadOnlyCollection<ServiceCatalogItem> services)
         // Snapshot preserves catalog values at booking time, even if catalog entries change later.
         => services

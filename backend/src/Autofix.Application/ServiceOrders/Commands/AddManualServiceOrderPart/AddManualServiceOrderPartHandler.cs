@@ -5,9 +5,13 @@ using MediatR;
 
 namespace Autofix.Application.ServiceOrders.Commands.AddManualServiceOrderPart;
 
+/// <summary>
+/// Delegates to <see cref="IServiceOrderManagementService.AddManualPartAsync"/>.
+/// </summary>
 public sealed class AddManualServiceOrderPartHandler(IServiceOrderManagementService serviceOrderManagementService)
     : IRequestHandler<AddManualServiceOrderPartCommand, ServiceOrderDto>
 {
+    /// <inheritdoc />
     public async Task<ServiceOrderDto> Handle(
         AddManualServiceOrderPartCommand request,
         CancellationToken cancellationToken)

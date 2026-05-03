@@ -3,8 +3,12 @@ using Autofix.Domain.Constants;
 
 namespace Autofix.Api.Middlewares;
 
+/// <summary>
+/// When auth middleware returns 401/403 with an empty body, writes a consistent <see cref="ApiResult{T}"/> JSON error for API clients.
+/// </summary>
 public sealed class AuthFailureResponseMiddleware(RequestDelegate next)
 {
+    /// <summary>Runs the rest of the pipeline, then fills in JSON for anonymous/forbidden responses if needed.</summary>
     public async Task InvokeAsync(HttpContext context)
     {
         await next(context);

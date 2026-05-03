@@ -4,9 +4,13 @@ using MediatR;
 
 namespace Autofix.Application.Vehicles.Queries.GetVehicleById;
 
+/// <summary>
+/// Resolves a vehicle by id or returns null when not found.
+/// </summary>
 public sealed class GetVehicleByIdHandler(IVehicleRepository repository)
     : IRequestHandler<GetVehicleByIdQuery, VehicleDto?>
 {
+    /// <inheritdoc />
     public async Task<VehicleDto?> Handle(GetVehicleByIdQuery request, CancellationToken cancellationToken)
     {
         // Query follows "null when missing" contract for API-layer 404 mapping.

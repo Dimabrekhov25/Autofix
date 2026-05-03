@@ -5,9 +5,13 @@ using MediatR;
 
 namespace Autofix.Application.Customers.Commands.UpdateCustomer;
 
+/// <summary>
+/// Loads customer, applies changes, persists, returns DTO or <c>null</c>.
+/// </summary>
 public sealed class UpdateCustomerHandler(ICustomerRepository repository)
     : IRequestHandler<UpdateCustomerCommand, CustomerDto?>
 {
+    /// <inheritdoc />
     public async Task<CustomerDto?> Handle(UpdateCustomerCommand request, CancellationToken cancellationToken)
     {
         // Update follows "null when missing" contract for absent customers.

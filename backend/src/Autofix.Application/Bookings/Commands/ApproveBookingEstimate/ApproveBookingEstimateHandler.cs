@@ -9,6 +9,9 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Commands.ApproveBookingEstimate;
 
+/// <summary>
+/// Ensures the current user owns the booking, then approves the linked service order and returns the refreshed DTO.
+/// </summary>
 public sealed class ApproveBookingEstimateHandler(
     ICurrentUserService currentUserService,
     ICustomerRepository customerRepository,
@@ -16,6 +19,7 @@ public sealed class ApproveBookingEstimateHandler(
     IServiceOrderManagementService serviceOrderManagementService)
     : IRequestHandler<ApproveBookingEstimateCommand, BookingDto?>
 {
+    /// <inheritdoc />
     public async Task<BookingDto?> Handle(ApproveBookingEstimateCommand request, CancellationToken cancellationToken)
     {
         // Ownership check is centralized to enforce consistent customer authorization rules.

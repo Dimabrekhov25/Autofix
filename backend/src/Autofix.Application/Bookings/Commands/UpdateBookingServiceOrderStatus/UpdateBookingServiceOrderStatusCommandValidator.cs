@@ -3,8 +3,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Bookings.Commands.UpdateBookingServiceOrderStatus;
 
+/// <summary>
+/// FluentValidation rules for <see cref="UpdateBookingServiceOrderStatusCommand"/> (allowed status subset).
+/// </summary>
 public sealed class UpdateBookingServiceOrderStatusCommandValidator : AbstractValidator<UpdateBookingServiceOrderStatusCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public UpdateBookingServiceOrderStatusCommandValidator()
     {
         RuleFor(x => x.Id)

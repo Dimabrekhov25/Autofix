@@ -3,8 +3,14 @@ using Autofix.Domain.Enum;
 
 namespace Autofix.Application.ServiceCatalog.Commands.UpdateServiceCatalogItem;
 
+/// <summary>
+/// Validation for <see cref="UpdateServiceCatalogItemCommand"/>.
+/// </summary>
 public sealed class UpdateServiceCatalogItemCommandValidator : AbstractValidator<UpdateServiceCatalogItemCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public UpdateServiceCatalogItemCommandValidator()
     {
         RuleFor(x => x.Id)

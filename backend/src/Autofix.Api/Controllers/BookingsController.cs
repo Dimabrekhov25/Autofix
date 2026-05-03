@@ -18,8 +18,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Autofix.Api.Controllers;
 
+/// <summary>
+/// Exposes booking-related API endpoints and delegates business logic to MediatR handlers.
+/// </summary>
 public sealed class BookingsController(IMediator mediator) : BaseController
 {
+    /// <summary>
+    /// Creates a new booking from the provided request payload.
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateBookingCommand command, CancellationToken cancellationToken)
     {
@@ -27,6 +33,9 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns a paginated and/or filtered list of bookings.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] GetBookingsQuery query, CancellationToken cancellationToken)
     {
@@ -34,6 +43,9 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns bookings that belong to the currently authenticated user.
+    /// </summary>
     [Authorize(Policy = PolicyNames.ActiveUser)]
     [HttpGet("my")]
     public async Task<IActionResult> GetMyBookings(CancellationToken cancellationToken)
@@ -42,6 +54,9 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Calculates and returns a booking quote for the provided request details.
+    /// </summary>
     [HttpPost("quote")]
     public async Task<IActionResult> GetQuote(
         [FromBody] GetBookingQuoteQuery query,
@@ -51,6 +66,9 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns available booking time slots that match the supplied criteria.
+    /// </summary>
     [HttpGet("slots")]
     public async Task<IActionResult> GetAvailableSlots(
         [FromQuery] GetAvailableBookingSlotsQuery query,
@@ -60,11 +78,15 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns a single booking by its identifier, or 404 if it does not exist.
+    /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetBookingByIdQuery(id), cancellationToken);
 
+        // Handler returns null when no booking matches the id.
         if (result is null)
         {
             return NotFound(ApiResult.Failure($"Booking {id} not found"));
@@ -73,12 +95,16 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Updates an existing booking. The route id must match <see cref="UpdateBookingCommand.Id"/> in the body.
+    /// </summary>
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateBookingCommand command,
         CancellationToken cancellationToken)
     {
+        // Avoid applying updates to the wrong entity when client sends mismatched ids.
         if (id != command.Id)
         {
             return BadRequestResult("Route id does not match body id.");
@@ -94,6 +120,9 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Deletes a booking by id. Returns 404 when the booking is missing.
+    /// </summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
@@ -104,15 +133,20 @@ public sealed class BookingsController(IMediator mediator) : BaseController
             return NotFound(ApiResult.Failure($"Booking {id} not found"));
         }
 
+        // Empty object signals success with no response body fields beyond the standard envelope.
         return OkResult(new { });
     }
 
+    /// <summary>
+    /// Records that the active user approved the estimate for the given booking.
+    /// </summary>
     [Authorize(Policy = PolicyNames.ActiveUser)]
     [HttpPost("{id:guid}/approve-estimate")]
     public async Task<IActionResult> ApproveEstimate(Guid id, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new ApproveBookingEstimateCommand(id), cancellationToken);
 
+        // No booking or transition not allowed for this id.
         if (result is null)
         {
             return NotFound(ApiResult.Failure($"Booking {id} not found"));
@@ -121,12 +155,16 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Lets the active user ask for changes to the booking (e.g. estimate or services) before proceeding.
+    /// </summary>
     [Authorize(Policy = PolicyNames.ActiveUser)]
     [HttpPost("{id:guid}/request-changes")]
     public async Task<IActionResult> RequestChanges(Guid id, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new RequestBookingChangesCommand(id), cancellationToken);
 
+        // No booking or transition not allowed for this id.
         if (result is null)
         {
             return NotFound(ApiResult.Failure($"Booking {id} not found"));
@@ -135,6 +173,9 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Updates how the booking will be paid. Requires <see cref="UpdateBookingPaymentOptionCommand.Id"/> to match the route id.
+    /// </summary>
     [Authorize(Policy = PolicyNames.ActiveUser)]
     [HttpPut("{id:guid}/payment-option")]
     public async Task<IActionResult> UpdatePaymentOption(
@@ -142,6 +183,7 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         [FromBody] UpdateBookingPaymentOptionCommand command,
         CancellationToken cancellationToken)
     {
+        // Avoid updating payment on the wrong booking when ids disagree.
         if (id != command.Id)
         {
             return BadRequestResult("Route id does not match body id.");
@@ -157,6 +199,10 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Admin-only: updates the service-order workflow status for a booking.
+    /// Requires <see cref="UpdateBookingServiceOrderStatusCommand.Id"/> to match the route id.
+    /// </summary>
     [Authorize(Policy = PolicyNames.AdminOnly)]
     [HttpPut("{id:guid}/service-order-status")]
     public async Task<IActionResult> UpdateServiceOrderStatus(
@@ -164,6 +210,7 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         [FromBody] UpdateBookingServiceOrderStatusCommand command,
         CancellationToken cancellationToken)
     {
+        // Avoid changing status on the wrong booking when ids disagree.
         if (id != command.Id)
         {
             return BadRequestResult("Route id does not match body id.");
@@ -171,6 +218,7 @@ public sealed class BookingsController(IMediator mediator) : BaseController
 
         var result = await mediator.Send(command, cancellationToken);
 
+        // No booking or invalid status transition for this id.
         if (result is null)
         {
             return NotFound(ApiResult.Failure($"Booking {id} not found"));
