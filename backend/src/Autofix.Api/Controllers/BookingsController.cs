@@ -199,6 +199,10 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Admin-only: updates the service-order workflow status for a booking.
+    /// Requires <see cref="UpdateBookingServiceOrderStatusCommand.Id"/> to match the route id.
+    /// </summary>
     [Authorize(Policy = PolicyNames.AdminOnly)]
     [HttpPut("{id:guid}/service-order-status")]
     public async Task<IActionResult> UpdateServiceOrderStatus(
@@ -206,6 +210,7 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         [FromBody] UpdateBookingServiceOrderStatusCommand command,
         CancellationToken cancellationToken)
     {
+        // Avoid changing status on the wrong booking when ids disagree.
         if (id != command.Id)
         {
             return BadRequestResult("Route id does not match body id.");
@@ -213,6 +218,7 @@ public sealed class BookingsController(IMediator mediator) : BaseController
 
         var result = await mediator.Send(command, cancellationToken);
 
+        // No booking or invalid status transition for this id.
         if (result is null)
         {
             return NotFound(ApiResult.Failure($"Booking {id} not found"));
