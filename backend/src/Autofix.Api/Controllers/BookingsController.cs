@@ -137,12 +137,16 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(new { });
     }
 
+    /// <summary>
+    /// Records that the active user approved the estimate for the given booking.
+    /// </summary>
     [Authorize(Policy = PolicyNames.ActiveUser)]
     [HttpPost("{id:guid}/approve-estimate")]
     public async Task<IActionResult> ApproveEstimate(Guid id, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new ApproveBookingEstimateCommand(id), cancellationToken);
 
+        // No booking or transition not allowed for this id.
         if (result is null)
         {
             return NotFound(ApiResult.Failure($"Booking {id} not found"));
@@ -151,12 +155,16 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Lets the active user ask for changes to the booking (e.g. estimate or services) before proceeding.
+    /// </summary>
     [Authorize(Policy = PolicyNames.ActiveUser)]
     [HttpPost("{id:guid}/request-changes")]
     public async Task<IActionResult> RequestChanges(Guid id, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new RequestBookingChangesCommand(id), cancellationToken);
 
+        // No booking or transition not allowed for this id.
         if (result is null)
         {
             return NotFound(ApiResult.Failure($"Booking {id} not found"));
@@ -165,6 +173,9 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Updates how the booking will be paid. Requires <see cref="UpdateBookingPaymentOptionCommand.Id"/> to match the route id.
+    /// </summary>
     [Authorize(Policy = PolicyNames.ActiveUser)]
     [HttpPut("{id:guid}/payment-option")]
     public async Task<IActionResult> UpdatePaymentOption(
@@ -172,6 +183,7 @@ public sealed class BookingsController(IMediator mediator) : BaseController
         [FromBody] UpdateBookingPaymentOptionCommand command,
         CancellationToken cancellationToken)
     {
+        // Avoid updating payment on the wrong booking when ids disagree.
         if (id != command.Id)
         {
             return BadRequestResult("Route id does not match body id.");
