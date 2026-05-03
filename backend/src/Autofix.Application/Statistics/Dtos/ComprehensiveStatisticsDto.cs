@@ -1,10 +1,14 @@
 namespace Autofix.Application.Statistics.Dtos;
 
-public class ComprehensiveStatisticsDto
-{
-    public OrderStatisticsDto OrderStatistics { get; set; } = new();
-    public RevenueStatisticsDto RevenueStatistics { get; set; } = new();
-    public VehicleStatisticsDto VehicleStatistics { get; set; } = new();
-    public List<ServiceStatisticsDto> TopServices { get; set; } = new();
-    public List<PartStatisticsDto> TopParts { get; set; } = new();
-}
+/// <summary>
+/// Comprehensive statistics dashboard combining all metrics.
+/// </summary>
+public sealed record ComprehensiveStatisticsDto(
+    DateTime GeneratedAt,
+    RevenueStatisticsDto Revenue,
+    OrderStatisticsDto Orders,
+    ServiceStatisticsDto Services,
+    InventoryStatisticsDto Inventory,
+    CustomerStatisticsDto Customers,
+    EmployeeStatisticsDto Employees
+);

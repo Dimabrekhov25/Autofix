@@ -24,6 +24,7 @@ export const APP_ROUTES = {
   diagnostics: '/diagnostics',
   premiumOilChange: '/services/premium-oil-change',
   services: '/services',
+  statistics: '/statistics',
   login: '/login',
   register: '/register',
   bookingEntry: '/start-booking',

@@ -22,6 +22,7 @@
 
     <ItemGroup>
       <Folder Include="Common\Interfaces\Loyalty\" />
+      <Folder Include="Statistics\Dtos\" />
     </ItemGroup>
 
 </Project>

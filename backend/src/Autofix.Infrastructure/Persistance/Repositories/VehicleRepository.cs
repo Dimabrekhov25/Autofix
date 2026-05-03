@@ -107,13 +107,4 @@ public sealed class VehicleRepository(ApplicationDbContext dbContext) : IVehicle
         await dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
-
-    public Task<IReadOnlyList<Vehicle>> GetAllAsync(CancellationToken cancellationToken)
-    {
-        return dbContext.Vehicles
-            .AsNoTracking()
-            .Where(vehicle => !vehicle.IsDeleted)
-            .ToListAsync(cancellationToken)
-            .ContinueWith(t => (IReadOnlyList<Vehicle>)t.Result);
-    }
 }

@@ -1,10 +1,21 @@
 namespace Autofix.Application.Statistics.Dtos;
 
-public class ServiceStatisticsDto
-{
-    public Guid ServiceId { get; set; }
-    public string ServiceName { get; set; } = string.Empty;
-    public int UsageCount { get; set; }
-    public decimal TotalRevenue { get; set; }
-    public decimal AveragePrice { get; set; }
-}
+/// <summary>
+/// Statistics about individual services: popularity, revenue, and utilization.
+/// </summary>
+public sealed record ServiceStatisticItemDto(
+    Guid ServiceId,
+    string ServiceName,
+    int TimesRequested,
+    decimal TotalRevenue,
+    decimal AveragePrice
+);
+
+/// <summary>
+/// Top services and overall service statistics.
+/// </summary>
+public sealed record ServiceStatisticsDto(
+    int TotalUniqueServices,
+    int ServicesRequested,
+    IReadOnlyList<ServiceStatisticItemDto> TopServices
+);

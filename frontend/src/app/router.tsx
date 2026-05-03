@@ -20,6 +20,7 @@ import { PremiumOilChangePage } from '../pages/premium-oil-change/PremiumOilChan
 import { RegisterPage } from '../pages/register/RegisterPage'
 import { ServicesPage } from '../pages/services/ServicesPage'
 import { VehicleDiagnosticPage } from '../pages/diagnostic/VehicleDiagnosticPage'
+import { StatisticsPage } from '../pages/statistics/StatisticsPage'
 import { APP_ROUTES, resolveProtectedEntryRoute } from '../shared/config/routes'
 import { ScrollToHash } from './ScrollToHash'
 
@@ -206,6 +207,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <ServicesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_ROUTES.statistics}
+          element={
+            <ProtectedRoute requireAdmin>
+              <StatisticsPage />
             </ProtectedRoute>
           }
         />

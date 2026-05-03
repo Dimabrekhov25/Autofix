@@ -1,13 +1,15 @@
 namespace Autofix.Application.Statistics.Dtos;
 
-public class OrderStatisticsDto
-{
-    public int TotalOrders { get; set; }
-    public int CompletedOrders { get; set; }
-    public int PendingOrders { get; set; }
-    public int CancelledOrders { get; set; }
-    public decimal TotalRevenue { get; set; }
-    public decimal AverageOrderValue { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-}
+/// <summary>
+/// Order statistics showing booking and service order status breakdown.
+/// </summary>
+public sealed record OrderStatisticsDto(
+    int TotalOrders,
+    int PendingOrders,
+    int ApprovedOrders,
+    int InProgressOrders,
+    int CompletedOrders,
+    int CancelledOrders,
+    decimal AverageProcessingTimeHours,
+    decimal CompletionRate
+);
