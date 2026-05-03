@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Parts.Commands.CreatePart;
 
+/// <summary>
+/// Validation for <see cref="CreatePartCommand"/>.
+/// </summary>
 public sealed class CreatePartCommandValidator : AbstractValidator<CreatePartCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public CreatePartCommandValidator()
     {
         RuleFor(x => x.Name)

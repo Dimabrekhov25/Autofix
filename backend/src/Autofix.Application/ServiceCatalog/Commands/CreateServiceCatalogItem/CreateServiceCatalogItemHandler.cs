@@ -7,14 +7,19 @@ using MediatR;
 
 namespace Autofix.Application.ServiceCatalog.Commands.CreateServiceCatalogItem;
 
+/// <summary>
+/// Validates required parts and inventory, builds a <see cref="ServiceCatalogItem"/>, and persists it.
+/// </summary>
 public sealed class CreateServiceCatalogItemHandler(
     IServiceCatalogRepository repository,
     IPartRepository partRepository,
     IInventoryRepository inventoryRepository)
     : IRequestHandler<CreateServiceCatalogItemCommand, ServiceCatalogItemDto>
 {
+    /// <inheritdoc />
     public async Task<ServiceCatalogItemDto> Handle(CreateServiceCatalogItemCommand request, CancellationToken cancellationToken)
     {
+        // Required parts are validated/normalized before building aggregate.
         var requirements = await BuildRequiredPartsAsync(request.RequiredParts, cancellationToken);
 
         var item = new ServiceCatalogItem
@@ -29,6 +34,7 @@ public sealed class CreateServiceCatalogItemHandler(
             RequiredParts = requirements
         };
 
+        // Repository persists new catalog item and related required parts.
         var saved = await repository.AddAsync(item, cancellationToken);
         
         return saved.ToDto();
@@ -38,6 +44,7 @@ public sealed class CreateServiceCatalogItemHandler(
         IReadOnlyList<ServiceCatalogRequiredPartInputDto>? requestedRequirements,
         CancellationToken cancellationToken)
     {
+        // Deduplicate part entries and merge quantities per part ID.
         var normalizedRequirements = requestedRequirements?
             .Where(requirement => requirement.PartId != Guid.Empty && requirement.Quantity > 0)
             .GroupBy(requirement => requirement.PartId)
@@ -58,6 +65,7 @@ public sealed class CreateServiceCatalogItemHandler(
             throw new NotFoundException("Part", string.Join(", ", normalizedRequirements.Select(requirement => requirement.PartId)));
         }
 
+        // Required parts must already exist in inventory to ensure fulfillable services.
         foreach (var part in parts)
         {
             var inventoryItem = await inventoryRepository.GetByPartIdAsync(part.Id, cancellationToken);

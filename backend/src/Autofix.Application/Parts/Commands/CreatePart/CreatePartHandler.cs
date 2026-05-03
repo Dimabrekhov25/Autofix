@@ -6,9 +6,13 @@ using MediatR;
 
 namespace Autofix.Application.Parts.Commands.CreatePart;
 
+/// <summary>
+/// Builds a <see cref="Part"/> aggregate and persists it via the repository.
+/// </summary>
 public sealed class CreatePartHandler(IPartRepository repository)
     : IRequestHandler<CreatePartCommand, PartDto>
 {
+    /// <inheritdoc />
     public async Task<PartDto> Handle(CreatePartCommand request, CancellationToken cancellationToken)
     {
         var part = new Part

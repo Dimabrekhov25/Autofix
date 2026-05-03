@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Inventory.Commands.UpdateInventoryItem;
 
+/// <summary>
+/// Validation for <see cref="UpdateInventoryItemCommand"/>.
+/// </summary>
 public sealed class UpdateInventoryItemCommandValidator : AbstractValidator<UpdateInventoryItemCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public UpdateInventoryItemCommandValidator()
     {
         RuleFor(x => x.Id)

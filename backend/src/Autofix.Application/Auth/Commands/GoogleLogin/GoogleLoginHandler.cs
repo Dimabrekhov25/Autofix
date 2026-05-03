@@ -4,11 +4,16 @@ using MediatR;
 
 namespace Autofix.Application.Auth.Commands.GoogleLogin;
 
+/// <summary>
+/// Delegates Google token verification and account linking to <see cref="IIdentityService"/>.
+/// </summary>
 public sealed class GoogleLoginHandler(IIdentityService identityService)
     : IRequestHandler<GoogleLoginCommand, AuthResponseDto>
 {
+    /// <inheritdoc />
     public Task<AuthResponseDto> Handle(GoogleLoginCommand request, CancellationToken cancellationToken)
     {
+        // External token verification and account linking are delegated to identity service.
         return identityService.LoginWithGoogleAsync(request.IdToken, cancellationToken);
     }
 }

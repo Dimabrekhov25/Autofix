@@ -4,11 +4,16 @@ using MediatR;
 
 namespace Autofix.Application.Vehicles.Commands.UpdateVehicle;
 
+/// <summary>
+/// Loads a vehicle by id, applies changes, and persists the aggregate.
+/// </summary>
 public sealed class UpdateVehicleHandler(IVehicleRepository repository)
     : IRequestHandler<UpdateVehicleCommand, VehicleDto?>
 {
+    /// <inheritdoc />
     public async Task<VehicleDto?> Handle(UpdateVehicleCommand request, CancellationToken cancellationToken)
     {
+        // Update follows "null when missing" contract for absent vehicles.
         var vehicle = await repository.GetByIdAsync(request.Id, cancellationToken);
 
         if (vehicle is null)
@@ -27,6 +32,7 @@ public sealed class UpdateVehicleHandler(IVehicleRepository repository)
         vehicle.IsDrivable = request.IsDrivable;
         vehicle.UpdatedAt = DateTime.UtcNow;
 
+        // Repository persists changes; handler projects the updated aggregate back to DTO.
         await repository.UpdateAsync(vehicle, cancellationToken);
 
         return new VehicleDto(

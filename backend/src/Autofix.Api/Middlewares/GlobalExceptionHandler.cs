@@ -6,10 +6,14 @@ using Microsoft.AspNetCore.Diagnostics;
 
 namespace Autofix.Api.Middlewares;
 
+/// <summary>
+/// Maps thrown exceptions to HTTP status codes and JSON <see cref="ApiResult{T}"/> envelopes consumed by the SPA or other clients.
+/// </summary>
 public class GlobalExceptionHandler(
     ILogger<GlobalExceptionHandler> logger,
     IHostEnvironment environment) : IExceptionHandler
 {
+    /// <inheritdoc />
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,

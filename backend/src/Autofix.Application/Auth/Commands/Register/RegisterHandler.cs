@@ -4,11 +4,16 @@ using MediatR;
 
 namespace Autofix.Application.Auth.Commands.Register;
 
+/// <summary>
+/// Delegates registration to <see cref="IIdentityService"/>.
+/// </summary>
 public sealed class RegisterHandler(IIdentityService identityService)
     : IRequestHandler<RegisterCommand, AuthResponseDto>
 {
+    /// <inheritdoc />
     public Task<AuthResponseDto> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
+        // Identity service owns registration flow and initial token creation.
         return identityService.RegisterAsync(
             request.UserName,
             request.Email,

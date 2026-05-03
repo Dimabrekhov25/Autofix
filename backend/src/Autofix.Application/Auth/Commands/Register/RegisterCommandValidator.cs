@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Auth.Commands.Register;
 
+/// <summary>
+/// Validation for <see cref="RegisterCommand"/> (lengths, email format, password strength).
+/// </summary>
 public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public RegisterCommandValidator()
     {
         RuleFor(x => x.UserName)
@@ -22,6 +28,7 @@ public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand
         RuleFor(x => x.Password)
             .NotEmpty()
             .MinimumLength(12)
+            // Registration enforces a strong password policy at command boundary.
             .Matches("[A-Z]").WithMessage("Password must contain at least one uppercase letter.")
             .Matches("[a-z]").WithMessage("Password must contain at least one lowercase letter.")
             .Matches("[0-9]").WithMessage("Password must contain at least one digit.")

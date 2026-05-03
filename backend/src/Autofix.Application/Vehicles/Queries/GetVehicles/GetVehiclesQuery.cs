@@ -4,6 +4,9 @@ using Autofix.Application.Common.Models;
 
 namespace Autofix.Application.Vehicles.Queries.GetVehicles;
 
+/// <summary>
+/// Returns a filtered, paged list of vehicles.
+/// </summary>
 public sealed record GetVehiclesQuery(
     Guid? OwnerCustomerId = null,
     string? Vin = null,

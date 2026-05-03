@@ -11,9 +11,15 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Autofix.Api.Controllers;
 
+/// <summary>
+/// Employee administration. All actions require the <see cref="RoleNames.Admin"/> role.
+/// </summary>
 [Authorize(Roles = RoleNames.Admin)]
 public sealed class EmployeesController(IMediator mediator) : BaseController
 {
+    /// <summary>
+    /// Creates an employee from the request body.
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateEmployeeCommand command, CancellationToken cancellationToken)
     {
@@ -21,6 +27,9 @@ public sealed class EmployeesController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Updates an employee; route id must match <see cref="UpdateEmployeeCommand.Id"/>.
+    /// </summary>
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
         Guid id,
@@ -42,6 +51,9 @@ public sealed class EmployeesController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Deletes an employee by id; 404 when not found.
+    /// </summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
@@ -55,6 +67,9 @@ public sealed class EmployeesController(IMediator mediator) : BaseController
         return OkResult(new { });
     }
 
+    /// <summary>
+    /// Lists employees.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
@@ -62,6 +77,9 @@ public sealed class EmployeesController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns one employee by id, or 404.
+    /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {

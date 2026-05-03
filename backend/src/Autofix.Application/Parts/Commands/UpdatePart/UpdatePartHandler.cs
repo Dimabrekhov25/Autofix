@@ -5,9 +5,13 @@ using MediatR;
 
 namespace Autofix.Application.Parts.Commands.UpdatePart;
 
+/// <summary>
+/// Loads a part by id, applies changes, and persists the aggregate.
+/// </summary>
 public sealed class UpdatePartHandler(IPartRepository repository)
     : IRequestHandler<UpdatePartCommand, PartDto?>
 {
+    /// <inheritdoc />
     public async Task<PartDto?> Handle(UpdatePartCommand request, CancellationToken cancellationToken)
     {
         var part = await repository.GetByIdAsync(request.Id, cancellationToken);

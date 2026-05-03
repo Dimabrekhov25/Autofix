@@ -2,4 +2,7 @@ using MediatR;
 
 namespace Autofix.Application.Inventory.Commands.DeleteInventoryItem;
 
+/// <summary>
+/// Deletes an inventory item by id.
+/// </summary>
 public sealed record DeleteInventoryItemCommand(Guid Id) : IRequest<bool>;

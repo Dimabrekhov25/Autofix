@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Customers.Commands.CreateCustomer;
 
+/// <summary>
+/// Validation for <see cref="CreateCustomerCommand"/>.
+/// </summary>
 public sealed class CreateCustomerCommandValidator : AbstractValidator<CreateCustomerCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public CreateCustomerCommandValidator()
     {
         RuleFor(x => x.UserId)
@@ -24,6 +30,7 @@ public sealed class CreateCustomerCommandValidator : AbstractValidator<CreateCus
         RuleFor(x => x.Email)
             .MaximumLength(320)
             .EmailAddress()
+            // Email is optional, but if provided it must pass format and length checks.
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
         RuleFor(x => x.Notes)

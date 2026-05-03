@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Customers.Commands.UpdateCustomer;
 
+/// <summary>
+/// Validation for <see cref="UpdateCustomerCommand"/>.
+/// </summary>
 public sealed class UpdateCustomerCommandValidator : AbstractValidator<UpdateCustomerCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public UpdateCustomerCommandValidator()
     {
         RuleFor(x => x.Id)
@@ -27,6 +33,7 @@ public sealed class UpdateCustomerCommandValidator : AbstractValidator<UpdateCus
         RuleFor(x => x.Email)
             .MaximumLength(320)
             .EmailAddress()
+            // Email is optional, but if provided it must pass format and length checks.
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
         RuleFor(x => x.Notes)

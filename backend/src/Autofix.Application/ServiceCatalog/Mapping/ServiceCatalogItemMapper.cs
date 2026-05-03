@@ -3,9 +3,14 @@ using Autofix.Domain.Entities.Catalog;
 
 namespace Autofix.Application.ServiceCatalog.Mapping;
 
+/// <summary>
+/// Maps domain <see cref="ServiceCatalogItem"/> to <see cref="ServiceCatalogItemDto"/>.
+/// </summary>
 public static class ServiceCatalogItemMapper
 {
+    /// <summary>Projects entity fields and required parts into a DTO.</summary>
     public static ServiceCatalogItemDto ToDto(this ServiceCatalogItem entity)
+        // Mapper filters soft-deleted links and exposes parts in stable alphabetical order.
         => new(
             entity.Id,
             entity.Name,

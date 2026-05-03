@@ -16,9 +16,15 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Autofix.Api.Controllers;
 
+/// <summary>
+/// Admin workshop API for service orders: lines, status, and customer-approval notifications.
+/// </summary>
 [Authorize(Policy = PolicyNames.AdminOnly)]
 public sealed class ServiceOrdersController(IMediator mediator) : BaseController
 {
+    /// <summary>
+    /// Lists pending (or all) customer approval notifications for the shop.
+    /// </summary>
     [HttpGet("customer-approval-notifications")]
     public async Task<IActionResult> GetCustomerApprovalNotifications(CancellationToken cancellationToken)
     {
@@ -26,6 +32,9 @@ public sealed class ServiceOrdersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns a service order by id, or 404.
+    /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -39,6 +48,9 @@ public sealed class ServiceOrdersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Returns the service order linked to a booking, or 404.
+    /// </summary>
     [HttpGet("by-booking/{bookingId:guid}")]
     public async Task<IActionResult> GetByBookingId(Guid bookingId, CancellationToken cancellationToken)
     {
@@ -52,6 +64,9 @@ public sealed class ServiceOrdersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Adds catalog line items to a service order; route id must match command id.
+    /// </summary>
     [HttpPost("{id:guid}/catalog-items")]
     public async Task<IActionResult> AddCatalogItems(
         Guid id,
@@ -67,6 +82,9 @@ public sealed class ServiceOrdersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Adds a manually entered part line (not from catalog) to a service order.
+    /// </summary>
     [HttpPost("{id:guid}/parts")]
     public async Task<IActionResult> AddManualPart(
         Guid id,
@@ -82,6 +100,9 @@ public sealed class ServiceOrdersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Marks the customer-approval notification for this service order as read.
+    /// </summary>
     [HttpPost("{id:guid}/customer-approval-notifications/read")]
     public async Task<IActionResult> MarkCustomerApprovalNotificationRead(
         Guid id,
@@ -97,6 +118,9 @@ public sealed class ServiceOrdersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Removes a part line from a service order; 404 if the part line is missing.
+    /// </summary>
     [HttpDelete("{id:guid}/parts/{partItemId:guid}")]
     public async Task<IActionResult> RemovePartItem(
         Guid id,
@@ -113,6 +137,9 @@ public sealed class ServiceOrdersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Removes a labor/work line from a service order; 404 if the work item is missing.
+    /// </summary>
     [HttpDelete("{id:guid}/work-items/{workItemId:guid}")]
     public async Task<IActionResult> RemoveWorkItem(
         Guid id,
@@ -129,6 +156,9 @@ public sealed class ServiceOrdersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Updates a work item; route service-order and work-item ids must match the command.
+    /// </summary>
     [HttpPut("{id:guid}/work-items/{workItemId:guid}")]
     public async Task<IActionResult> UpdateWorkItem(
         Guid id,
@@ -151,6 +181,9 @@ public sealed class ServiceOrdersController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Updates workflow status for the service order; route id must match <see cref="UpdateServiceOrderStatusCommand.Id"/>.
+    /// </summary>
     [HttpPut("{id:guid}/status")]
     public async Task<IActionResult> UpdateStatus(
         Guid id,

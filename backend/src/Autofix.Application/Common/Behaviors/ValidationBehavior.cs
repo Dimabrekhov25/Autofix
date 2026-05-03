@@ -3,10 +3,14 @@ using MediatR;
 
 namespace Autofix.Application.Common.Behaviors;
 
+/// <summary>
+/// MediatR pipeline step that runs all FluentValidation validators for <typeparamref name="TRequest"/> before the handler.
+/// </summary>
 public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validators)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
+    /// <inheritdoc />
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,

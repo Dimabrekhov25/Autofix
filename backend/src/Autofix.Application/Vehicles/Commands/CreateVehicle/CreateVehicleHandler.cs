@@ -5,12 +5,17 @@ using MediatR;
 
 namespace Autofix.Application.Vehicles.Commands.CreateVehicle;
 
+/// <summary>
+/// Builds a <see cref="Vehicle"/> aggregate and persists it via the repository.
+/// </summary>
 public sealed class CreateVehicleHandler(
     IVehicleRepository repository)
     : IRequestHandler<CreateVehicleCommand, VehicleDto>
 {
+    /// <inheritdoc />
     public async Task<VehicleDto> Handle(CreateVehicleCommand request, CancellationToken cancellationToken)
     {
+        // Input normalization keeps VIN/optional fields consistent at write boundary.
         var vehicle = new Vehicle
         {
             OwnerCustomerId = request.OwnerCustomerId,
@@ -24,6 +29,7 @@ public sealed class CreateVehicleHandler(
             IsDrivable = request.IsDrivable
         };
 
+        // Repository assigns identity and persistence metadata before projection.
         var saved = await repository.AddAsync(vehicle, cancellationToken);
         
         return new VehicleDto(

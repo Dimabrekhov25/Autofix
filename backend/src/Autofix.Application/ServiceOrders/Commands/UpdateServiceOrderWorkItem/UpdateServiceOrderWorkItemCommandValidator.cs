@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.ServiceOrders.Commands.UpdateServiceOrderWorkItem;
 
+/// <summary>
+/// Validation for <see cref="UpdateServiceOrderWorkItemCommand"/>.
+/// </summary>
 public sealed class UpdateServiceOrderWorkItemCommandValidator : AbstractValidator<UpdateServiceOrderWorkItemCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public UpdateServiceOrderWorkItemCommandValidator()
     {
         RuleFor(x => x.Id)

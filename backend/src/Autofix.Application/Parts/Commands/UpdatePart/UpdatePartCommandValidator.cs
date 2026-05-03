@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Parts.Commands.UpdatePart;
 
+/// <summary>
+/// Validation for <see cref="UpdatePartCommand"/>.
+/// </summary>
 public sealed class UpdatePartCommandValidator : AbstractValidator<UpdatePartCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public UpdatePartCommandValidator()
     {
         RuleFor(x => x.Id)

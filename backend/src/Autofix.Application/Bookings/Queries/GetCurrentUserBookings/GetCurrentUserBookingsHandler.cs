@@ -7,15 +7,20 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Queries.GetCurrentUserBookings;
 
+/// <summary>
+/// Resolves the current user’s customer id, then loads their bookings.
+/// </summary>
 public sealed class GetCurrentUserBookingsHandler(
     ICurrentUserService currentUserService,
     ICustomerRepository customerRepository,
     IBookingRepository bookingRepository) : IRequestHandler<GetCurrentUserBookingsQuery, IReadOnlyList<BookingDto>>
 {
+    /// <inheritdoc />
     public async Task<IReadOnlyList<BookingDto>> Handle(
         GetCurrentUserBookingsQuery request,
         CancellationToken cancellationToken)
     {
+        // Authorization boundary: this query resolves bookings strictly from current authenticated user.
         var userId = currentUserService.UserId;
         if (userId is null)
         {
@@ -25,6 +30,7 @@ public sealed class GetCurrentUserBookingsHandler(
         var customer = await customerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
         if (customer is null)
         {
+            // Missing customer profile is treated as "no bookings" rather than authorization failure.
             return [];
         }
 

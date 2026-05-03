@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Inventory.Commands.CreateInventoryItem;
 
+/// <summary>
+/// Validation for <see cref="CreateInventoryItemCommand"/>.
+/// </summary>
 public sealed class CreateInventoryItemCommandValidator : AbstractValidator<CreateInventoryItemCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public CreateInventoryItemCommandValidator()
     {
         RuleFor(x => x.PartId)

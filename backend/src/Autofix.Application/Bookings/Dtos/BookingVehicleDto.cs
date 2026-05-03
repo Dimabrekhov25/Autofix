@@ -1,5 +1,8 @@
 namespace Autofix.Application.Bookings.Dtos;
 
+/// <summary>
+/// Vehicle snapshot shown on a booking (identity and descriptive fields for the customer’s car).
+/// </summary>
 public sealed record BookingVehicleDto(
     Guid Id,
     string LicensePlate,

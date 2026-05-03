@@ -5,12 +5,17 @@ using MediatR;
 
 namespace Autofix.Application.Auth.Commands.Logout;
 
+/// <summary>
+/// Requires a resolved user id, then calls <see cref="IIdentityService.LogoutAsync"/>.
+/// </summary>
 public sealed class LogoutHandler(
     IIdentityService identityService,
     ICurrentUserService currentUserService) : IRequestHandler<LogoutCommand>
 {
+    /// <inheritdoc />
     public async Task Handle(LogoutCommand request, CancellationToken cancellationToken)
     {
+        // Logout requires a resolved authenticated user to revoke the provided refresh token.
         var userId = currentUserService.UserId;
         if (userId is null)
         {

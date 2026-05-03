@@ -4,6 +4,9 @@ using MediatR;
 
 namespace Autofix.Application.Employees.Commands.CreateEmployee;
 
+/// <summary>
+/// Creates an employee profile linked to an application user.
+/// </summary>
 public sealed record CreateEmployeeCommand(
     Guid UserId,
     string FullName,

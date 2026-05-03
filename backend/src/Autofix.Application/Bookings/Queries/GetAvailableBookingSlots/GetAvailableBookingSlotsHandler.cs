@@ -8,6 +8,9 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Queries.GetAvailableBookingSlots;
 
+/// <summary>
+/// Expands active time templates for the date, computes end times from service duration, counts overlaps per slot.
+/// </summary>
 public sealed class GetAvailableBookingSlotsHandler(
     IServiceCatalogRepository serviceCatalogRepository,
     IBookingTimeSlotRepository bookingTimeSlotRepository,
@@ -15,10 +18,12 @@ public sealed class GetAvailableBookingSlotsHandler(
     IBookingFlowSettings bookingFlowSettings)
     : IRequestHandler<GetAvailableBookingSlotsQuery, BookingAvailableSlotsDto>
 {
+    /// <inheritdoc />
     public async Task<BookingAvailableSlotsDto> Handle(
         GetAvailableBookingSlotsQuery request,
         CancellationToken cancellationToken)
     {
+        // Requested services drive total duration, which then determines each candidate slot's end time.
         var services = await LoadRequestedServicesAsync(request.ServiceCatalogItemIds, cancellationToken);
         var totalDuration = BookingFlowCalculator.CalculateTotalDuration(services, bookingFlowSettings);
         var timeSlots = await bookingTimeSlotRepository.GetActiveByDateAsync(request.Date, cancellationToken);
@@ -27,6 +32,7 @@ public sealed class GetAvailableBookingSlotsHandler(
         foreach (var timeSlot in timeSlots)
         {
             var slotEnd = timeSlot.StartAt + totalDuration;
+            // Availability is computed per slot by checking overlapping bookings in the computed interval.
             var overlaps = await bookingRepository.CountOverlappingBookingsAsync(
                 timeSlot.StartAt,
                 slotEnd,
@@ -52,6 +58,7 @@ public sealed class GetAvailableBookingSlotsHandler(
         IReadOnlyList<Guid>? serviceCatalogItemIds,
         CancellationToken cancellationToken)
     {
+        // Normalize incoming IDs so downstream lookups operate on a clean, unique set.
         var normalizedIds = serviceCatalogItemIds?
             .Where(id => id != Guid.Empty)
             .Distinct()
@@ -62,6 +69,7 @@ public sealed class GetAvailableBookingSlotsHandler(
             throw new NotFoundException("ServiceCatalogItem", "No services selected");
         }
 
+        // Count mismatch means at least one requested service ID does not exist.
         var catalogItems = await serviceCatalogRepository.GetByIdsAsync(normalizedIds, cancellationToken);
         if (catalogItems.Count != normalizedIds.Count)
         {

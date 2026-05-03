@@ -6,9 +6,13 @@ using MediatR;
 
 namespace Autofix.Application.Employees.Commands.CreateEmployee;
 
+/// <summary>
+/// Builds an <see cref="Employee"/> aggregate and persists it via the repository.
+/// </summary>
 public sealed class CreateEmployeeHandler(IEmployeeRepository repository)
     : IRequestHandler<CreateEmployeeCommand, EmployeeDto>
 {
+    /// <inheritdoc />
     public async Task<EmployeeDto> Handle(CreateEmployeeCommand request, CancellationToken cancellationToken)
     {
         var employee = new Employee

@@ -3,6 +3,9 @@ using MediatR;
 
 namespace Autofix.Application.Vehicles.Commands.CreateVehicle;
 
+/// <summary>
+/// Registers a vehicle for a customer with identification and specification fields.
+/// </summary>
 public sealed record CreateVehicleCommand(
     Guid OwnerCustomerId,
     string LicensePlate,

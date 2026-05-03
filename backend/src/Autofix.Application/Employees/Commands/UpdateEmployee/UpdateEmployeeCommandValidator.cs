@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Employees.Commands.UpdateEmployee;
 
+/// <summary>
+/// Validation for <see cref="UpdateEmployeeCommand"/>.
+/// </summary>
 public sealed class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmployeeCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public UpdateEmployeeCommandValidator()
     {
         RuleFor(x => x.Id)

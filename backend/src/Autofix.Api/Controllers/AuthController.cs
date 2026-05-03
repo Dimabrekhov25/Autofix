@@ -13,8 +13,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Autofix.Api.Controllers;
 
+/// <summary>
+/// Authentication and session endpoints: registration, login, token refresh, and current-user profile.
+/// </summary>
 public sealed class AuthController(IMediator mediator) : BaseController
 {
+    /// <summary>
+    /// Registers a new user account; returns credentials/tokens per application rules.
+    /// </summary>
     [AllowAnonymous]
     [HttpPost("register")]
     [ProducesResponseType(typeof(ApiResult<object>), StatusCodes.Status201Created)]
@@ -31,6 +37,9 @@ public sealed class AuthController(IMediator mediator) : BaseController
         return CreatedResult(result);
     }
 
+    /// <summary>
+    /// Authenticates with username/email and password; returns tokens on success.
+    /// </summary>
     [AllowAnonymous]
     [HttpPost("login")]
     [ProducesResponseType(typeof(ApiResult<object>), StatusCodes.Status200OK)]
@@ -48,6 +57,9 @@ public sealed class AuthController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Signs in using a Google ID token (e.g. from the client SDK).
+    /// </summary>
     [AllowAnonymous]
     [HttpPost("google")]
     [ProducesResponseType(typeof(ApiResult<object>), StatusCodes.Status200OK)]
@@ -62,6 +74,9 @@ public sealed class AuthController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Issues a new access token (and possibly refresh token) from a valid refresh token.
+    /// </summary>
     [AllowAnonymous]
     [HttpPost("refresh-token")]
     [ProducesResponseType(typeof(ApiResult<object>), StatusCodes.Status200OK)]
@@ -75,6 +90,9 @@ public sealed class AuthController(IMediator mediator) : BaseController
         return OkResult(result);
     }
 
+    /// <summary>
+    /// Revokes the given refresh token for the signed-in user.
+    /// </summary>
     [Authorize(Policy = PolicyNames.ActiveUser)]
     [HttpPost("logout")]
     [ProducesResponseType(typeof(ApiResult<object>), StatusCodes.Status200OK)]
@@ -85,9 +103,13 @@ public sealed class AuthController(IMediator mediator) : BaseController
         CancellationToken cancellationToken)
     {
         await mediator.Send(new LogoutCommand(request.RefreshToken), cancellationToken);
+        // Empty payload; success is still wrapped by ApiResult via OkResult.
         return OkResult(new { });
     }
 
+    /// <summary>
+    /// Returns the profile for the currently authenticated active user.
+    /// </summary>
     [Authorize(Policy = PolicyNames.ActiveUser)]
     [HttpGet("me")]
     [ProducesResponseType(typeof(ApiResult<object>), StatusCodes.Status200OK)]

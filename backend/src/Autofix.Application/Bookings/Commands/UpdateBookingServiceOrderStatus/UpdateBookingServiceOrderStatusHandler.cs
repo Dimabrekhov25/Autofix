@@ -7,21 +7,27 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Commands.UpdateBookingServiceOrderStatus;
 
+/// <summary>
+/// Updates service-order status by booking id and returns the booking DTO after workflow side effects.
+/// </summary>
 public sealed class UpdateBookingServiceOrderStatusHandler(
     IBookingRepository bookingRepository,
     IServiceOrderManagementService serviceOrderManagementService)
     : IRequestHandler<UpdateBookingServiceOrderStatusCommand, BookingDto?>
 {
+    /// <inheritdoc />
     public async Task<BookingDto?> Handle(
         UpdateBookingServiceOrderStatusCommand request,
         CancellationToken cancellationToken)
     {
+        // Handler follows "null when missing" contract for absent bookings.
         var booking = await bookingRepository.GetByIdAsync(request.Id, cancellationToken);
         if (booking is null)
         {
             return null;
         }
 
+        // Service-order workflow is the source of truth for booking progress transitions.
         var serviceOrder = await serviceOrderManagementService.UpdateStatusByBookingIdAsync(
             request.Id,
             request.Status,
@@ -32,6 +38,7 @@ public sealed class UpdateBookingServiceOrderStatusHandler(
             throw new NotFoundException("ServiceOrder", request.Id);
         }
 
+        // Reload reflects booking fields synchronized by the workflow update.
         var updatedBooking = await bookingRepository.GetByIdAsync(request.Id, cancellationToken);
         return updatedBooking?.ToDto();
     }

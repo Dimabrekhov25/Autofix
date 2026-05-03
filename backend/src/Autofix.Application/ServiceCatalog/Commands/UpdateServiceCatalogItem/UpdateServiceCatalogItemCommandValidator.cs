@@ -3,8 +3,14 @@ using Autofix.Domain.Enum;
 
 namespace Autofix.Application.ServiceCatalog.Commands.UpdateServiceCatalogItem;
 
+/// <summary>
+/// Validation for <see cref="UpdateServiceCatalogItemCommand"/>.
+/// </summary>
 public sealed class UpdateServiceCatalogItemCommandValidator : AbstractValidator<UpdateServiceCatalogItemCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public UpdateServiceCatalogItemCommandValidator()
     {
         RuleFor(x => x.Id)
@@ -40,6 +46,7 @@ public sealed class UpdateServiceCatalogItemCommandValidator : AbstractValidator
             });
 
         RuleFor(x => x)
+            // Required parts are allowed only for real services, not diagnostic-only catalog entries.
             .Must(command => command.Category == ServiceCatalogCategory.Service || command.RequiredParts is not { Count: > 0 })
             .WithMessage("Diagnostic catalog items cannot have required parts.");
     }

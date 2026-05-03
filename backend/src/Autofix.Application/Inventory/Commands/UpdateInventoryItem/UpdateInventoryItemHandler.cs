@@ -6,11 +6,15 @@ using MediatR;
 
 namespace Autofix.Application.Inventory.Commands.UpdateInventoryItem;
 
+/// <summary>
+/// Loads an inventory item, validates the part, applies changes, and persists.
+/// </summary>
 public sealed class UpdateInventoryItemHandler(
     IInventoryRepository inventoryRepository,
     IPartRepository partRepository)
     : IRequestHandler<UpdateInventoryItemCommand, InventoryItemDto?>
 {
+    /// <inheritdoc />
     public async Task<InventoryItemDto?> Handle(UpdateInventoryItemCommand request, CancellationToken cancellationToken)
     {
         var item = await inventoryRepository.GetByIdAsync(request.Id, cancellationToken);
