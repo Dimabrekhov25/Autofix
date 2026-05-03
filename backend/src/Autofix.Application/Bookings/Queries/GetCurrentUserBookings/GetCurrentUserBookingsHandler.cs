@@ -7,11 +7,15 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Queries.GetCurrentUserBookings;
 
+/// <summary>
+/// Resolves the current user’s customer id, then loads their bookings.
+/// </summary>
 public sealed class GetCurrentUserBookingsHandler(
     ICurrentUserService currentUserService,
     ICustomerRepository customerRepository,
     IBookingRepository bookingRepository) : IRequestHandler<GetCurrentUserBookingsQuery, IReadOnlyList<BookingDto>>
 {
+    /// <inheritdoc />
     public async Task<IReadOnlyList<BookingDto>> Handle(
         GetCurrentUserBookingsQuery request,
         CancellationToken cancellationToken)

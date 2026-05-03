@@ -7,11 +7,15 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Commands.UpdateBookingServiceOrderStatus;
 
+/// <summary>
+/// Updates service-order status by booking id and returns the booking DTO after workflow side effects.
+/// </summary>
 public sealed class UpdateBookingServiceOrderStatusHandler(
     IBookingRepository bookingRepository,
     IServiceOrderManagementService serviceOrderManagementService)
     : IRequestHandler<UpdateBookingServiceOrderStatusCommand, BookingDto?>
 {
+    /// <inheritdoc />
     public async Task<BookingDto?> Handle(
         UpdateBookingServiceOrderStatusCommand request,
         CancellationToken cancellationToken)

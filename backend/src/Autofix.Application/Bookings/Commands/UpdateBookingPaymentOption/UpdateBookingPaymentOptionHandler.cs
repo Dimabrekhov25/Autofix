@@ -8,12 +8,16 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Commands.UpdateBookingPaymentOption;
 
+/// <summary>
+/// Authorizes the booking owner, validates status gates, persists payment option only.
+/// </summary>
 public sealed class UpdateBookingPaymentOptionHandler(
     ICurrentUserService currentUserService,
     ICustomerRepository customerRepository,
     IBookingRepository bookingRepository)
     : IRequestHandler<UpdateBookingPaymentOptionCommand, BookingDto?>
 {
+    /// <inheritdoc />
     public async Task<BookingDto?> Handle(
         UpdateBookingPaymentOptionCommand request,
         CancellationToken cancellationToken)

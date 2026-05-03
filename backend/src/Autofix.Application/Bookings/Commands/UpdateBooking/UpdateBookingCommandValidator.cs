@@ -2,8 +2,14 @@ using FluentValidation;
 
 namespace Autofix.Application.Bookings.Commands.UpdateBooking;
 
+/// <summary>
+/// FluentValidation rules for <see cref="UpdateBookingCommand"/>.
+/// </summary>
 public sealed class UpdateBookingCommandValidator : AbstractValidator<UpdateBookingCommand>
 {
+    /// <summary>
+    /// Configures validation rules applied before the handler runs.
+    /// </summary>
     public UpdateBookingCommandValidator()
     {
         RuleFor(x => x.Id)

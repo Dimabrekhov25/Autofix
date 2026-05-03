@@ -9,6 +9,9 @@ using MediatR;
 
 namespace Autofix.Application.Bookings.Commands.RequestBookingChanges;
 
+/// <summary>
+/// Verifies ownership, sets service order to <see cref="ServiceOrderStatus.ChangesRequested"/>, reloads booking.
+/// </summary>
 public sealed class RequestBookingChangesHandler(
     ICurrentUserService currentUserService,
     ICustomerRepository customerRepository,
@@ -16,6 +19,7 @@ public sealed class RequestBookingChangesHandler(
     IServiceOrderManagementService serviceOrderManagementService)
     : IRequestHandler<RequestBookingChangesCommand, BookingDto?>
 {
+    /// <inheritdoc />
     public async Task<BookingDto?> Handle(RequestBookingChangesCommand request, CancellationToken cancellationToken)
     {
         // Ownership check is centralized to enforce consistent customer authorization rules.
