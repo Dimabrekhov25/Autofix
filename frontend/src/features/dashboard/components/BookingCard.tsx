@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import type { Booking, BookingStatus } from '../types/booking'
-import { formatBookingCurrency, formatBookingReference, formatStartingPrice, getBookingStartingPrice } from '../../booking/lib/booking-api-helpers'
+import { formatBookingCurrency, formatBookingReference, formatStartingPrice } from '../../booking/lib/booking-api-helpers'
 import { cn } from '../../../shared/lib/cn'
 import { MaterialIcon } from '../../../shared/ui/MaterialIcon'
 
@@ -70,8 +70,8 @@ export function BookingCard({ booking, isSelected = false, onClick }: BookingCar
   const servicesCount = booking.services.length
   const secondaryLine = [booking.vehicle.plateNumber, booking.vehicle.trim].filter(Boolean).join(' | ')
   const priceLabel = booking.estimate
-    ? formatBookingCurrency(booking.estimate.estimatedTotalCost, booking.pricing.currency)
-    : formatStartingPrice(getBookingStartingPrice(booking.pricing), booking.pricing.currency)
+    ? formatBookingCurrency(booking.estimate.payableTotal, booking.pricing.currency)
+    : formatStartingPrice(booking.pricing.totalEstimate, booking.pricing.currency)
 
   return (
     <button
@@ -132,6 +132,11 @@ export function BookingCard({ booking, isSelected = false, onClick }: BookingCar
           </span>
         </div>
       </div>
+      {booking.pricing.hasLoyaltyDiscount || booking.estimate?.hasLoyaltyDiscount ? (
+        <div className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">
+          Loyalty discount applied
+        </div>
+      ) : null}
     </button>
   )
 }

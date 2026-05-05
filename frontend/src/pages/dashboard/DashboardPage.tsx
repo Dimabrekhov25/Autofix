@@ -285,7 +285,7 @@ export function DashboardPage() {
                         style: 'currency',
                         currency: booking.pricing.currency,
                         minimumFractionDigits: 2,
-                      }).format(booking.estimate?.estimatedTotalCost ?? booking.pricing.totalEstimate)}
+                      }).format(booking.estimate?.payableTotal ?? booking.pricing.totalEstimate)}
                     </p>
                   </div>
                 </div>

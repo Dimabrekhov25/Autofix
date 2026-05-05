@@ -32,8 +32,12 @@ export interface BookingPricing {
   subtotal: number
   estimatedLaborCost: number
   taxAmount: number
+  discountAmount: number
+  totalBeforeDiscount: number
   totalEstimate: number
   currency: string
+  loyaltyDiscountRate: number
+  hasLoyaltyDiscount: boolean
 }
 
 export interface BookingEstimateWorkItem {
@@ -60,6 +64,10 @@ export interface BookingEstimate {
   estimatedLaborCost: number
   estimatedPartsCost: number
   estimatedTotalCost: number
+  discountAmount: number
+  payableTotal: number
+  loyaltyDiscountRate: number
+  hasLoyaltyDiscount: boolean
   workItems: BookingEstimateWorkItem[]
   partItems: BookingEstimatePartItem[]
 }

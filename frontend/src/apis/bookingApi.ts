@@ -107,8 +107,12 @@ export interface BookingPricingDto {
   subtotal: number
   estimatedLaborCost: number
   taxAmount: number
+  discountAmount: number
+  totalBeforeDiscount: number
   totalEstimate: number
   currency: string
+  loyaltyDiscountRate: number
+  hasLoyaltyDiscount: boolean
 }
 
 export interface BookingQuoteServiceDto {
@@ -165,6 +169,10 @@ export interface BookingEstimateDto {
   estimatedLaborCost: number
   estimatedPartsCost: number
   estimatedTotalCost: number
+  discountAmount: number
+  payableTotal: number
+  loyaltyDiscountRate: number
+  hasLoyaltyDiscount: boolean
   workItems: BookingEstimateWorkItemDto[]
   partItems: BookingEstimatePartItemDto[]
 }
@@ -219,6 +227,7 @@ export interface CreateCustomerPayload {
 }
 
 export interface BookingQuotePayload {
+  customerId?: string | null
   vehicleId: string
   startAt: string
   serviceCatalogItemIds: string[]

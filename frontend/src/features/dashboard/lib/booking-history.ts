@@ -68,6 +68,10 @@ export function mapBookingHistory(bookings: BookingDto[], now = new Date()): Boo
               estimatedLaborCost: booking.estimate.estimatedLaborCost,
               estimatedPartsCost: booking.estimate.estimatedPartsCost,
               estimatedTotalCost: booking.estimate.estimatedTotalCost,
+              discountAmount: booking.estimate.discountAmount,
+              payableTotal: booking.estimate.payableTotal,
+              loyaltyDiscountRate: booking.estimate.loyaltyDiscountRate,
+              hasLoyaltyDiscount: booking.estimate.hasLoyaltyDiscount,
               workItems: booking.estimate.workItems.map((item) => ({
                 id: item.id,
                 description: item.description,
